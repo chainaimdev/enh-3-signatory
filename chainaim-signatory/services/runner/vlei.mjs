@@ -227,6 +227,63 @@ export function readGrantInfo({ vleiDir, sellerAgent, said }) {
   return null;
 }
 
+// ------------------------------------------------------------------ identity chain (S-7C)
+
+/**
+ * What the existing exporter proves about one agent, read from its JSON output (V-READ of
+ * export-signatory-evidence.js, 13 Nov):
+ *   agent → officer : live KELs from the OOBI URLs; agent inception is `dip` with di = officer AID and the
+ *                     officer's KEL anchors a seal for the agent (event structure; signatures not re-verified)
+ *   officer OOR     : task-data OOR credential record: issuee = officer AID, issuer = QVI AID
+ *   officer → LE    : the officer is listed under that LE in the 4D config; LE AID from task-data
+ *   LE → QVI        : NOT checked by the exporter (no LE credential check) — reported, never claimed
+ * Returns {ok, reason?, data}.
+ */
+export function agentChain(evidence, alias) {
+  const companies = evidence?.companies || [];
+  const company = companies.find((c) => (c.agents || []).some((a) => a.alias === alias));
+  const agent = company?.agents.find((a) => a.alias === alias);
+  const officer = company?.officers.find((o) => o.aid === agent?.delegator);
+  const oor = officer?.oorCredential;
+  const qviAid = evidence?.source?.qviAid ?? null;
+  const links = [
+    {
+      link: "agent → OOR officer",
+      verified: agent?.delegationVerified === true,
+      how: "live KELs via OOBI: agent inception is dip with di = officer AID, officer KEL anchors a seal for the agent (event structure; KEL signatures not re-verified by the exporter)",
+    },
+    {
+      link: "officer holds OOR issued by the QVI",
+      verified: !!(oor?.said && oor.issueeAid === officer?.aid && qviAid && oor.issuerAid === qviAid),
+      how: "task-data OOR credential record: issuee = officer AID, issuer = QVI AID (record, not a credential-signature/TEL check)",
+    },
+    {
+      link: "officer → Legal Entity",
+      verified: !!company?.leAid,
+      how: "officer listed under this LE in the 4D config; LE AID from task-data",
+    },
+    { link: "Legal Entity → QVI", verified: false, checked: false, how: "not checked: the existing exporter has no LE credential check" },
+  ];
+  const data = {
+    agent: alias,
+    agentAid: agent?.aid ?? null,
+    delegationVerified: agent?.delegationVerified === true,
+    officer: officer?.alias ?? null,
+    officerAid: officer?.aid ?? null,
+    officerOorSaid: oor?.said ?? null,
+    legalEntity: company?.name ?? null,
+    lei: company?.lei ?? null,
+    leAid: company?.leAid ?? null,
+    qviAid,
+    links,
+  };
+  const required = links.filter((l) => l.checked !== false);
+  const bad = required.filter((l) => !l.verified);
+  if (!agent) return { ok: false, reason: `${alias} not in the export`, data };
+  if (bad.length) return { ok: false, reason: bad.map((l) => `${l.link} not verified`).join("; "), data };
+  return { ok: true, data };
+}
+
 // ------------------------------------------------------------------ preflight
 
 /**

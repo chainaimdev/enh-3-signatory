@@ -123,13 +123,13 @@ table.data td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align
 .prevrun > summary{cursor:pointer;font-size:13px}
 .composer{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px}
 .composer input{flex:1 1 220px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
-.scards{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
-.scard{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:88px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);cursor:pointer;text-align:left;font-size:12px;position:relative;min-width:0}
-.scard b{font-weight:600;font-size:12px;line-height:1.25}
-.scard .sn{color:var(--muted);font-size:11px}
-.scard .ic{position:absolute;top:4px;right:6px;font-size:13px}
-.scard:hover{border-color:var(--muted)}
-.scard[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--surface)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chipb{padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:inherit;cursor:pointer;font:inherit;font-size:11.5px;line-height:1.7;white-space:nowrap}
+.chipb:hover{border-color:var(--muted)}
+.chipb[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--surface)}
+.vlabel{font-size:12px;margin-top:4px;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--surface);overflow-wrap:anywhere}
+.orch{align-self:center;font-size:11px;color:var(--muted);text-align:center;max-width:94%;overflow-wrap:anywhere}
+.pfchk{font-size:12px;margin:4px 0 0;padding-left:18px}
 .preview{font-size:12px;border:1px dashed var(--line);border-radius:8px;padding:6px 8px;overflow-wrap:anywhere}
 .team{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:3px}
 .team h3{margin-bottom:2px}
@@ -196,9 +196,9 @@ table.data td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align
     <section class="chat" aria-label="Chat">
       <div class="chatlog" id="chat-live" aria-live="polite"></div>
       <div class="composer">
-        <div class="scards" id="scenarios" role="group" aria-label="Built-in scenarios (click fills the chat box; nothing is sent)"></div>
         <div class="row"><input id="req" type="text" autocomplete="off" maxlength="500" placeholder="Request as the buyer, e.g. Need 8,000 t-shirts, about $84,000" aria-label="Request to the buyer agent"><button id="run-text" class="btn primary" type="button" disabled>Send</button></div>
         <div class="preview" id="preview" aria-live="polite"></div>
+        <div class="chips" id="scenarios" role="group" aria-label="Scenarios (click fills the chat box; nothing is sent)"></div>
         <div id="run-reason"></div>
       </div>
     </section>
@@ -519,7 +519,7 @@ function onRunEvent(run, name, text){
   else if (name === "step"){   // keyed by runId + step: a later event for the same step updates its bubble
     const k = run.steps.findIndex(s => s.step === d.step);
     if (k >= 0) run.steps[k] = d; else run.steps.push(d);
-    if (d.step === "export" && d.status === "done") loadEvidence().then(renderAll);   // fresh proof data for the summary
+    if ((d.step === "export" || d.step === "verify_seller") && d.status === "done") loadEvidence().then(renderAll);   // fresh proof data (S-7C: the strict export runs inside verify_seller)
   }
   renderAll(); scheduleRefresh();
 }
@@ -547,9 +547,25 @@ function badge(stepName){
   const st = run.steps.find(s => s.step === stepName);
   if (!st) return {cls:"", text:"not verified yet", sub: run.finished ? `run ${run.runId} had no ${stepName} step` : `waiting for ${stepName} in run ${run.runId}`};
   if (st.status === "running") return {cls:"warn", text:"verifying…", sub:`run ${run.runId}`, spin:true};
-  if (st.status === "done") return {cls:"ok", text:"✓ verified", sub:`${stepName} · run ${run.runId} · ${fmt.when(st.ts) || ""}`};
-  if (st.status === "failed") return {cls:"bad", text:"✗ verification failed", sub:`${stepName} · run ${run.runId}${st.text ? " · " + scrub(st.text) : ""}`};
+  const lbl = checkLabel(st.data);
+  if (st.status === "done" && isObj(st.data) && st.data.delegationVerified === true) return {cls:"ok", text:"✓ delegation verified", sub:`${lbl ? lbl + " · " : ""}${stepName} · run ${run.runId} · ${fmt.when(st.ts) || ""}`};
+  if (st.status === "done") return {cls:"warn", text:"step done, no delegation flag in its data", sub:`${lbl ? lbl + " · " : ""}${stepName} · run ${run.runId}`};
+  if (st.status === "failed") return {cls:"bad", text:"✗ not verified", sub:`${stepName} · run ${run.runId}${st.text ? " · " + scrub(st.text) : ""}${lbl ? " · " + lbl : ""}`};
   return {cls:"warn", text:st.status, sub:`${stepName} · run ${run.runId}`};
+}
+// Exactly what a verify step checked: its data.links (V-READ runner vlei.mjs agentChain) → [verified, not verified, not checked]. Never a hard-coded pass.
+const LINK_TEXT = {
+  "agent → OOR officer": ["Delegation verified (agent → OOR officer, live KELs from KERIA)", "Delegation NOT verified (agent → OOR officer)", "agent → OOR officer: not checked"],
+  "officer holds OOR issued by the QVI": ["OOR credential: stored record", "OOR credential: stored record not matched", "OOR credential: not checked"],
+  "officer → Legal Entity": ["officer → LE: config", "officer → LE: not in config", "officer → LE: not checked"],
+  "Legal Entity → QVI": ["LE → QVI: verified", "LE → QVI: not verified", "LE → QVI: not checked"],
+};
+function checkLabel(data){
+  if (!isObj(data) || !Array.isArray(data.links) || !data.links.length) return null;
+  const parts = data.links.filter(isObj).map(l => { const t = LINK_TEXT[l.link] || [`${l.link}: verified`, `${l.link}: not verified`, `${l.link}: not checked`]; return l.checked === false ? t[2] : l.verified === true ? t[0] : t[1]; });
+  if (data.issuanceVerified === true) parts.push("invoice issuance anchored in the seller KEL");
+  else if (data.issuanceVerified === false) parts.push("invoice issuance NOT anchored");
+  return parts.join(" · ");
 }
 function badgeEl(stepName){
   const b = badge(stepName);
@@ -613,7 +629,7 @@ function renderBuyer(){
   const p = $("#panel-buyer"); p.replaceChildren();
   const a = S.cfg.buyerAgent, c = companyOf(a), acct = agentAccount(), m = S.chain.mandate;
   if (!c){ p.append(el("div",{class:"empty",text: S.ev ? `${a} is not in the evidence` : "vLEI evidence not loaded"})); return; }
-  p.append(panelHeader(c, "Buyer"));
+  p.append(panelHeader(c, "Buyer", "verify_buyer"));
   p.append(ladder(a));
   p.append(badgeEl("verify_buyer"));
   // Turn off agent: signer /revoke as the approver. Re-enable is owner-only.
@@ -651,7 +667,7 @@ function renderSeller(){
   const p = $("#panel-seller"); p.replaceChildren();
   const a = S.cfg.sellerAgent, c = companyOf(a);
   if (!c){ p.append(el("div",{class:"empty",text: S.ev ? `${a} is not in the evidence` : "vLEI evidence not loaded"})); return; }
-  p.append(panelHeader(c, "Seller"));
+  p.append(panelHeader(c, "Seller", "verify_seller"));
   p.append(ladder(a));
   p.append(badgeEl("verify_seller"));
   // footer only when every invoice in the evidence pays the accounts.json payee
@@ -771,12 +787,12 @@ function previewLine(pv){
 const SCENARIOS = [
   {n:1, label:"Within limit", prompt:"Need 8,000 cotton t-shirts, total $84,000"},
   {n:2, label:"Small order", prompt:"Order 2,500 denim jeans, total $50,000"},
-  {n:3, label:"Exactly at limit", prompt:"Need 10,000 polo shirts, total $100,000"},
-  {n:4, label:"Escalate → approve", prompt:"Need 15,000 hoodies, total $157,500"},
-  {n:5, label:"Escalate → reject", prompt:"Order 12,000 jackets, total $120,000"},
-  {n:6, label:"Near CPO maximum", prompt:"Need 20,000 knit sweaters, total $240,000"},
-  {n:7, label:"Above CPO authority", prompt:"Order 30,000 winter coats, total $300,000"},
-  {n:8, label:"Agent turned off", prompt:"Need 5,000 t-shirts, total $42,000", note:"turn off the agent first"},
+  {n:3, label:"At limit", prompt:"Need 10,000 polo shirts, total $100,000"},
+  {n:4, label:"Approve", prompt:"Need 15,000 hoodies, total $157,500"},
+  {n:5, label:"Reject", prompt:"Order 12,000 jackets, total $120,000"},
+  {n:6, label:"Near max", prompt:"Need 20,000 knit sweaters, total $240,000"},
+  {n:7, label:"Over CPO", prompt:"Order 30,000 winter coats, total $300,000"},
+  {n:8, label:"Agent off", prompt:"Need 5,000 t-shirts, total $42,000", note:"turn off the agent first"},
   {n:9, label:"Too small", prompt:"Sample order of 1 t-shirt, total $50"},
   {n:10, label:"No amount", prompt:"Need cotton t-shirts for next month"},
 ];
@@ -786,10 +802,9 @@ function renderScenarios(){
   for (const sc of SCENARIOS){
     const pv = previewOf(sc.prompt);
     const amt = pv.units !== null && S.chain.token ? `${fmt.units(pv.units.toString(), S.chain.token.decimals)} USDC` : DASH;
-    g.append(el("button",{class:"scard",type:"button","aria-pressed":String(selectedScenario === sc.n),title:`${sc.prompt}\nexpected now: ${pv.path}`,
-      onclick: () => { selectedScenario = sc.n; const i = $("#req"); i.value = sc.prompt; i.focus(); renderScenarios(); renderControls(); }},
-      el("span",{class:"sn",text:`#${sc.n}`}), el("span",{class:"ic","aria-label":pv.path,text:iconOf(pv.kind)}),
-      el("b",{text:sc.label}), el("span",{class:"mono",text:amt}), sc.note ? el("span",{class:"meta",text:sc.note}) : null));
+    g.append(el("button",{class:"chipb",type:"button","aria-pressed":String(selectedScenario === sc.n),
+      title:`#${sc.n} ${sc.label} · ${amt} on NEAR\nexpected now: ${iconOf(pv.kind)} ${pv.path}${sc.note ? "\n" + sc.note : ""}\n"${sc.prompt}"`,
+      onclick: () => { selectedScenario = sc.n; const i = $("#req"); i.value = sc.prompt; i.focus(); renderScenarios(); renderControls(); }, text: sc.label}));
   }
 }
 function renderPreview(){
@@ -820,21 +835,24 @@ function checkedNow(){
   for (const st of run.steps){
     if (!["verify_seller","verify_buyer"].includes(st.step) || st.status !== "done" || !isObj(st.data)) continue;
     const when = fmt.when(st.ts) || "";
-    if (isStr(st.data.agent) && st.data.delegationVerified === true) out.set(st.data.agent, `KEL delegation verified by ${st.step} · run ${run.runId} · ${when}`);
-    if (isStr(st.data.officer) && isStr(st.data.officerOorSaid) && st.data.officerOorSaid) out.set(st.data.officer, `OOR credential checked by ${st.step} · run ${run.runId} · ${when}`);
+    const link = n => Array.isArray(st.data.links) ? st.data.links.find(l => isObj(l) && l.link === n) || null : null;
+    const del = link("agent → OOR officer"), oor = link("officer holds OOR issued by the QVI");
+    const agentOk = del ? del.verified === true : st.data.delegationVerified === true;
+    const officerOk = oor ? oor.verified === true : isStr(st.data.officerOorSaid) && !!st.data.officerOorSaid;
+    if (isStr(st.data.agent) && agentOk) out.set(st.data.agent, `Delegation verified (agent → OOR officer, live KELs from KERIA) · ${st.step} · run ${run.runId} · ${when}`);
+    if (isStr(st.data.officer) && officerOk) out.set(st.data.officer, `OOR credential: stored record (issuee = officer, issuer = QVI) · ${st.step} · run ${run.runId} · ${when}`);
   }
   return out;
 }
-// Who acts now, from the running step (only preflight/issue/export/register/pay emit "running"; escalation = outcome waiting).
+// Who acts now = the actor of the running step (S-7C: verify_buyer/issue → seller agent, verify_seller/pay → buyer agent,
+// register → registrar, not in a ladder); escalation pending / decide in flight → CPO.
 function actingNow(){
   const run = S.live.run;
   if (!run || run.finished) return null;
   if (isWaiting(run) || run.decide.busy) return alias("cpo");
   const running = [...run.steps].reverse().find(s => s.status === "running");
-  if (!running) return null;
-  if (["issue","offer","verify_seller"].includes(running.step)) return S.cfg.sellerAgent;
-  if (["verify_buyer","accept","register","pay"].includes(running.step)) return S.cfg.buyerAgent;
-  return null;
+  const id = running && isObj(running.actor) ? running.actor.id : null;
+  return id === S.cfg.sellerAgent || id === S.cfg.buyerAgent ? id : null;
 }
 function ladderBox(node, checked, acting){
   const human = node.kind === "human";
@@ -899,17 +917,21 @@ function ladder(actingAgentAlias){
   if (rest.length){ col.append(el("div",{class:"meta",text:"other agents in the evidence"})); rest.forEach(a => col.append(ladderBox(agent(a), checked, now))); }
   return col;
 }
-function panelHeader(c, sideLabel){
+function panelHeader(c, sideLabel, stepName){
   const src = S.ev && isObj(S.ev.source) ? S.ev.source : {};
+  const run = S.live.run, st = run ? run.steps.find(x => x.step === stepName) : null, lbl = st ? checkLabel(st.data) : null;
+  const leParts = lbl ? lbl.split(" · ").filter(x => /LE/.test(x)) : [];
+  const tip = `Legal Entity: not checked in this run${leParts.length ? ` (${stepName}: ${leParts.join(" · ")})` : ""}`;
   return el("div",{class:"phd"}, el("h2",{text:c.name}),
-    el("div",{class:"meta"}, `${sideLabel} · LEI `, el("span",{class:"mono",title:c.lei,text:shortLei(c.lei)}), src.qviAid && src.gedaAid ? " · QVI ← GLEIF" : ""));
+    el("div",{class:"meta"}, `${sideLabel} · LEI `, el("span",{class:"mono",title:c.lei,text:shortLei(c.lei)}), src.qviAid && src.gedaAid ? " · QVI ← GLEIF" : "", " ",
+      el("span",{class:"dot",role:"img","aria-label":"Legal Entity not checked in this run",title:tip})));
 }
 function renderLegend(){
   const g = $("#legend"); if (!g) return; g.replaceChildren();
   const item = (...k) => el("span",{class:"li"}, ...k);
   g.append(item(icon("human","k-human",15), " Human"), item(icon("ai","k-ai",15), " AI agent"),
     item(el("b",{text:"↑"}), " vLEI delegation"), item(el("b",{class:"escc",text:"⇡"}), " business escalation (display only)"),
-    item(el("span",{class:"dot ok","aria-hidden":"true"}), " verified in this run"), item(el("span",{class:"dot","aria-hidden":"true"}), " waiting / not checked"),
+    item(el("span",{class:"dot ok","aria-hidden":"true"}), " verified in this run (agent + its OOR officer)"), item(el("span",{class:"dot","aria-hidden":"true"}), " waiting / not checked (LE → QVI is never checked)"),
     item(el("span",{class:"swatch","aria-hidden":"true"}), " blue border = acting now"));
 }
 /* ---------- chat ---------- */
@@ -932,7 +954,7 @@ function actorClass(actor){
 }
 function who(actor){
   const id = isObj(actor) ? actor.id : actor, account = isObj(actor) && isStr(actor.account) ? actor.account : null;
-  const name = id === "vlei_registrar" ? "vLEI registrar" : id === "contract" ? "NEAR contract" : id === "runner" ? "runner" : (isStr(id) && id) || account || DASH;
+  const name = id === "vlei_registrar" ? "vLEI registrar" : id === "contract" ? "NEAR contract" : id === "runner" ? "System check" : (isStr(id) && id) || account || DASH;
   const cls = actorClass(isStr(id) ? id : "") || actorClass(account || "");
   const person = personOf(isStr(id) ? id : "") || personOf(account || "");
   return {name, cls, av: AV[cls] || "▫", account, person};
@@ -947,7 +969,10 @@ function hashOf(d){
 function apiBlock(d){
   const api = isObj(d.api) ? d.api : null;
   const raw = isObj(d.data) && d.data.raw !== undefined ? d.data.raw : null;
-  const rest = isObj(d.data) ? Object.fromEntries(Object.entries(d.data).filter(([k]) => k !== "raw")) : d.data;
+  // preflight checks: inside the request bubble (S-7C) or the failed preflight bubble
+  const pf = isObj(d.data) && isObj(d.data.preflight) && Array.isArray(d.data.preflight.checks) ? d.data.preflight
+    : d.step === "preflight" && isObj(d.data) && Array.isArray(d.data.checks) ? {checks: d.data.checks} : null;
+  const rest = isObj(d.data) ? Object.fromEntries(Object.entries(d.data).filter(([k]) => k !== "raw" && !(pf && (k === "preflight" || k === "checks")))) : d.data;
   const hasRest = rest !== undefined && rest !== null && !(isObj(rest) && !Object.keys(rest).length);
   if (!api && raw === null && !hasRest) return null;
   const box = el("details",{class:"raw","data-k": d.runId && d.step ? `${d.runId}:${d.step}` : null}, el("summary",{text: api ? `details · ${api.service || "?"} ${[api.method, api.path || api.cmd].filter(Boolean).join(" ")}` : "details"}));
@@ -959,7 +984,13 @@ function apiBlock(d){
     if (api.httpStatus !== undefined) parts.push(`HTTP ${api.httpStatus}`);
     if (api.exitCode !== undefined) parts.push(`exit ${api.exitCode}`);
     if (Number.isFinite(api.ms)) parts.push(`took ${fmt.ms(api.ms)}`);
+    if (api.orchestrator) parts.push(`orchestrator: ${api.orchestrator}`);
     box.append(el("div",{class:"mono",style:"font-size:12px;margin-top:4px;overflow-wrap:anywhere",text:scrub(parts.join(" · "))}));
+  }
+  if (pf){
+    const ok = pf.checks.filter(c => isObj(c) && c.ok === true).length;
+    box.append(el("div",{class:"meta",style:"margin-top:4px",text:`preflight by the orchestrator: ${ok}/${pf.checks.length} checks passed${Number.isFinite(pf.ms) ? " in " + fmt.ms(pf.ms) : ""}`}),
+      el("ul",{class:"pfchk"}, ...pf.checks.filter(isObj).map(c => el("li",{text: scrub(`${c.ok === true ? "✓" : "✗"} ${c.name}${c.detail !== undefined && c.detail !== null && c.detail !== "" ? " — " + (isStr(c.detail) ? c.detail : JSON.stringify(c.detail)) : ""}`)}))));
   }
   if (raw !== null) box.append(el("pre",{text: scrub(isStr(raw) ? raw : JSON.stringify(raw, null, 2))}));
   if (hasRest) box.append(el("pre",{text: scrub(JSON.stringify(rest, null, 2))}));
@@ -968,16 +999,22 @@ function apiBlock(d){
 }
 function bubble(d, extra){
   const a = who(d.actor), t = d.target ? who(d.target) : null, st = isStr(d.status) ? d.status : null;
+  if (isStr(d.name)) a.name = d.name;
+  else if (d.step === "preflight") a.name = st === "failed" ? "System not ready" : "System check";   // never "runner" as an actor
+  const tgt = t && d.step === "preflight" ? null : t;
   const took = isObj(d.api) && Number.isFinite(d.api.ms) ? fmt.ms(d.api.ms) : null;
   const body = el("div",{class:"bb"},
-    el("div",{class:"hd"}, el("span",{class:"nm",title:a.account || null,text:a.name}), t ? el("span",{class:"meta",title:t.account || null,text:"→ " + t.name}) : null,
+    el("div",{class:"hd"}, el("span",{class:"nm",title:a.account || null,text:a.name}), tgt ? el("span",{class:"meta",title:tgt.account || null,text:"→ " + tgt.name}) : null,
       d.step ? el("span",{class:"pill",text:(Number.isInteger(d.index) ? d.index + " · " : "") + d.step}) : null, st ? el("span",{class:STCLS(st),text:st}) : null,
+      isObj(d.data) && d.data.signed === false ? el("span",{class:"pill",title:"the request itself carries no signature",text: isStr(d.data.label) ? d.data.label : "unsigned request"}) : null,
       d.ts ? el("time",{text: fmt.when(d.ts) || ""}) : null, took ? el("span",{class:"meta",text:`took ${took}`}) : null));
   if (d.history) body.append(el("div",{class:"meta",style:"font-style:italic",text:"vLEI proof — pre-issued credential, not a live action in this run"}));
   if (d.text) body.append(el("div",{class:"txt",text:scrub(d.text)}));
+  const lbl = ["verify_buyer","verify_seller"].includes(d.step) ? checkLabel(d.data) : null;
+  if (lbl) body.append(el("div",{class:"vlabel"}, el("b",{text:"Checked: "}), lbl));
   const h = hashOf(d);
   if (h) body.append(el("div",{class:"meta"}, "tx ", txLink(h)));
-  if (st === "running") body.append(el("div",{class:"typing",role:"status"}, el("span",{class:"spin","aria-hidden":"true"}), ` Typing… (${a.name}${t ? " → " + t.name : ""})`));
+  if (st === "running") body.append(el("div",{class:"typing",role:"status"}, el("span",{class:"spin","aria-hidden":"true"}), ` Typing… (${a.name}${tgt ? " → " + tgt.name : ""})`));
   const det = apiBlock(d); if (det) body.append(det);
   if (d.src) body.append(el("div",{class:"meta",text:d.src}));
   if (extra) body.append(extra);
@@ -1074,8 +1111,9 @@ function runLog(run){
   if (run.streamErr && !run.finished) box.append(el("div",{class:"result bad",role:"alert"}, "event stream: ", el("span",{class:"mono",text:run.streamErr})));
   const cmp = compareLine(run); if (cmp) box.append(cmp);
   if (run.finished && ["no_match","no_amount","bad_amount"].includes(run.finished.result))   // runner stop before anything happened: amber, not an error
-    box.append(bubble({actor:{id:"runner"}, step:"stop", status:run.finished.result, ts:run.finished.ts, text:run.finished.text, tone:"amber"}));
+    box.append(bubble({actor:{id:"runner"}, name:"Request not sent", step:"stop", status:run.finished.result, ts:run.finished.ts, text:run.finished.text, tone:"amber"}));
   else if (run.finished) box.append(summaryCard(run));
+  box.append(el("div",{class:"orch",text:"Steps sequenced by the orchestrator, which holds no keys. Every signature comes from the agent's own key."}));
   return box;
 }
 function renderControls(){

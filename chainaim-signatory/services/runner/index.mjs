@@ -14,7 +14,7 @@
 //   POST /run {said} | {text} | {text, mode:"issue"}  → {ok, runId, eventsUrl, mode, state, result?}
 //   GET  /runs/:id · GET /runs/:id/events (SSE) · POST /runs/:id/decide {decision} · POST /runs/:id/cancel
 // Origin rule (P8): an Origin header other than allowOrigin → 403; no Origin → allowed (127.0.0.1 bind).
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
 import { relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -90,6 +90,28 @@ export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, fetch
         writeInvoiceConfig({ vleiDir: vlei.dir, template: vlei.template, invoiceNumber, units, item, quantity, decimals: cfg.tokenDecimals, demoScale: cfg.demoScale ?? 1000000 }),
       runIssue: (relPath) => run("bash", ["issue-additional-invoice.sh", "--invoice-config", relPath], { cwd: vlei.dir, timeoutMs: vlei.issueTimeoutMs }),
       runExport: () => run(vlei.exportNode, ["export-signatory-evidence.js", "--strict", "--out", outRel], { cwd: vlei.dir, timeoutMs: vlei.exportTimeoutMs }),
+      // S-7C verify_buyer: the same existing exporter (strict), written to a runner work file so the UI evidence is
+      // untouched; read back as JSON for agentChain(), then deleted. No new invoice needed (V-READ 13 Nov).
+      verifyBuyerCmd: `"${vlei.exportNode}" export-signatory-evidence.js --strict --out <services/runner/.work/verify-buyer-<runId>.json>`,
+      runVerifyBuyer: async (runId) => {
+        const workDir = resolve(ROOT, "services", "runner", ".work");
+        mkdirSync(workDir, { recursive: true });
+        const file = resolve(workDir, `verify-buyer-${runId}.json`);
+        const rel = relative(vlei.dir, file).split("\\").join("/");
+        const r = await run(vlei.exportNode, ["export-signatory-evidence.js", "--strict", "--out", rel], { cwd: vlei.dir, timeoutMs: vlei.exportTimeoutMs });
+        let evidence = null;
+        try {
+          evidence = JSON.parse(readFileSync(file, "utf8"));
+        } catch {
+          evidence = null;
+        }
+        try {
+          rmSync(file, { force: true });
+        } catch {
+          /* ignore */
+        }
+        return { ...r, cmd: `"${vlei.exportNode}" export-signatory-evidence.js --strict --out ${rel}`, evidence };
+      },
       readGrantInfo: (said) => readGrantInfo({ vleiDir: vlei.dir, sellerAgent, said }),
     });
   }

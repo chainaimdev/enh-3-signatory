@@ -1,7 +1,10 @@
 // S-7 runner engine: one run at a time; every step is a real action or real evidence, with an `api` proof block.
 //   mode "invoice" (Phase A): pay a pre-issued invoice — steps offer, accept, register, pay, outcome, decision (index 1..6)
-//   mode "issue"   (Phase B): issue a new vLEI invoice per request — steps 0..10:
-//     preflight, issue, offer, export, verify_seller, verify_buyer, accept, register, pay, outcome, decision
+//   mode "issue"   (Phase B, business order S-7C): issue a new vLEI invoice per request — steps 0..10:
+//     preflight (event only when it FAILS; when it passes its result is inside `request`), request,
+//     verify_buyer (before anything is issued), issue, offer, verify_seller (runs the strict export), accept,
+//     register, pay, outcome, decision
+//   Every step's `api` carries orchestrator:"runner (no keys)"; the runner is never the actor except a failed preflight.
 // Network/process access is injected (deps) so the engine is unit-testable without keys:
 //   deps.loadEvidence() · deps.getInvoice(said) · deps.getMandate(account)
 //   deps.bridgeRegister(said) / deps.signerPay(said) / deps.signerDecide(kind, said)
@@ -10,14 +13,16 @@
 //   Phase B only: deps.preflight() → {ok, checks, mandate} · deps.nextInvoiceNumber(evidence) → {invoiceNumber, highest}
 //                 deps.writeInvoiceConfig(invoiceNumber, units) → {path, relPath}
 //                 deps.runIssue(relPath) / deps.runExport() → {exitCode, timedOut, stdout, stderr, ms, cmd}
+//                 deps.runVerifyBuyer(runId) → {exitCode, timedOut, stdout, stderr, ms, cmd, evidence|null}
 //                 deps.readGrantInfo(said) → {grantSaid, path, timestamp} | null
 import { formatUnits } from "../../scripts/lib/common.mjs";
 import { evidenceInvoices } from "../bridge/rules.mjs";
 import { listInvoices, matchInvoice, parseRequest } from "./logic.mjs";
-import { lineItemDescription, parseIssueOutput, proofJson, proofTail } from "./vlei.mjs";
+import { agentChain, lineItemDescription, parseIssueOutput, proofJson, proofTail } from "./vlei.mjs";
 
+export const ORCHESTRATOR = "runner (no keys)";
 export const STEPS = ["offer", "accept", "register", "pay", "outcome", "decision"];
-export const STEPS_B = ["preflight", "issue", "offer", "export", "verify_seller", "verify_buyer", "accept", "register", "pay", "outcome", "decision"];
+export const STEPS_B = ["preflight", "request", "verify_buyer", "issue", "offer", "verify_seller", "accept", "register", "pay", "outcome", "decision"];
 
 export class RunnerError extends Error {
   constructor(status, message, extra = {}) {
@@ -96,7 +101,8 @@ export function createRunner({
 
   function step(run, name, status, actor, target, text, extra = {}) {
     const index = run.plan.indexOf(name) + (run.mode === "issue" ? 0 : 1);
-    emit(run, "step", { step: name, index, status, actor, target, text, ...extra });
+    const api = { ...(extra.api || {}), orchestrator: ORCHESTRATOR };
+    emit(run, "step", { step: name, index, status, actor, target, text, ...extra, api });
   }
 
   function finish(run, result, text, extra = {}) {
@@ -315,30 +321,69 @@ export function createRunner({
 
   async function executeB(run, units, parsed = {}) {
     const amountText = `${fmt(units)} USDC`;
-    const fail = (name, actor, target, text, extra) => {
+    const fail = (name, actor, target, text, extra, result = "error", finishText = text) => {
       step(run, name, "failed", actor, target, text, extra);
-      finish(run, "error", text, { failedStep: name });
+      finish(run, result, finishText, { failedStep: name });
     };
 
-    // 0. preflight
+    // 0. preflight — a real check, folded into `request` when it passes; a failure is its own red step.
     run.currentStep = "preflight";
-    step(run, "preflight", "running", ACTORS.runner, ACTORS.runner, "Checking signer, bridge, NEAR, Docker/KERIA, vLEI tools, evidence and the agent mandate",
-      { api: { service: "runner", method: "GET", path: "/preflight" } });
     const t0 = Date.now();
     const pf = await deps.preflight();
-    const pfApi = { service: "runner", method: "GET", path: "/preflight", httpStatus: null, ms: Date.now() - t0 };
-    const bad = pf.checks.filter((c) => !c.ok);
+    const pfMs = Date.now() - t0;
+    const pfApi = { service: "runner", method: "GET", path: "/preflight", httpStatus: null, ms: pfMs };
     if (!pf.ok) {
-      return fail("preflight", ACTORS.runner, ACTORS.runner, `Preflight failed: ${bad.map((c) => `${c.name} (${c.detail})`).join("; ")} — nothing issued`, { api: pfApi, data: { checks: pf.checks } });
+      const bad = pf.checks.filter((c) => !c.ok);
+      return fail("preflight", ACTORS.runner, ACTORS.runner,
+        `Preflight failed: ${bad.map((c) => `${c.name} (${c.detail})`).join("; ")} — nothing requested, nothing issued`,
+        { api: pfApi, data: { checks: pf.checks } });
     }
-    const revoked = pf.mandate?.revoked === true;
-    step(run, "preflight", "done", ACTORS.runner, ACTORS.runner,
-      `All ${pf.checks.length} checks passed${revoked ? " — note: the agent mandate is revoked, the contract will refuse the payment" : ""}`,
-      { api: pfApi, data: { checks: pf.checks, mandate: mandateView(pf.mandate) } });
 
-    // 1. issue (existing vLEI script)
-    run.currentStep = "issue";
+    // 1. request (buyer → seller), unsigned
+    run.currentStep = "request";
     let planned;
+    try {
+      planned = deps.nextInvoiceNumber(deps.loadEvidence());
+    } catch (e) {
+      return fail("request", ACTORS.agent, ACTORS.seller, `Could not determine the next invoice number: ${e.message}`, { api: pfApi, data: { preflight: { ok: true, ms: pfMs, checks: pf.checks } } });
+    }
+    const realUnits = (units * BigInt(demoScale)) / 10n ** BigInt(decimals);
+    const realTotal = `${Number(realUnits).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+    const what = parsed.item ? `${parsed.quantity ? `${parsed.quantity.toLocaleString("en-US")} ` : ""}${parsed.item}` : "an order";
+    const revoked = pf.mandate?.revoked === true;
+    step(run, "request", "done", ACTORS.agent, ACTORS.seller,
+      `Request: ${what}, real total ${realTotal} → ${amountText} on NEAR (unsigned request)${revoked ? " — note: the agent mandate is revoked, the contract will refuse the payment" : ""}`,
+      {
+        api: { ...pfApi, path: "/preflight + /next-invoice" },
+        data: {
+          signed: false, label: "unsigned request",
+          item: parsed.item ?? null, quantity: parsed.quantity ?? null, realTotal, amount: fmt(units), amountUnits: units.toString(), currency: "USDC",
+          description: lineItemDescription({ item: parsed.item, quantity: parsed.quantity, units, decimals, demoScale }),
+          nextInvoiceNumber: planned.invoiceNumber, nextInvoiceSources: planned.highest,
+          preflight: { ok: true, ms: pfMs, checks: pf.checks }, mandate: mandateView(pf.mandate),
+        },
+      });
+
+    // 2. verify_buyer (seller checks the buyer BEFORE issuing) — existing exporter, strict, own output file
+    run.currentStep = "verify_buyer";
+    const vbCmd = deps.verifyBuyerCmd ?? "node.exe export-signatory-evidence.js --strict --out <runner work file>";
+    step(run, "verify_buyer", "running", ACTORS.seller, ACTORS.agent, `Verifying ${agentAlias}: live KEL delegation from its OOR officer, OOR issuer, Legal Entity`, { api: { service: "vlei", cmd: vbCmd } });
+    const vb = await deps.runVerifyBuyer(run.id);
+    const vbApi = { service: "vlei", cmd: vb.cmd ?? vbCmd, exitCode: vb.exitCode, ms: vb.ms, ...(vb.timedOut ? { timedOut: true } : {}) };
+    const vbRaw = proofTail(`${vb.stdout ?? ""}\n${vb.stderr ?? ""}`);
+    const buyer = vb.evidence ? agentChain(vb.evidence, agentAlias) : null;
+    if (vb.exitCode !== 0 || !buyer?.ok) {
+      const why = vb.timedOut ? "exporter timed out" : vb.spawnError ? vb.spawnError : buyer && !buyer.ok ? buyer.reason : !vb.evidence ? `exporter exit code ${vb.exitCode}, no output` : `exporter strict checks failed (exit ${vb.exitCode})`;
+      return fail("verify_buyer", ACTORS.seller, ACTORS.agent, `Seller refused: buyer not verified — ${why}. No invoice issued.`,
+        { api: vbApi, data: { ...(buyer?.data ?? {}), raw: vbRaw } }, "seller_refused", `seller refused: buyer not verified — ${why}`);
+    }
+    const bd = buyer.data;
+    step(run, "verify_buyer", "done", ACTORS.seller, ACTORS.agent,
+      `${agentAlias} verified: delegated (live KEL) from ${bd.officer}, who holds OOR ${bd.officerOorSaid} issued by the QVI; Legal Entity ${bd.legalEntity} (LEI ${bd.lei}). LE → QVI is not checked by the exporter.`,
+      { api: vbApi, data: { ...bd, raw: vbRaw } });
+
+    // 3. issue (existing vLEI script)
+    run.currentStep = "issue";
     let written;
     try {
       planned = deps.nextInvoiceNumber(deps.loadEvidence());
@@ -361,7 +406,7 @@ export function createRunner({
     step(run, "issue", "done", ACTORS.seller, ACTORS.vlei, `${issued.invoiceNumber} issued as credential ${issued.said}, granted, admitted and held`,
       { api: issueApi, data: { invoiceNumber: issued.invoiceNumber, said: issued.said, configFile: written.relPath, description: written.description, raw: issueRaw } });
 
-    // 2. offer (IPEX grant from the archived grant file)
+    // 4. offer (IPEX grant from the archived grant file; the admit happened inside the issue script)
     run.currentStep = "offer";
     let grant = null;
     try {
@@ -374,63 +419,46 @@ export function createRunner({
     step(run, "offer", "done", ACTORS.seller, ACTORS.agent, `Invoice ${issued.invoiceNumber} for ${amountText} offered by IPEX grant ${grant.grantSaid}`,
       { api: offerApi, data: { invoiceNumber: issued.invoiceNumber, amount: fmt(units), amountUnits: units.toString(), currency: "USDC", said: issued.said, grantSaid: grant.grantSaid, grantedAt: grant.timestamp } });
 
-    // 3. export (Windows node, strict)
-    run.currentStep = "export";
+    // 5. verify_seller (buyer checks the seller and the new invoice) — real strict export to the UI evidence
+    run.currentStep = "verify_seller";
     const exportCmd = deps.exportCmd ?? "node.exe export-signatory-evidence.js --strict --out ../UI/data/signatory-evidence.json";
-    step(run, "export", "running", ACTORS.runner, ACTORS.vlei, "Exporting the vLEI evidence (strict: KELs, OOR delegations, IPEX, issuance proofs)", { api: { service: "vlei", cmd: exportCmd } });
+    step(run, "verify_seller", "running", ACTORS.agent, ACTORS.seller, "Exporting the vLEI evidence (strict) and verifying the seller agent and the invoice issuance", { api: { service: "vlei", cmd: exportCmd } });
     const ex = await deps.runExport();
     const exApi = { service: "vlei", cmd: exportCmd, exitCode: ex.exitCode, ms: ex.ms, ...(ex.timedOut ? { timedOut: true } : {}) };
     const exRaw = proofTail(`${ex.stdout}\n${ex.stderr}`);
     let evidence;
     try {
       evidence = deps.loadEvidence();
-    } catch (e) {
+    } catch {
       evidence = null;
     }
     const inv = evidence && evidenceInvoices(evidence).find((i) => i.said === issued.said);
-    if (ex.exitCode !== 0 || !/All checks passed\./.test(ex.stdout) || !inv) {
-      const why = ex.timedOut ? "timed out" : ex.spawnError ? ex.spawnError : ex.exitCode !== 0 ? `exit code ${ex.exitCode}` : !inv ? "new invoice not in the export" : '"All checks passed." not printed';
-      return fail("export", ACTORS.runner, ACTORS.vlei, `Strict export failed (${why})`, { api: exApi, data: { raw: exRaw } });
+    const exportInfo = { exitCode: ex.exitCode, ms: ex.ms, allChecksPassed: /All checks passed\./.test(ex.stdout), generatedAt: evidence?.generatedAt ?? null, invoices: evidence ? evidenceInvoices(evidence).length : null };
+    if (ex.exitCode !== 0 || !exportInfo.allChecksPassed || !inv) {
+      const why = ex.timedOut ? "export timed out" : ex.spawnError ? ex.spawnError : ex.exitCode !== 0 ? `export exit code ${ex.exitCode}` : !inv ? "new invoice not in the export" : '"All checks passed." not printed';
+      return fail("verify_seller", ACTORS.agent, ACTORS.seller, `Seller not verified: strict export failed (${why})`, { api: exApi, data: { export: exportInfo, raw: exRaw } });
     }
-    step(run, "export", "done", ACTORS.runner, ACTORS.vlei, `Strict export passed: ${evidenceInvoices(evidence).length} invoices, all checks passed`,
-      { api: exApi, data: { generatedAt: evidence.generatedAt, raw: exRaw } });
-
-    // 4–6. verification from the fresh export
-    const companies = evidence.companies || [];
-    const agents = companies.flatMap((c) => c.agents || []);
-    const officers = companies.flatMap((c) => c.officers || []);
-    const agentProof = (alias) => {
-      const a = agents.find((x) => x.alias === alias);
-      const officer = a && officers.find((o) => o.aid === a.delegator);
-      return { agent: a, officer, ok: !!(a && a.delegationVerified === true && officer && officer.oorCredential?.said) };
-    };
-    const evApi = { service: "evidence", method: "read", path: cfg.paths?.evidence ?? "evidence" };
-
-    run.currentStep = "verify_seller";
-    const sp = agentProof(sellerAgent);
+    const seller = agentChain(evidence, sellerAgent);
     const from = inv.issuerDelegatedFrom || {};
-    const sellerOk = sp.ok && inv.issuerAid === sp.agent.aid && from.officerAid === sp.officer.aid && from.officerOorSaid === sp.officer.oorCredential.said && inv.issuanceVerified === true;
-    const sellerData = {
-      agent: sellerAgent, agentAid: sp.agent?.aid, delegationVerified: sp.agent?.delegationVerified === true,
-      officer: sp.officer?.alias, officerAid: sp.officer?.aid, officerOorSaid: sp.officer?.oorCredential?.said,
-      issuanceVerified: inv.issuanceVerified === true, issuanceAnchor: inv.issuance?.anchor ?? null,
-    };
-    if (!sellerOk) return fail("verify_seller", ACTORS.agent, ACTORS.seller, "Seller verification failed (delegation, OOR or issuance proof)", { api: evApi, data: sellerData });
+    const sd = seller.data;
+    const issuerOk = inv.issuerAid === sd.agentAid && from.officerAid === sd.officerAid && from.officerOorSaid === sd.officerOorSaid;
+    const sellerData = { ...sd, issuerMatches: issuerOk, issuanceVerified: inv.issuanceVerified === true, issuanceAnchor: inv.issuance?.anchor ?? null, export: exportInfo, raw: exRaw };
+    if (!seller.ok || !issuerOk || inv.issuanceVerified !== true) {
+      const why = !seller.ok ? seller.reason : !issuerOk ? "invoice issuer is not the delegated seller agent" : "invoice issuance not anchored in the seller KEL";
+      return fail("verify_seller", ACTORS.agent, ACTORS.seller, `Seller not verified: ${why}`, { api: exApi, data: sellerData });
+    }
     step(run, "verify_seller", "done", ACTORS.agent, ACTORS.seller,
-      `${sellerAgent} is delegated (KEL verified) from ${sp.officer.alias} who holds OOR ${sp.officer.oorCredential.said}; invoice issuance anchored in the seller KEL`,
-      { api: evApi, data: sellerData });
+      `${sellerAgent} verified: delegated (live KEL) from ${sd.officer}, who holds OOR ${sd.officerOorSaid}; it issued ${issued.invoiceNumber} and the issuance is anchored in its KEL (strict export: ${exportInfo.invoices} invoices, all checks passed)`,
+      { api: exApi, data: sellerData });
 
-    run.currentStep = "verify_buyer";
-    const bp = agentProof(agentAlias);
-    const buyerData = { agent: agentAlias, agentAid: bp.agent?.aid, delegationVerified: bp.agent?.delegationVerified === true, officer: bp.officer?.alias, officerAid: bp.officer?.aid, officerOorSaid: bp.officer?.oorCredential?.said };
-    if (!bp.ok || inv.holderAid !== bp.agent.aid) return fail("verify_buyer", ACTORS.seller, ACTORS.agent, "Buyer verification failed (delegation, OOR or holder)", { api: evApi, data: buyerData });
-    step(run, "verify_buyer", "done", ACTORS.seller, ACTORS.agent,
-      `${agentAlias} is delegated (KEL verified) from ${bp.officer.alias} who holds OOR ${bp.officer.oorCredential.said}`, { api: evApi, data: buyerData });
-
+    // 6. accept
     run.currentStep = "accept";
+    const evApi = { service: "evidence", method: "read", path: cfg.paths?.evidence ?? "evidence" };
     const ipex = inv.ipex || {};
-    const accData = { admitSuccess: ipex.admitSuccess === true, credentialHeld: ipex.credentialHeld === true, admitGrantSaid: ipex.admitGrantSaid, grantSaid: ipex.grantSaid };
-    if (!(accData.admitSuccess && accData.credentialHeld)) return fail("accept", ACTORS.agent, ACTORS.seller, `IPEX admit ${ipex.admitSuccess} / credential held ${ipex.credentialHeld}`, { api: evApi, data: accData });
+    const accData = { admitSuccess: ipex.admitSuccess === true, credentialHeld: ipex.credentialHeld === true, admitGrantSaid: ipex.admitGrantSaid, grantSaid: ipex.grantSaid, holderMatches: inv.holderAid === bd.agentAid };
+    if (!(accData.admitSuccess && accData.credentialHeld && accData.holderMatches)) {
+      return fail("accept", ACTORS.agent, ACTORS.seller, `IPEX admit ${ipex.admitSuccess} / credential held ${ipex.credentialHeld} / holder is ${agentAlias}: ${accData.holderMatches}`, { api: evApi, data: accData });
+    }
     step(run, "accept", "done", ACTORS.agent, ACTORS.seller, `Admitted IPEX grant ${ipex.grantSaid} and holds credential ${issued.said}`, { api: evApi, data: accData });
 
     // 7–10. NEAR

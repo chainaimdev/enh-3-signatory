@@ -57,10 +57,11 @@ test("unitsToJsonNumber: exact JSON numbers only", () => {
   assert.equal(JSON.stringify({ x: unitsToJsonNumber(100n, 6) }), '{"x":0.0001}');
 });
 
-test("next invoice number on the REAL legentvLEI folder is INV-2026-0009 (read-only)", { skip: !existsSync(VLEI) }, () => {
+test("next invoice number on the REAL legentvLEI folder = highest issued + 1, ≥ INV-2026-0009 (read-only)", { skip: !existsSync(VLEI) }, () => {
   const n = nextInvoiceNumber({ vleiDir: VLEI, evidence: full, sellerAgent: "jupiterSellerAgent" });
-  assert.equal(n.invoiceNumber, "INV-2026-0009");
-  assert.equal(n.highest.generatedRuns, "INV-2026-0008");
+  const nums = Object.values(n.highest).filter(Boolean).map((s) => Number(s.slice(-4)));
+  assert.equal(Number(n.invoiceNumber.slice(-4)), Math.max(...nums) + 1);
+  assert.ok(Number(n.invoiceNumber.slice(-4)) >= 9, "0008 was the G-42 test");
 });
 
 function tempVlei() {
@@ -231,6 +232,12 @@ function fakeB({ target = INV3, invNo = target === INV3 ? "INV-2026-0003" : "INV
       return over.issue ?? GOOD_ISSUE(invNo, target);
     },
     readGrantInfo: (said) => (said === target ? { grantSaid: "EGRANT-" + said.slice(0, 6), path: "/td/grant.json", timestamp: "t" } : null),
+    // verify_buyer = strict exporter run BEFORE issue: evidence without the new invoice
+    runVerifyBuyer: async () => {
+      calls.push(["verify_buyer"]);
+      if (over.verifyBuyer) return over.verifyBuyer(deps.loadEvidence());
+      return { exitCode: 0, stdout: "agent tommyBuyerAgent … KEL-verified: true\nAll checks passed.\n", stderr: "", ms: 15000, cmd: "node.exe export-signatory-evidence.js --strict --out x", evidence: deps.loadEvidence() };
+    },
     exportCmd: '"/mnt/c/Program Files/nodejs/node.exe" export-signatory-evidence.js --strict --out ../UI/data/signatory-evidence.json',
     runExport: async () => {
       calls.push(["export"]);
@@ -275,13 +282,43 @@ const waiting = (r) => r.state === "waiting" && r.waiter;
 const finals = (run) => run.events.filter((e) => e.type === "step" && e.data.status !== "running").map((e) => `${e.data.index}:${e.data.step}:${e.data.status}`);
 const allText = (run) => JSON.stringify(run.events);
 
-test("B1: $84,000 → issue → verify both → register → pay → paid; steps 0–10 indexes, api on every step", async () => {
+test("B1 (S-7C order): request → verify_buyer → issue → offer → verify_seller → accept → register → pay → paid", async () => {
   const { deps, calls } = fakeB();
   const runner = createRunner({ cfg, deps, pollMs: 1 });
   const run = await runner.start({ text: "Need 8,000 t-shirts, about $84,000", mode: "issue" });
   await until(run, finished);
   assert.equal(run.result, "paid", allText(run).slice(0, 2000));
-  assert.deepEqual(finals(run), ["0:preflight:done", "1:issue:done", "2:offer:done", "3:export:done", "4:verify_seller:done", "5:verify_buyer:done", "6:accept:done", "7:register:done", "8:pay:done", "9:outcome:done"]);
+  assert.deepEqual(finals(run), ["1:request:done", "2:verify_buyer:done", "3:issue:done", "4:offer:done", "5:verify_seller:done", "6:accept:done", "7:register:done", "8:pay:done", "9:outcome:done"]);
+  assert.ok(!run.events.some((e) => e.data.step === "preflight"), "a passing preflight is folded into request");
+  const steps = run.events.filter((e) => e.type === "step");
+  for (const e of steps) {
+    assert.equal(e.data.api.orchestrator, "runner (no keys)", `${e.data.step} orchestrator`);
+    assert.notEqual(e.data.actor.id, "runner", `${e.data.step}: runner is never the actor`);
+  }
+  const req = steps.find((e) => e.data.step === "request").data;
+  assert.deepEqual([req.actor.id, req.target.id], ["tommyBuyerAgent", "jupiterSellerAgent"]);
+  assert.equal(req.data.signed, false);
+  assert.equal(req.data.label, "unsigned request");
+  assert.equal(req.data.item, "t-shirts");
+  assert.equal(req.data.quantity, 8000);
+  assert.equal(req.data.realTotal, "84,000.00 USD");
+  assert.equal(req.data.amount, "0.084");
+  assert.equal(req.data.nextInvoiceNumber, "INV-2026-0003");
+  assert.equal(req.data.preflight.ok, true);
+  assert.ok(Array.isArray(req.data.preflight.checks));
+  assert.match(req.text, /8,000 t-shirts, real total 84,000\.00 USD → 0\.084 USDC on NEAR \(unsigned request\)/);
+  const vb = steps.find((e) => e.data.step === "verify_buyer" && e.data.status === "done").data;
+  assert.deepEqual([vb.actor.id, vb.target.id], ["jupiterSellerAgent", "tommyBuyerAgent"]);
+  assert.equal(vb.data.officer, "Tommy_Chief_Procurement_Officer");
+  assert.equal(vb.api.exitCode, 0);
+  assert.deepEqual(vb.data.links.map((l) => [l.link, l.verified]), [
+    ["agent → OOR officer", true], ["officer holds OOR issued by the QVI", true], ["officer → Legal Entity", true], ["Legal Entity → QVI", false],
+  ]);
+  assert.match(vb.text, /LE → QVI is not checked by the exporter/);
+  const vsel = steps.find((e) => e.data.step === "verify_seller" && e.data.status === "done").data;
+  assert.deepEqual([vsel.actor.id, vsel.target.id], ["tommyBuyerAgent", "jupiterSellerAgent"]);
+  assert.equal(vsel.data.export.allChecksPassed, true);
+  assert.match(vsel.api.cmd, /export-signatory-evidence\.js --strict --out \.\.\/UI\/data\/signatory-evidence\.json/);
   const started = run.events[0].data;
   assert.equal(started.mode, "issue");
   assert.deepEqual(started.steps, STEPS_B);
@@ -294,15 +331,14 @@ test("B1: $84,000 → issue → verify both → register → pay → paid; steps
   assert.match(issue.api.cmd, /^bash issue-additional-invoice\.sh --invoice-config \.\/appconfig\/generated-runs\/invoiceConfig-run-INV-2026-0003\.json$/);
   assert.match(issue.data.raw, /issued, granted, admitted and held/);
   assert.doesNotMatch(issue.data.raw, /\x1b\[/);
-  const vs = run.events.find((e) => e.data.step === "verify_seller").data;
-  assert.equal(vs.data.officer, "Jupiter_Chief_Sales_Officer");
-  assert.equal(vs.data.issuanceVerified, true);
-  assert.equal(run.events.find((e) => e.data.step === "verify_buyer").data.data.officer, "Tommy_Chief_Procurement_Officer");
+  assert.equal(vsel.data.officer, "Jupiter_Chief_Sales_Officer");
+  assert.equal(vsel.data.issuanceVerified, true);
+  assert.equal(vsel.data.issuerMatches, true);
   const reg = run.events.find((e) => e.data.step === "register" && e.data.status === "done").data;
-  assert.deepEqual(reg.api, { service: "bridge", method: "POST", path: "http://127.0.0.1:8772/register", httpStatus: 200, ms: 4000 });
+  assert.deepEqual(reg.api, { service: "bridge", method: "POST", path: "http://127.0.0.1:8772/register", httpStatus: 200, ms: 4000, orchestrator: "runner (no keys)" });
   assert.equal(run.said, INV3);
-  assert.deepEqual(calls.map((c) => c[0]), ["preflight", "config", "issue", "export", "register", "pay"]);
-  assert.deepEqual(calls[1], ["config", "INV-2026-0003", "84000", "t-shirts", 8000]);
+  assert.deepEqual(calls.map((c) => c[0]), ["preflight", "verify_buyer", "config", "issue", "export", "register", "pay"]);
+  assert.deepEqual(calls[2], ["config", "INV-2026-0003", "84000", "t-shirts", 8000]);
   assert.doesNotMatch(allText(run), KEY_WORDS);
   assert.equal(runner.active, null);
 });
@@ -330,7 +366,7 @@ test("B4: revoked agent → invoice still issued and verified, payment refused +
   const run = await runner.start({ text: "$84,000", mode: "issue" });
   await until(run, finished);
   assert.equal(run.result, "refused");
-  assert.match(run.events.find((e) => e.data.step === "preflight" && e.data.status === "done").data.text, /revoked/);
+  assert.match(run.events.find((e) => e.data.step === "request").data.text, /revoked/);
   assert.ok(calls.some((c) => c[0] === "issue") && calls.some((c) => c[0] === "pay"));
   assert.match(run.events.find((e) => e.data.step === "outcome").data.text, /mandate revoked — 0.084 USDC returned/);
 });
@@ -344,6 +380,38 @@ test("B5: preflight fails → nothing issued, run error at preflight", async () 
   assert.equal(run.events.at(-1).data.failedStep, "preflight");
   assert.match(run.events.at(-1).data.text, /bridge \(not reachable\).*nothing issued/);
   assert.deepEqual(calls.map((c) => c[0]), ["preflight"]);
+  const pfStep = run.events.find((e) => e.data.step === "preflight").data;
+  assert.equal(pfStep.status, "failed", "a failed preflight is shown, never hidden");
+  assert.equal(pfStep.index, 0);
+  assert.equal(pfStep.actor.id, "runner", "the only step the runner acts in");
+  assert.ok(!run.events.some((e) => e.data.step === "request"));
+});
+
+test("S-7C: verify_buyer fails → seller refuses, NO invoice issued", async () => {
+  for (const [label, verifyBuyer, why] of [
+    ["delegation not verified", (ev) => {
+      for (const c of ev.companies) for (const a of c.agents) if (a.alias === "tommyBuyerAgent") a.delegationVerified = false;
+      return { exitCode: 1, stdout: "1 check failure(s):\n  - tommyBuyerAgent: Tommy_Chief_Procurement_Officer's KEL has no seal", stderr: "", ms: 9000, evidence: ev };
+    }, /agent → OOR officer not verified/],
+    ["exporter timed out", () => ({ exitCode: null, timedOut: true, stdout: "", stderr: "", ms: 120000, evidence: null }), /exporter timed out/],
+    ["OOR issuer is not the QVI", (ev) => {
+      for (const c of ev.companies) for (const o of c.officers) if (o.alias === "Tommy_Chief_Procurement_Officer") o.oorCredential.issuerAid = "Enot-the-qvi";
+      return { exitCode: 1, stdout: "", stderr: "", ms: 9000, evidence: ev };
+    }, /officer holds OOR issued by the QVI not verified/],
+  ]) {
+    const { deps, calls } = fakeB({ over: { verifyBuyer } });
+    const runner = createRunner({ cfg, deps, pollMs: 1 });
+    const run = await runner.start({ text: "Need 8,000 cotton t-shirts, total $84,000", mode: "issue" });
+    await until(run, finished);
+    assert.equal(run.result, "seller_refused", label);
+    assert.match(run.events.at(-1).data.text, /^seller refused: buyer not verified — /, label);
+    assert.match(run.events.at(-1).data.text, why, label);
+    assert.equal(run.events.at(-1).data.failedStep, "verify_buyer");
+    assert.deepEqual(calls.map((c) => c[0]), ["preflight", "verify_buyer"], `${label}: no config, no issue, no export, no NEAR`);
+    const vb = run.events.find((e) => e.data.step === "verify_buyer" && e.data.status === "failed").data;
+    assert.match(vb.text, /No invoice issued\./);
+    assert.equal(vb.actor.id, "jupiterSellerAgent");
+  }
 });
 
 test("B6: amounts refused before anything runs (min, max, none, inexact)", async () => {
@@ -374,7 +442,7 @@ test("stop-on-failure: issue exit 1 → no export; export fail → no register; 
   assert.equal(iss.api.exitCode, 1);
   assert.match(iss.data.raw, /already issued/);
   assert.doesNotMatch(iss.data.raw, /BRAN/);
-  assert.deepEqual(f.calls.map((c) => c[0]), ["preflight", "config", "issue"]);
+  assert.deepEqual(f.calls.map((c) => c[0]), ["preflight", "verify_buyer", "config", "issue"]);
 
   f = fakeB({ over: { issue: { exitCode: null, timedOut: true, stdout: "→ [2/4] IPEX grant", stderr: "", ms: 360000 } } });
   runner = createRunner({ cfg, deps: f.deps, pollMs: 1 });
@@ -386,7 +454,8 @@ test("stop-on-failure: issue exit 1 → no export; export fail → no register; 
   runner = createRunner({ cfg, deps: f.deps, pollMs: 1 });
   run = await runner.start({ text: "$84,000", mode: "issue" });
   await until(run, finished);
-  assert.equal(run.events.at(-1).data.failedStep, "export");
+  assert.equal(run.events.at(-1).data.failedStep, "verify_seller", "the export runs inside verify_seller");
+  assert.match(run.events.at(-1).data.text, /strict export failed \(export exit code 1\)/);
   assert.ok(!f.calls.some((c) => c[0] === "register"));
 
   f = fakeB();

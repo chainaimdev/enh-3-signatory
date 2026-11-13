@@ -11,8 +11,9 @@
 # setup  (first time on a PC)
 #   1. tools: node >= 22, npm, jq, curl (+ docker with --fresh-vlei)
 #   2. --fresh-vlei: DESTRUCTIVE fresh vLEI stack + 4D run (≈ 25 min) — legentvLEI/stop.sh --fresh, setup.sh,
-#      deploy.sh --fresh, saidify-and-restart.sh, run-all-buyerseller-4D-with-subdelegation.sh, then the strict
-#      evidence export. It wipes the identities on THIS PC, so it asks you to type FRESH (or pass --yes).
+#      deploy.sh --fresh, saidify-and-restart.sh, run-all-buyerseller-4D-with-subdelegation.sh with the full Signatory
+#      org (appconfig/generated/config-4c.json + config-4d.json, --force-base), the invoice issuance proof
+#      (task-scripts/invoice/invoice-export-issuance.sh), then the strict evidence export. It wipes the identities on THIS PC, so it asks you to type FRESH (or pass --yes).
 #      Without --fresh-vlei the vLEI stack is left as it is.
 #   3. npm install in services/ (skip with --skip-npm)
 #   4. checks, read-only: NEAR key files present (names only), AP2 key files present, evidence file present,
@@ -184,7 +185,9 @@ do_setup() {
       && run ./setup.sh \
       && run ./deploy.sh --fresh \
       && run ./saidify-and-restart.sh \
-      && run ./run-all-buyerseller-4D-with-subdelegation.sh --invoice-config ./appconfig/invoiceConfig-near.json ) \
+      && run ./run-all-buyerseller-4D-with-subdelegation.sh --config-4c ./appconfig/generated/config-4c.json \
+             --config-4d ./appconfig/generated/config-4d.json --force-base --invoice-config ./appconfig/invoiceConfig-near.json \
+      && run env MSYS_NO_PATHCONV=1 ./task-scripts/invoice/invoice-export-issuance.sh jupiterSellerAgent ) \
       || { bad "vLEI step failed — see its output above (if WSL cannot run it, run this setup step in Git Bash)"; exit 1; }
     hdr "evidence export (strict) → UI/data/signatory-evidence.json"
     local exnode="node"; [ -x "$EXPORT_NODE" ] && exnode="$EXPORT_NODE"

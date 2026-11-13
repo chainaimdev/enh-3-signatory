@@ -1,8 +1,15 @@
 //! chainaim-signatory — mandate contract (ARCHITECTURE-signatory-2026-11-13.md §S-2, D-03).
 //!
+//! Privacy (v2, change #2 of 2026-11-14): `register_invoice` stores only a commitment
+//! `commit = hex(sha256("signatory-commit-v1|<said>|<payee>|<amount_units>|<buyer_agent>|<salt>|<checkout_hash>"))`.
+//! Amount, payee, LEIs and due date are not on-chain before payment; LEIs and due date never are.
+//!
 //! Money flow (D-03): the buyer agent pays with NEP-141
-//! `ft_transfer_call(receiver_id = this contract, amount, msg = {"invoice":"<said>"})`.
-//! In `ft_on_transfer` the contract:
+//! `ft_transfer_call(receiver_id = this contract, amount,
+//!                   msg = {"invoice":"<said>","payee":"<account>","salt":"<hex>",
+//!                          "checkout_hash":"<hex or empty>","receipt_hash":"<hex or empty>"})`.
+//! In `ft_on_transfer` the contract recomputes the commitment from the sender, the amount and the
+//! revealed fields (mismatch → refused and refunded), stores the revealed amount and payee, then:
 //!   * amount within the agent's limit  → forwards it to the payee (`ft_transfer`), status `paid`;
 //!   * amount above the agent's limit   → holds it, status `pending` until the approver decides;
 //!   * any rule broken                  → returns the full amount (token refunds the agent) and
@@ -24,7 +31,9 @@ use near_sdk::{
 };
 
 pub const EVENT_STANDARD: &str = "signatory";
-pub const EVENT_VERSION: &str = "1.0.0";
+pub const EVENT_VERSION: &str = "2.0.0";
+/// Domain prefix of the invoice commitment (bump on any format change; the bridge uses the same).
+pub const COMMIT_DOMAIN: &str = "signatory-commit-v1";
 
 /// Gas for the token's `ft_transfer` (standard NEP-141 needs well under this).
 pub const GAS_FOR_FT_TRANSFER: Gas = Gas::from_tgas(15);
@@ -35,6 +44,11 @@ pub const MAX_EVENTS_PAGE: u32 = 100;
 /// Upper bounds on registrar-supplied strings (storage guard).
 const MAX_SAID_LEN: usize = 128;
 const MAX_FIELD_LEN: usize = 256;
+/// Salt: 32..=128 lowercase hex characters (16..=64 random bytes).
+const MIN_SALT_HEX: usize = 32;
+const MAX_SALT_HEX: usize = 128;
+/// sha256 in lowercase hex.
+const HASH_HEX_LEN: usize = 64;
 
 #[near(serializers = [borsh])]
 #[derive(BorshStorageKey)]
@@ -71,11 +85,14 @@ pub enum InvoiceStatus {
 #[near(serializers = [borsh, json])]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Invoice {
-    pub amount_units: U128,
-    pub payee: AccountId,
-    pub seller_lei: String,
-    pub buyer_lei: String,
-    pub due: String,
+    /// Commitment to (said, payee, amount, buyer agent, salt, checkout hash); see the module doc.
+    pub commit: String,
+    /// Revealed at payment; `None` while `registered`.
+    pub amount_units: Option<U128>,
+    /// Revealed at payment; `None` while `registered`.
+    pub payee: Option<AccountId>,
+    /// Hash of the off-chain receipt bundle, sent with the payment (`None` if not given).
+    pub receipt_hash: Option<String>,
     pub status: InvoiceStatus,
     pub payer: Option<AccountId>,
     /// Block timestamp (ns) when the invoice became `paid`.
@@ -194,15 +211,8 @@ impl Contract {
     // -------------------------------------------------------------- registrar
 
     /// Registers a vLEI-checked invoice (registrar = bridge only).
-    pub fn register_invoice(
-        &mut self,
-        said: String,
-        amount_units: U128,
-        payee: AccountId,
-        seller_lei: String,
-        buyer_lei: String,
-        due: String,
-    ) {
+    /// Only the commitment is stored: no amount, payee, LEI or due date on-chain.
+    pub fn register_invoice(&mut self, said: String, commit: String) {
         require!(
             env::predecessor_account_id() == self.registrar,
             "only the registrar can register an invoice"
@@ -210,32 +220,21 @@ impl Contract {
         require!(!said.is_empty(), "said must not be empty");
         require!(said.len() <= MAX_SAID_LEN, "said too long");
         require!(
-            seller_lei.len() <= MAX_FIELD_LEN
-                && buyer_lei.len() <= MAX_FIELD_LEN
-                && due.len() <= MAX_FIELD_LEN,
-            "field too long"
+            is_lower_hex(&commit, HASH_HEX_LEN, HASH_HEX_LEN),
+            "commit must be 64 lowercase hex characters"
         );
-        require!(amount_units.0 > 0, "amount must be greater than 0");
         require!(
             !self.invoices.contains_key(&said),
             "invoice already registered"
         );
-        let data = json!({
-            "said": said,
-            "amount_units": amount_units,
-            "payee": payee,
-            "seller_lei": seller_lei,
-            "buyer_lei": buyer_lei,
-            "due": due,
-        });
+        let data = json!({ "said": said, "commit": commit });
         self.invoices.insert(
             said,
             Invoice {
-                amount_units,
-                payee,
-                seller_lei,
-                buyer_lei,
-                due,
+                commit,
+                amount_units: None,
+                payee: None,
+                receipt_hash: None,
                 status: InvoiceStatus::Registered,
                 payer: None,
                 paid_at: None,
@@ -257,12 +256,11 @@ impl Contract {
             env::predecessor_account_id() == self.token,
             "only the configured token can call ft_on_transfer"
         );
-        let said = match parse_invoice_msg(&msg) {
-            Some(s) => s,
-            None => {
-                return self.refuse(None, &sender_id, amount, "msg must be {\"invoice\":\"<said>\"}")
-            }
+        let reveal = match parse_reveal_msg(&msg) {
+            Some(r) => r,
+            None => return self.refuse(None, &sender_id, amount, BAD_MSG_REASON),
         };
+        let said = reveal.said.clone();
         let invoice = match self.invoices.get(&said) {
             Some(inv) => inv.clone(),
             None => return self.refuse(Some(&said), &sender_id, amount, "invoice not registered"),
@@ -278,12 +276,23 @@ impl Contract {
         if mandate.revoked {
             return self.refuse(Some(&said), &sender_id, amount, "mandate revoked");
         }
-        if amount.0 != invoice.amount_units.0 {
-            let reason = format!(
-                "amount {} does not equal invoice amount {}",
-                amount.0, invoice.amount_units.0
-            );
-            return self.refuse(Some(&said), &sender_id, amount, &reason);
+        let expected = commitment_hex(
+            &said,
+            &reveal.payee,
+            amount,
+            &sender_id,
+            &reveal.salt,
+            &reveal.checkout_hash,
+        );
+        if expected != invoice.commit {
+            return self.refuse(Some(&said), &sender_id, amount, COMMIT_MISMATCH_REASON);
+        }
+        // Reveal accepted: from here on the amount and payee are known (the transfer shows them anyway).
+        {
+            let inv = self.invoices.get_mut(&said).unwrap();
+            inv.amount_units = Some(amount);
+            inv.payee = Some(reveal.payee.clone());
+            inv.receipt_hash = reveal.receipt_hash.clone();
         }
 
         if amount.0 <= mandate.limit_units.0 {
@@ -292,7 +301,7 @@ impl Contract {
             inv.status = InvoiceStatus::Paid;
             inv.payer = Some(sender_id.clone());
             inv.paid_at = Some(U64(env::block_timestamp()));
-            let payee = inv.payee.clone();
+            let payee = reveal.payee.clone();
             let p = self
                 .ft_transfer(&payee, amount, &said)
                 .then(
@@ -314,6 +323,7 @@ impl Contract {
                     "amount_units": amount,
                     "limit_units": mandate.limit_units,
                     "approver": mandate.approver,
+                    "receipt_hash": reveal.receipt_hash,
                 }),
             );
             PromiseOrValue::Value(U128(0))
@@ -326,24 +336,23 @@ impl Contract {
     /// whose own mandate must exist, not be revoked, and cover the amount.
     pub fn approve(&mut self, said: String) -> Promise {
         let caller = env::predecessor_account_id();
-        let (invoice, _payer) = self.pending_for_approver(&said, &caller);
+        let p = self.pending_for_approver(&said, &caller);
         let approver_mandate = self
             .mandates
             .get(&caller)
             .unwrap_or_else(|| env::panic_str("approver has no mandate"));
         require!(!approver_mandate.revoked, "approver mandate revoked");
         require!(
-            invoice.amount_units.0 <= approver_mandate.limit_units.0,
+            p.amount.0 <= approver_mandate.limit_units.0,
             format!(
                 "amount {} exceeds approver limit {}",
-                invoice.amount_units.0, approver_mandate.limit_units.0
+                p.amount.0, approver_mandate.limit_units.0
             )
         );
         let inv = self.invoices.get_mut(&said).unwrap();
         inv.status = InvoiceStatus::Paid;
         inv.paid_at = Some(U64(env::block_timestamp()));
-        let payee = inv.payee.clone();
-        self.ft_transfer(&payee, invoice.amount_units, &said).then(
+        self.ft_transfer(&p.payee, p.amount, &said).then(
             Self::ext(env::current_account_id())
                 .with_static_gas(GAS_FOR_CALLBACK)
                 .on_settle(said, Settlement::Approve, caller),
@@ -353,10 +362,10 @@ impl Contract {
     /// Rejects a pending payment: refunds it to the payer. Caller = the payer's approver.
     pub fn reject(&mut self, said: String) -> Promise {
         let caller = env::predecessor_account_id();
-        let (invoice, payer) = self.pending_for_approver(&said, &caller);
+        let p = self.pending_for_approver(&said, &caller);
         let inv = self.invoices.get_mut(&said).unwrap();
         inv.status = InvoiceStatus::Rejected;
-        self.ft_transfer(&payer, invoice.amount_units, &said).then(
+        self.ft_transfer(&p.payer, p.amount, &said).then(
             Self::ext(env::current_account_id())
                 .with_static_gas(GAS_FOR_CALLBACK)
                 .on_settle(said, Settlement::Reject, caller),
@@ -390,8 +399,11 @@ impl Contract {
             .invoices
             .get_mut(&said)
             .unwrap_or_else(|| env::panic_str("invoice not found"));
-        let amount = inv.amount_units;
+        let amount = inv
+            .amount_units
+            .unwrap_or_else(|| env::panic_str("invoice amount not revealed"));
         let payee = inv.payee.clone();
+        let receipt_hash = inv.receipt_hash.clone();
         if ok {
             self.emit(
                 "paid",
@@ -401,13 +413,18 @@ impl Contract {
                     "payee": payee,
                     "amount_units": amount,
                     "via": "within_limit",
+                    "receipt_hash": receipt_hash,
                 }),
             );
             U128(0)
         } else {
+            // Back to `registered`: the reveal is cleared too, so the invoice can be paid again.
             inv.status = InvoiceStatus::Registered;
             inv.payer = None;
             inv.paid_at = None;
+            inv.amount_units = None;
+            inv.payee = None;
+            inv.receipt_hash = None;
             self.emit(
                 "payment_refused",
                 json!({
@@ -432,6 +449,7 @@ impl Contract {
         let amount = inv.amount_units;
         let payee = inv.payee.clone();
         let payer = inv.payer.clone();
+        let receipt_hash = inv.receipt_hash.clone();
         if !ok {
             inv.status = InvoiceStatus::Pending;
             inv.paid_at = None;
@@ -459,6 +477,7 @@ impl Contract {
                         "payee": payee,
                         "amount_units": amount,
                         "via": "approved",
+                        "receipt_hash": receipt_hash,
                     }),
                 );
             }
@@ -531,8 +550,9 @@ impl Contract {
         )
     }
 
-    /// Checks `said` is pending and `caller` is its payer's approver. Returns (invoice, payer).
-    fn pending_for_approver(&self, said: &String, caller: &AccountId) -> (Invoice, AccountId) {
+    /// Checks `said` is pending and `caller` is its payer's approver. Returns the payer and the
+    /// amount and payee revealed with the payment.
+    fn pending_for_approver(&self, said: &String, caller: &AccountId) -> PendingPayment {
         let invoice = self
             .invoices
             .get(said)
@@ -554,7 +574,14 @@ impl Contract {
             *caller == agent_mandate.approver,
             "only the payer's approver can approve or reject"
         );
-        (invoice, payer)
+        let amount = invoice
+            .amount_units
+            .unwrap_or_else(|| env::panic_str("pending invoice has no revealed amount"));
+        let payee = invoice
+            .payee
+            .clone()
+            .unwrap_or_else(|| env::panic_str("pending invoice has no revealed payee"));
+        PendingPayment { payer, amount, payee }
     }
 
     fn refuse(
@@ -592,13 +619,104 @@ impl Contract {
     }
 }
 
-fn parse_invoice_msg(msg: &str) -> Option<String> {
+/// Refusal reason for a payment msg that does not parse.
+pub const BAD_MSG_REASON: &str =
+    "msg must be {\"invoice\",\"payee\",\"salt\"[,\"checkout_hash\",\"receipt_hash\"]}";
+/// Refusal reason when the revealed fields, sender or amount do not match the commitment.
+pub const COMMIT_MISMATCH_REASON: &str =
+    "commitment mismatch (payee, amount, payer, salt or checkout hash differ from the registered invoice)";
+
+/// Amount and payee revealed with a pending payment, plus its payer.
+struct PendingPayment {
+    payer: AccountId,
+    amount: U128,
+    payee: AccountId,
+}
+
+/// Fields revealed in the payment msg.
+struct Reveal {
+    said: String,
+    payee: AccountId,
+    salt: String,
+    /// Lowercase hex sha256, or empty when there is no checkout yet.
+    checkout_hash: String,
+    receipt_hash: Option<String>,
+}
+
+fn parse_reveal_msg(msg: &str) -> Option<Reveal> {
     let v: Value = serde_json::from_str(msg).ok()?;
     let said = v.get("invoice")?.as_str()?;
     if said.is_empty() || said.len() > MAX_SAID_LEN {
         return None;
     }
-    Some(said.to_string())
+    let payee: AccountId = v.get("payee")?.as_str()?.parse().ok()?;
+    let salt = v.get("salt")?.as_str()?;
+    if !is_lower_hex(salt, MIN_SALT_HEX, MAX_SALT_HEX) {
+        return None;
+    }
+    let checkout_hash = match v.get("checkout_hash") {
+        None | Some(Value::Null) => String::new(),
+        Some(x) => {
+            let s = x.as_str()?;
+            if !s.is_empty() && !is_lower_hex(s, HASH_HEX_LEN, HASH_HEX_LEN) {
+                return None;
+            }
+            s.to_string()
+        }
+    };
+    let receipt_hash = match v.get("receipt_hash") {
+        None | Some(Value::Null) => None,
+        Some(x) => {
+            let s = x.as_str()?;
+            if s.is_empty() {
+                None
+            } else if is_lower_hex(s, HASH_HEX_LEN, HASH_HEX_LEN) {
+                Some(s.to_string())
+            } else {
+                return None;
+            }
+        }
+    };
+    Some(Reveal {
+        said: said.to_string(),
+        payee,
+        salt: salt.to_string(),
+        checkout_hash,
+        receipt_hash,
+    })
+}
+
+/// The invoice commitment (same string and hash as the bridge computes):
+/// hex(sha256("signatory-commit-v1|<said>|<payee>|<amount_units>|<buyer_agent>|<salt>|<checkout_hash>")).
+pub fn commitment_hex(
+    said: &str,
+    payee: &AccountId,
+    amount_units: U128,
+    buyer_agent: &AccountId,
+    salt: &str,
+    checkout_hash: &str,
+) -> String {
+    let preimage = format!(
+        "{COMMIT_DOMAIN}|{said}|{payee}|{}|{buyer_agent}|{salt}|{checkout_hash}",
+        amount_units.0
+    );
+    to_hex(&env::sha256(preimage.as_bytes()))
+}
+
+fn to_hex(bytes: &[u8]) -> String {
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        s.push(DIGITS[(b >> 4) as usize] as char);
+        s.push(DIGITS[(b & 0x0f) as usize] as char);
+    }
+    s
+}
+
+fn is_lower_hex(s: &str, min_len: usize, max_len: usize) -> bool {
+    s.len() >= min_len
+        && s.len() <= max_len
+        && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 fn status_str(s: InvoiceStatus) -> &'static str {

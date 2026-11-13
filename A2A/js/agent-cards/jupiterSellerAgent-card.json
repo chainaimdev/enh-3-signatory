@@ -70,33 +70,33 @@
       "lei": "3358004DXAMRWRUIYJ05",
       "legalEntityName": "JUPITER KNITTING COMPANY",
       "registryName": "Jupiter_Knitting_Company-oor-registry",
-      "qvi": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43"
+      "qvi": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2"
     },
     "vLEImetadata": {
       "agentName": "jupiterSellerAgent",
       "oorHolderName": "Jupiter_Chief_Sales_Officer",
-      "delegatorAID": "EAA9PCNjAsDKeEyJfDlrPwGtEDkuL5cPXoxSFNK4oqhT",
-      "delegateeAID": "EN__-eqhkkcwtF6jGgMFucJcRspBolnL_t4cwLDFqy6G",
-      "delegatorSAID": "EC-SEzFZqQ-qv1xS7LDwMecnzKNPahiU6WqncJwLRQ-k",
-      "delegateeSAID": "EN__-eqhkkcwtF6jGgMFucJcRspBolnL_t4cwLDFqy6G",
-      "delegatorOOBI": "http://keria:3902/oobi/EAA9PCNjAsDKeEyJfDlrPwGtEDkuL5cPXoxSFNK4oqhT/agent/ENU_fRs6eSBDAH8uIT-Xj8f5Bgi3EI3uIH2j00yXpVs2",
-      "delegateeOOBI": "http://keria:3902/oobi/EN__-eqhkkcwtF6jGgMFucJcRspBolnL_t4cwLDFqy6G/agent/EBm8C8IdRjHs9bSHH2YITXLM3wDIZnHLjgjXFbjDdWTc",
-      "leAID": "ELXPExYB91c3xIpr-2PAzMNMULNuyBAh5fD3v0ylwAp5",
-      "leOOBI": "http://keria:3902/oobi/ELXPExYB91c3xIpr-2PAzMNMULNuyBAh5fD3v0ylwAp5/agent/EMSqy9flKY2rXNP3ICEtCAF4yeKOcP5LMVAYN6sF7qcX",
+      "delegatorAID": "EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4",
+      "delegateeAID": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+      "delegatorSAID": "EK0RtBmmVkTRYZFWigEltl8cYlZ-uLEcfTX6mFx1aeaX",
+      "delegateeSAID": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+      "delegatorOOBI": "http://keria:3902/oobi/EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4/agent/EGmNu5r8CoEGh6kijBdmGq489TQUNmLVemZMP8N2PUu4",
+      "delegateeOOBI": "http://keria:3902/oobi/EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk/agent/EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP",
+      "leAID": "EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR",
+      "leOOBI": "http://keria:3902/oobi/EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR/agent/EJQtExZQ1vWs9bI24W_PO7nfPHQemb2p1eLRoGoZ540-",
       "verificationPath": [
         "GLEIF_ROOT → QVI",
         "QVI → JUPITER KNITTING COMPANY → Chief Sales Officer → jupiterSellerAgent"
       ],
-      "timestamp": "2026-11-13T06:02:52.080Z"
+      "timestamp": "2026-11-13T15:55:58.525Z"
     },
     "gleifVerification": {
       "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/3358004DXAMRWRUIYJ05"
     },
     "keriIdentifiers": {
-      "agentAID": "EN__-eqhkkcwtF6jGgMFucJcRspBolnL_t4cwLDFqy6G",
-      "oorHolderAID": "EAA9PCNjAsDKeEyJfDlrPwGtEDkuL5cPXoxSFNK4oqhT",
-      "legalEntityAID": "ELXPExYB91c3xIpr-2PAzMNMULNuyBAh5fD3v0ylwAp5",
-      "qviAID": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43"
+      "agentAID": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+      "oorHolderAID": "EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4",
+      "legalEntityAID": "EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR",
+      "qviAID": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2"
     }
   }
 }

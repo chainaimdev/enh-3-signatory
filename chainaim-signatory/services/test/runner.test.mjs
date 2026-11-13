@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { loadConfig } from "../../scripts/lib/common.mjs";
+import { FIXTURE_EVIDENCE } from "./fixture.mjs";
 import { listInvoices, matchInvoice, parseRequest, toUnits } from "../runner/logic.mjs";
 import { createRunner } from "../runner/engine.mjs";
 import { startRunnerServer } from "../runner/index.mjs";
@@ -12,7 +13,7 @@ const INV3 = "EBQy-FlPtaa6_kh-BZI5Cn-ndtJ2It5Q3JNDMH3oYY1z"; // 0.084
 const INV4 = "EHusycc5UI7q2qRnfHhY-5fc0M9xkxB0nixx9Vs7m1qr"; // 0.1575
 // Fixture: the real export reduced to INV-2026-0003/0004, so tests do not depend on how many invoices exist.
 const evidence = (() => {
-  const ev = JSON.parse(readFileSync(cfg.paths.evidence, "utf8"));
+  const ev = JSON.parse(readFileSync(FIXTURE_EVIDENCE, "utf8"));
   ev.invoices = ev.invoices.filter((i) => i.said === INV3 || i.said === INV4);
   ev.invoice = ev.invoices[0];
   return ev;

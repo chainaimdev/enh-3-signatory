@@ -1,12 +1,22 @@
 {
   "network": "testnet",
-  "contractId": "chainaim-signatory.testnet",
+  "contractId": "chainaim-signatory-v2.testnet",
+  "previousContractIds": ["chainaim-signatory.testnet"],
   "rpcUrl": "https://test.rpc.fastnear.com",
   "token": "3e2210e1184b45b64c8a434c0a7e7b23cc04ea7eb7a6c3c32520d03d4afcb8af",
   "tokenDecimals": 6,
   "allowOrigin": "http://127.0.0.1:8765",
   "evidencePath": "../UI/data/signatory-evidence.json",
   "accountsPath": "config/accounts.json",
+  "commitsPath": "private/commits",
+  "ap2": {
+    "recordsPath": "private/ap2",
+    "merchantKeyPath": "private/ap2-keys/merchant.pem",
+    "merchantPublicJwkPath": "config/ap2-keys/merchant.public.jwk.json",
+    "buyerKeyPath": "private/ap2-keys/buyer-agent.pem",
+    "buyerPublicJwkPath": "config/ap2-keys/buyer-agent.public.jwk.json",
+    "checkoutTtlMinutes": 15
+  },
   "uiConfigPath": "../UI/signatory-config.json",
   "uiAccountsPath": "../UI/data/accounts.json",
   "wasmPath": "contract/target/near/chainaim_signatory.wasm",

@@ -6,6 +6,7 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, exis
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { loadConfig, ROOT } from "../../scripts/lib/common.mjs";
+import { FIXTURE_EVIDENCE } from "./fixture.mjs";
 import { createRunner, STEPS_B } from "../runner/engine.mjs";
 import { startRunnerServer } from "../runner/index.mjs";
 import {
@@ -20,7 +21,7 @@ const cfg = loadConfig();
 const VLEI = resolve(ROOT, "..", "legentvLEI");
 const INV3 = "EBQy-FlPtaa6_kh-BZI5Cn-ndtJ2It5Q3JNDMH3oYY1z"; // 0.084  ($84,000)
 const INV4 = "EHusycc5UI7q2qRnfHhY-5fc0M9xkxB0nixx9Vs7m1qr"; // 0.1575 ($157,500)
-const full = JSON.parse(readFileSync(cfg.paths.evidence, "utf8"));
+const full = JSON.parse(readFileSync(FIXTURE_EVIDENCE, "utf8"));
 const only = (saids) => {
   const ev = JSON.parse(JSON.stringify(full));
   ev.invoices = ev.invoices.filter((i) => saids.includes(i.said));
@@ -523,4 +524,75 @@ test("HTTP: /preflight, /next-invoice, POST /run mode issue; 501 when issue mode
     server.closeAllConnections?.();
     plain.closeAllConnections?.();
   }
+});
+
+// ---- change #3: AP2 inside the accept step (runner --ap2 on); real ES256 signing with in-memory keys ----------------
+
+import { generateKeyPairSync as genKeyAp2 } from "node:crypto";
+import * as ap2 from "../shared/ap2.mjs";
+
+function ap2Fakes({ refuseMandate = false } = {}) {
+  const mk = () => ap2.signerFromKey(genKeyAp2("ec", { namedCurve: "prime256v1" }).privateKey);
+  const merchant = mk();
+  const buyer = mk();
+  const seen = [];
+  return {
+    seen,
+    ap2Checkout: async (said) => {
+      seen.push(["checkout", said]);
+      const checkout = ap2.buildCheckout({ said, invoiceNumber: "INV-2026-0003", payee: cfg.accounts.payee, amountUnits: "84000", decimals: 6, demoScale: 1000000, network: "testnet", asset: cfg.token, contract: cfg.contractId, expiresAt: new Date(Date.now() + 900000).toISOString() });
+      const auth = ap2.signMerchantAuthorization(checkout, merchant);
+      return { ok: true, kid: merchant.kid, checkoutHash: ap2.checkoutHash(checkout), checkout, merchant_authorization: auth, _http: { status: 200, ms: 5, url: "http://127.0.0.1:8772" } };
+    },
+    ap2Mandate: async ({ said, checkout, merchantAuthorization }) => {
+      seen.push(["mandate", said]);
+      if (refuseMandate) return { ok: false, code: "merchant_authorization_invalid", error: "the merchant_authorization signature does not verify", _http: { status: 422, ms: 3, url: "http://127.0.0.1:8771" } };
+      const v = ap2.checkCheckoutForMandate(checkout, merchantAuthorization, [merchant.publicJwk], { said, payee: cfg.accounts.payee, network: "testnet", asset: cfg.token, contract: cfg.contractId });
+      assert.equal(v.ok, true, v.reason);
+      const mandate = ap2.buildPaymentMandate({ checkout, merchantKid: v.kid, payer: "chainaim-tommy-buyer-agent.testnet", createdAt: new Date().toISOString() });
+      ap2.signMandate(mandate, buyer);
+      const receiptHash = ap2.receiptHash({ checkoutHashHex: mandate.checkout_hash, merchantAuthorization, mandate });
+      return { ok: true, kid: buyer.kid, mandate, mandateHash: ap2.sha256Hex(ap2.jcs(mandate)), receiptHash, _http: { status: 200, ms: 4, url: "http://127.0.0.1:8771" } };
+    },
+  };
+}
+
+test("AP2 on (#3): accept carries the signed quote and mandate; same steps as B1; paid", async () => {
+  const { deps, calls } = fakeB();
+  const f = ap2Fakes();
+  deps.ap2Checkout = f.ap2Checkout;
+  deps.ap2Mandate = f.ap2Mandate;
+  const runner = createRunner({ cfg, deps, pollMs: 1 });
+  const run = await runner.start({ text: "Need 8,000 t-shirts, about $84,000", mode: "issue" });
+  await until(run, finished);
+  assert.equal(run.result, "paid", allText(run).slice(0, 2000));
+  assert.deepEqual(finals(run), ["1:request:done", "2:verify_buyer:done", "3:issue:done", "4:offer:done", "5:verify_seller:done", "6:accept:done", "7:register:done", "8:pay:done", "9:outcome:done"]);
+  assert.deepEqual(f.seen.map((s) => s[0]), ["checkout", "mandate"], "checkout before mandate, once each");
+  const acc = run.events.find((e) => e.data.step === "accept" && e.data.status === "done").data;
+  assert.match(acc.text, /AP2 quote signed by Jupiter ✓/);
+  assert.match(acc.text, /payment mandate signed by tommyBuyerAgent ✓/);
+  assert.match(acc.data.ap2.receiptHash, /^[0-9a-f]{64}$/);
+  assert.match(acc.data.ap2.checkoutHash, /^[0-9a-f]{64}$/);
+  assert.equal(acc.api.path, "http://127.0.0.1:8771/mandate");
+});
+
+test("AP2 on (#3): a refused mandate stops the run at accept — nothing registered or paid", async () => {
+  const { deps } = fakeB();
+  const f = ap2Fakes({ refuseMandate: true });
+  deps.ap2Checkout = f.ap2Checkout;
+  deps.ap2Mandate = f.ap2Mandate;
+  let registered = 0;
+  let paid = 0;
+  const reg = deps.bridgeRegister;
+  const pay = deps.signerPay;
+  deps.bridgeRegister = async (...a) => { registered++; return reg(...a); };
+  deps.signerPay = async (...a) => { paid++; return pay(...a); };
+  const runner = createRunner({ cfg, deps, pollMs: 1 });
+  const run = await runner.start({ text: "Need 8,000 t-shirts, about $84,000", mode: "issue" });
+  await until(run, finished);
+  assert.notEqual(run.result, "paid");
+  assert.ok(finals(run).includes("6:accept:failed"), finals(run).join(" "));
+  assert.equal(registered, 0, "not registered");
+  assert.equal(paid, 0, "not paid");
+  assert.match(allText(run), /AP2 payment mandate refused \(merchant_authorization_invalid\)/);
 });

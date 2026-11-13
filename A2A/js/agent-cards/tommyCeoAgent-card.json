@@ -17,33 +17,33 @@
       "lei": "54930012QJWZMYHNJW95",
       "legalEntityName": "TOMMY HILFIGER EUROPE B.V.",
       "registryName": "Tommy_Hilfiger_Europe-oor-registry",
-      "qvi": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43"
+      "qvi": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2"
     },
     "vLEImetadata": {
       "agentName": "tommyCeoAgent",
       "oorHolderName": "Tommy_Chief_Executive_Officer",
-      "delegatorAID": "EMBHw77dQ4dvAar4cVekAXeUOicMo98i1Im6ONNxWtV6",
-      "delegateeAID": "EIVVDrMkfyWlWXM50WT6-Gtvk-fi_so03N_1rS28FmMl",
-      "delegatorSAID": "EO1A7gUghDxOQIGOTKLTJPfNBIaobdXPedvfCa_eViqq",
-      "delegateeSAID": "EIVVDrMkfyWlWXM50WT6-Gtvk-fi_so03N_1rS28FmMl",
-      "delegatorOOBI": "http://keria:3902/oobi/EMBHw77dQ4dvAar4cVekAXeUOicMo98i1Im6ONNxWtV6/agent/ENU_fRs6eSBDAH8uIT-Xj8f5Bgi3EI3uIH2j00yXpVs2",
-      "delegateeOOBI": "http://keria:3902/oobi/EIVVDrMkfyWlWXM50WT6-Gtvk-fi_so03N_1rS28FmMl/agent/EDC_ZPdNx-2OngH7YQDcl1lRn4Hr_Y_853sUnygUcGA4",
-      "leAID": "EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5",
-      "leOOBI": "http://keria:3902/oobi/EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5/agent/EMSqy9flKY2rXNP3ICEtCAF4yeKOcP5LMVAYN6sF7qcX",
+      "delegatorAID": "EEzYmNARgjxOUWphZa2ukK1uKtBsNoAx8WiNYIjj5Jog",
+      "delegateeAID": "EKkLlqyWUeu1m91_n58DsYlptyBiWZKvQQYJSJQpOZrA",
+      "delegatorSAID": "EAITl-kd9leaDpBDGfzXTcYWepD7zcIw1pXti9lLBA6u",
+      "delegateeSAID": "EKkLlqyWUeu1m91_n58DsYlptyBiWZKvQQYJSJQpOZrA",
+      "delegatorOOBI": "http://keria:3902/oobi/EEzYmNARgjxOUWphZa2ukK1uKtBsNoAx8WiNYIjj5Jog/agent/EGmNu5r8CoEGh6kijBdmGq489TQUNmLVemZMP8N2PUu4",
+      "delegateeOOBI": "http://keria:3902/oobi/EKkLlqyWUeu1m91_n58DsYlptyBiWZKvQQYJSJQpOZrA/agent/EPYKKIx687b-7vD3diIEX1ahPhufHceZJQkgMX6Y8mYv",
+      "leAID": "EMcbkIVMOKk0f-6I9POqRtc0CZxvXHGyd4tKddXojvDu",
+      "leOOBI": "http://keria:3902/oobi/EMcbkIVMOKk0f-6I9POqRtc0CZxvXHGyd4tKddXojvDu/agent/EJQtExZQ1vWs9bI24W_PO7nfPHQemb2p1eLRoGoZ540-",
       "verificationPath": [
         "GLEIF_ROOT → QVI",
         "QVI → TOMMY HILFIGER EUROPE B.V. → Chief Executive Officer → tommyCeoAgent"
       ],
-      "timestamp": "2026-11-13T06:02:52.089Z"
+      "timestamp": "2026-11-13T15:55:58.656Z"
     },
     "gleifVerification": {
       "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/54930012QJWZMYHNJW95"
     },
     "keriIdentifiers": {
-      "agentAID": "EIVVDrMkfyWlWXM50WT6-Gtvk-fi_so03N_1rS28FmMl",
-      "oorHolderAID": "EMBHw77dQ4dvAar4cVekAXeUOicMo98i1Im6ONNxWtV6",
-      "legalEntityAID": "EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5",
-      "qviAID": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43"
+      "agentAID": "EKkLlqyWUeu1m91_n58DsYlptyBiWZKvQQYJSJQpOZrA",
+      "oorHolderAID": "EEzYmNARgjxOUWphZa2ukK1uKtBsNoAx8WiNYIjj5Jog",
+      "legalEntityAID": "EMcbkIVMOKk0f-6I9POqRtc0CZxvXHGyd4tKddXojvDu",
+      "qviAID": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2"
     }
   }
 }

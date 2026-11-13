@@ -17,19 +17,19 @@
       "lei": "3358004DXAMRWRUIYJ05",
       "legalEntityName": "JUPITER KNITTING COMPANY",
       "registryName": "Jupiter_Knitting_Company-oor-registry",
-      "qvi": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43"
+      "qvi": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2"
     },
     "vLEImetadata": {
       "agentName": "jupiterCeoAgent",
       "oorHolderName": "Jupiter_Chief_Executive_Officer",
-      "delegatorAID": "EJYcOvZie9R5V8VQqSkAzuxVhW5suFb2zU_Jk7PUnGGA",
-      "delegateeAID": "EMEAtt7rqpjwTuGCvcZvCzpgA7WM9CkGqDbyhFAX-gQy",
-      "delegatorSAID": "EBHepa-QLvz_m3ar0XEH-irBa2cCw7PfC9BNxM5R4ilD",
-      "delegateeSAID": "EMEAtt7rqpjwTuGCvcZvCzpgA7WM9CkGqDbyhFAX-gQy",
-      "delegatorOOBI": "http://keria:3902/oobi/EJYcOvZie9R5V8VQqSkAzuxVhW5suFb2zU_Jk7PUnGGA/agent/ENU_fRs6eSBDAH8uIT-Xj8f5Bgi3EI3uIH2j00yXpVs2",
-      "delegateeOOBI": "http://keria:3902/oobi/EMEAtt7rqpjwTuGCvcZvCzpgA7WM9CkGqDbyhFAX-gQy/agent/EJjqaqEQk2ahlxpQMroJABnIQ9J3J-dArVK8fF0_zTKU",
-      "leAID": "ELXPExYB91c3xIpr-2PAzMNMULNuyBAh5fD3v0ylwAp5",
-      "leOOBI": "http://keria:3902/oobi/ELXPExYB91c3xIpr-2PAzMNMULNuyBAh5fD3v0ylwAp5/agent/EMSqy9flKY2rXNP3ICEtCAF4yeKOcP5LMVAYN6sF7qcX",
+      "delegatorAID": "EMsP7zKISymMIMIKPladC5n2ed1l7RXBb1QJL6ZzL2WY",
+      "delegateeAID": "EPat8jN-LKTZswbLDqbGyMVvfgSD8-D15hnNJ00Yoa_S",
+      "delegatorSAID": "EPb1R0nXfsbnzKxEsZvH6LxiDvxUwddFxvb480LDPmGj",
+      "delegateeSAID": "EPat8jN-LKTZswbLDqbGyMVvfgSD8-D15hnNJ00Yoa_S",
+      "delegatorOOBI": "http://keria:3902/oobi/EMsP7zKISymMIMIKPladC5n2ed1l7RXBb1QJL6ZzL2WY/agent/EGmNu5r8CoEGh6kijBdmGq489TQUNmLVemZMP8N2PUu4",
+      "delegateeOOBI": "http://keria:3902/oobi/EPat8jN-LKTZswbLDqbGyMVvfgSD8-D15hnNJ00Yoa_S/agent/ENJiS3sW9JWI9_3b1uWjztUOBEujGyVyY1woGGJ201Mu",
+      "leAID": "EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR",
+      "leOOBI": "http://keria:3902/oobi/EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR/agent/EJQtExZQ1vWs9bI24W_PO7nfPHQemb2p1eLRoGoZ540-",
       "verificationPath": [
         "GLEIF_ROOT → QVI",
         "QVI → JUPITER KNITTING COMPANY → Chief Executive Officer → jupiterCeoAgent"
@@ -39,10 +39,10 @@
       "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/3358004DXAMRWRUIYJ05"
     },
     "keriIdentifiers": {
-      "agentAID": "EMEAtt7rqpjwTuGCvcZvCzpgA7WM9CkGqDbyhFAX-gQy",
-      "oorHolderAID": "EJYcOvZie9R5V8VQqSkAzuxVhW5suFb2zU_Jk7PUnGGA",
-      "legalEntityAID": "ELXPExYB91c3xIpr-2PAzMNMULNuyBAh5fD3v0ylwAp5",
-      "qviAID": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43"
+      "agentAID": "EPat8jN-LKTZswbLDqbGyMVvfgSD8-D15hnNJ00Yoa_S",
+      "oorHolderAID": "EMsP7zKISymMIMIKPladC5n2ed1l7RXBb1QJL6ZzL2WY",
+      "legalEntityAID": "EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR",
+      "qviAID": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2"
     }
   }
 }

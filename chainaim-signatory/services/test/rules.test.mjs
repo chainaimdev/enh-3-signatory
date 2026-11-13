@@ -3,10 +3,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { loadConfig } from "../../scripts/lib/common.mjs";
+import { FIXTURE_EVIDENCE } from "./fixture.mjs";
 import { amountUnits, checkInvoice, computeSaid } from "../bridge/rules.mjs";
 
 const cfg = loadConfig();
-const evidence = JSON.parse(readFileSync(cfg.paths.evidence, "utf8"));
+const evidence = JSON.parse(readFileSync(FIXTURE_EVIDENCE, "utf8"));
 const INV3 = "EBQy-FlPtaa6_kh-BZI5Cn-ndtJ2It5Q3JNDMH3oYY1z";
 const INV4 = "EHusycc5UI7q2qRnfHhY-5fc0M9xkxB0nixx9Vs7m1qr";
 const opts = (said, extra = {}) => ({
@@ -29,17 +30,15 @@ test("INV-2026-0003 passes every rule and registers 84000 units", () => {
   assert.equal(r.ok, true, r.reason);
   assert.deepEqual(failed(r), []);
   assert.deepEqual(r.checks.map((c) => c.rule), ["found", "said", "strict", "grant", "admit", "held", "issuer", "chain", "payee", "amount"]);
-  assert.equal(r.registerArgs.amount_units, "84000");
-  assert.equal(r.registerArgs.payee, "chainaim-jupiter-payee.testnet");
-  assert.equal(r.registerArgs.seller_lei, "3358004DXAMRWRUIYJ05");
-  assert.equal(r.registerArgs.buyer_lei, "54930012QJWZMYHNJW95");
+  // change #2: only (said, payee, amount) leave the rules, to build the commitment; LEIs and due date never do
+  assert.deepEqual(r.reveal, { said: INV3, payee: "chainaim-jupiter-payee.testnet", amountUnits: "84000" });
   assert.equal(r.info.issuanceVerified, true);
 });
 
 test("INV-2026-0004 passes and registers 157500 units", () => {
   const r = checkInvoice(evidence, opts(INV4));
   assert.equal(r.ok, true, r.reason);
-  assert.equal(r.registerArgs.amount_units, "157500");
+  assert.equal(r.reveal.amountUnits, "157500");
 });
 
 test("scene 3: tampered payee → SAID mismatch, refused, labelled demo", () => {
@@ -48,7 +47,7 @@ test("scene 3: tampered payee → SAID mismatch, refused, labelled demo", () => 
   assert.ok(failed(r).includes("said"));
   assert.match(r.reason, /^said: recomputed E/);
   assert.equal(r.demo.tamper, true);
-  assert.equal(r.registerArgs, undefined);
+  assert.equal(r.reveal, undefined);
 });
 
 test("tampered amount → SAID mismatch", () => {

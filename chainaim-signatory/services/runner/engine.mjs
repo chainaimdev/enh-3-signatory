@@ -15,6 +15,9 @@
 //                 deps.runIssue(relPath) / deps.runExport() → {exitCode, timedOut, stdout, stderr, ms, cmd}
 //                 deps.runVerifyBuyer(runId) → {exitCode, timedOut, stdout, stderr, ms, cmd, evidence|null}
 //                 deps.readGrantInfo(said) → {grantSaid, path, timestamp} | null
+//   Change #3 (only when the runner runs with --ap2 on; absent otherwise, and every flow is unchanged):
+//                 deps.ap2Checkout(said) → bridge POST /checkout · deps.ap2Mandate({said, checkout, merchantAuthorization})
+//                 → signer POST /mandate. Used inside the Phase B `accept` step, after verify_seller.
 import { formatUnits } from "../../scripts/lib/common.mjs";
 import { evidenceInvoices } from "../bridge/rules.mjs";
 import { listInvoices, matchInvoice, parseRequest } from "./logic.mjs";
@@ -459,7 +462,25 @@ export function createRunner({
     if (!(accData.admitSuccess && accData.credentialHeld && accData.holderMatches)) {
       return fail("accept", ACTORS.agent, ACTORS.seller, `IPEX admit ${ipex.admitSuccess} / credential held ${ipex.credentialHeld} / holder is ${agentAlias}: ${accData.holderMatches}`, { api: evApi, data: accData });
     }
-    step(run, "accept", "done", ACTORS.agent, ACTORS.seller, `Admitted IPEX grant ${ipex.grantSaid} and holds credential ${issued.said}`, { api: evApi, data: accData });
+    // change #3: AP2 — Jupiter signs the checkout (bridge), the buyer agent verifies it and signs the payment mandate (signer)
+    if (deps.ap2Checkout && deps.ap2Mandate) {
+      const { body: co, http: coHttp } = unwrap(await deps.ap2Checkout(issued.said));
+      const coApi = httpApi("bridge", "POST", "/checkout", coHttp);
+      if (!co.ok) {
+        return fail("accept", ACTORS.seller, ACTORS.agent, `AP2 checkout not signed: ${co.reason || co.error}`, { api: coApi, data: { raw: proofJson(co) } });
+      }
+      const { body: md, http: mdHttp } = unwrap(await deps.ap2Mandate({ said: issued.said, checkout: co.checkout, merchantAuthorization: co.merchant_authorization }));
+      const mdApi = httpApi("signer", "POST", "/mandate", mdHttp);
+      if (!md.ok) {
+        return fail("accept", ACTORS.agent, ACTORS.seller, `AP2 payment mandate refused (${md.code || "error"}): ${md.error}`, { api: mdApi, data: { raw: proofJson(md) } });
+      }
+      accData.ap2 = { checkoutHash: co.checkoutHash, merchantKid: co.kid, buyerKid: md.kid, mandateHash: md.mandateHash, receiptHash: md.receiptHash, expiresAt: co.checkout?.expires_at ?? null };
+      step(run, "accept", "done", ACTORS.agent, ACTORS.seller,
+        `Admitted IPEX grant ${ipex.grantSaid} and holds credential ${issued.said} · AP2 quote signed by Jupiter ✓ (kid ${co.kid.slice(0, 8)}…) · payment mandate signed by ${agentAlias} ✓ (kid ${md.kid.slice(0, 8)}…)`,
+        { api: mdApi, data: accData });
+    } else {
+      step(run, "accept", "done", ACTORS.agent, ACTORS.seller, `Admitted IPEX grant ${ipex.grantSaid} and holds credential ${issued.said}`, { api: evApi, data: accData });
+    }
 
     // 7–10. NEAR
     const listed = listInvoices(evidence, { [issued.said]: null }, { decimals, demoScale, realCurrency: cfg.realCurrency }).find((i) => i.said === issued.said);

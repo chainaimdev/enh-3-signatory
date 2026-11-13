@@ -23,6 +23,14 @@ export function loadConfig(configPath = resolve(ROOT, "config", "signatory.json"
     uiConfig: abs(cfg.uiConfigPath),
     uiAccounts: abs(cfg.uiAccountsPath),
     wasm: abs(cfg.wasmPath),
+    // change #2: off-chain commitment records (salts); git-ignored, never published
+    commits: abs(cfg.commitsPath),
+    // change #3: AP2 records and keys (private/* git-ignored; public JWKs under config/ap2-keys)
+    ap2Records: abs(cfg.ap2?.recordsPath),
+    ap2MerchantKey: abs(cfg.ap2?.merchantKeyPath),
+    ap2MerchantPublicJwk: abs(cfg.ap2?.merchantPublicJwkPath),
+    ap2BuyerKey: abs(cfg.ap2?.buyerKeyPath),
+    ap2BuyerPublicJwk: abs(cfg.ap2?.buyerPublicJwkPath),
   };
   cfg.accounts = loadAccounts(cfg.paths.accounts);
   return cfg;

@@ -178,6 +178,9 @@ async function main() {
           const got = await view(cfg.rpcUrl, cfg.contractId, "get_invoice", { said: inv.said });
           onChain[inv.said] = got;
           if (!got) report("INFO", `invoice ${inv.said.slice(0, 10)}…`, "not registered yet (bridge, S-5)");
+          // change #2: amount is only a commitment until payment reveals it
+          else if (got.amount_units === null || got.amount_units === undefined)
+            report("PASS", `invoice ${inv.said.slice(0, 10)}…`, `${got.status}, commitment only (amount hidden until payment)`);
           else if (inv.units !== null && BigInt(got.amount_units) !== inv.units)
             report("FAIL", `invoice ${inv.said.slice(0, 10)}…`, `on-chain amount ${got.amount_units} ≠ evidence ${inv.units}`);
           else report("PASS", `invoice ${inv.said.slice(0, 10)}…`, `${got.status}, ${formatUnits(got.amount_units, cfg.tokenDecimals)} USDC`);

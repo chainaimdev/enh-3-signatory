@@ -1081,7 +1081,7 @@ function summaryCard(run){
         pr.issuanceVerified === true ? " · verified by the exporter" : "") : "not in the loaded evidence"]]));
     const v = S.chain.invoices[pr.said];
     card.append(el("h3",{text:"On NEAR now"}));
-    card.append(el("div",{class:stale().trim(),text: v ? `get_invoice: ${v.status} · ${tokenText(v.amount_units)}${realText(v.amount_units) ? " (" + realText(v.amount_units) + ")" : ""}${v.payer ? " · payer " + aliasOf(v.payer) : ""}` : v === null ? "get_invoice: not registered" : "get_invoice: not read yet"}));
+    card.append(el("div",{class:stale().trim(),text: v ? `get_invoice: ${v.status} · ${v.amount_units == null ? "amount hidden until payment (commitment only)" : tokenText(v.amount_units) + (realText(v.amount_units) ? " (" + realText(v.amount_units) + ")" : "")}${v.payer ? " · payer " + aliasOf(v.payer) : ""}` : v === null ? "get_invoice: not registered" : "get_invoice: not read yet"}));
   }
   card.append(el("div",{class:"row",style:"margin-top:6px"}, el("span",{class:"meta",text:"summary:"}), copyBtn(summaryText(run), "run summary")));
   return card;

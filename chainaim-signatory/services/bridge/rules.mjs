@@ -48,7 +48,9 @@ export function tamper(rawText, field) {
 /**
  * Runs every rule and reports all of them.
  * opts: { said, tamperField?, payee, network, sellerAgent, decimals }
- * Returns { ok, said, reason?, checks[], info{}, registerArgs? , demo? }
+ * Returns { ok, said, reason?, checks[], info{}, reveal?, demo? }
+ * reveal = { said, payee, amountUnits }: the fields the commitment binds (change #2). LEIs and due date are
+ * checked here (they are inside the hashed ACDC) but never leave the bridge.
  */
 export function checkInvoice(evidence, opts) {
   const { said, tamperField, payee, network, sellerAgent, decimals } = opts;
@@ -120,14 +122,7 @@ export function checkInvoice(evidence, opts) {
   };
   const out = result({ info, ...(demo ? { demo } : {}) });
   if (out.ok) {
-    out.registerArgs = {
-      said,
-      amount_units: amt.units.toString(),
-      payee: a.paymentWalletAddress,
-      seller_lei: a.sellerLEI,
-      buyer_lei: a.buyerLEI,
-      due: a.dueDate,
-    };
+    out.reveal = { said, payee: a.paymentWalletAddress, amountUnits: amt.units.toString() };
   }
   return out;
 }

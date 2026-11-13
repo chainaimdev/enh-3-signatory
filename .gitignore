@@ -37,3 +37,5 @@ build/
 legentvLEI/appconfig/*-with-brans.json
 
 legentvLEI/.docker-exec-backup*/
+# 2026-11-14 change #2: off-chain invoice commitment records (salts) — private until payment, never commit
+chainaim-signatory/private/

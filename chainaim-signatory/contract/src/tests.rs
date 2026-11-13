@@ -22,6 +22,22 @@ const INV4: &str = "EHusycc5UI7q2qRnfHhY-5fc0M9xkxB0nixx9Vs7m1qr";
 const INV4_UNITS: u128 = 157_500;
 const AGENT_LIMIT: u128 = 100_000;
 const CPO_LIMIT: u128 = 250_000;
+/// Test salt (16 bytes hex). Real salts are random per invoice (bridge).
+const SALT: &str = "00112233445566778899aabbccddeeff";
+/// sha256 of "signatory-commit-v1|<INV3>|<PAYEE>|84000|<AGENT>|<SALT>|", computed independently
+/// with Node's crypto module, so the Rust and the bridge (JavaScript) commitments must agree.
+const INV3_COMMIT_VECTOR: &str = "4873ca7444354cddb4809c6e5782c8db7447c22390a8b264955d1e009bc75634";
+
+/// Commitment the bridge would register for (said, PAYEE, units, AGENT, SALT, no checkout).
+fn commit(said: &str, units: u128) -> String {
+    commitment_hex(said, &acc(PAYEE), U128(units), &acc(AGENT), SALT, "")
+}
+
+/// Registers `said` as the bridge would (caller = registrar).
+fn register(c: &mut Contract, said: &str, units: u128) {
+    set_caller(BRIDGE);
+    c.register_invoice(said.into(), commit(said, units));
+}
 
 fn acc(s: &str) -> AccountId {
     s.parse().unwrap()
@@ -73,28 +89,14 @@ fn setup() -> Contract {
         U128(CPO_LIMIT),
         acc(OWNER),
     );
-    set_caller(BRIDGE);
-    c.register_invoice(
-        INV3.into(),
-        U128(INV3_UNITS),
-        acc(PAYEE),
-        "SELLER-LEI-TEST".into(),
-        "BUYER-LEI-TEST".into(),
-        "2026-12-13".into(),
-    );
-    c.register_invoice(
-        INV4.into(),
-        U128(INV4_UNITS),
-        acc(PAYEE),
-        "SELLER-LEI-TEST".into(),
-        "BUYER-LEI-TEST".into(),
-        "2026-12-13".into(),
-    );
+    register(&mut c, INV3, INV3_UNITS);
+    register(&mut c, INV4, INV4_UNITS);
     c
 }
 
+/// The payment msg the signer sends: the reveal for (PAYEE, SALT, no checkout).
 fn msg(said: &str) -> String {
-    format!(r#"{{"invoice":"{said}"}}"#)
+    format!(r#"{{"invoice":"{said}","payee":"{PAYEE}","salt":"{SALT}"}}"#)
 }
 
 fn pay(c: &mut Contract, sender: &str, said: &str, amount: u128) -> PromiseOrValue<U128> {
@@ -212,22 +214,31 @@ fn set_mandate_again_clears_revoked() {
 // ------------------------------------------------------------------ register
 
 #[test]
-fn register_invoice_stores_and_emits() {
+fn register_invoice_stores_only_the_commitment_and_emits() {
     let mut c = setup();
+    let k = commit("ENEW", 5);
     set_caller(BRIDGE);
-    c.register_invoice("ENEW".into(), U128(5), acc(PAYEE), "S".into(), "B".into(), "2026-12-31".into());
+    c.register_invoice("ENEW".into(), k.clone());
     let v = c.get_invoice("ENEW".into()).unwrap();
     assert_eq!(v.said, "ENEW");
     assert_eq!(v.invoice.status, InvoiceStatus::Registered);
-    assert_eq!(v.invoice.amount_units, U128(5));
+    assert_eq!(v.invoice.commit, k);
+    assert_eq!(v.invoice.amount_units, None, "amount not on-chain before payment");
+    assert_eq!(v.invoice.payee, None, "payee not on-chain before payment");
     assert_eq!(v.invoice.payer, None);
     let e = last_event();
     assert_eq!(e["standard"], "signatory");
-    assert_eq!(e["version"], "1.0.0");
+    assert_eq!(e["version"], "2.0.0");
     assert_eq!(e["event"], "invoice_registered");
     assert_eq!(e["data"][0]["said"], "ENEW");
-    assert_eq!(e["data"][0]["amount_units"], "5");
-    assert_eq!(e["data"][0]["payee"], PAYEE);
+    assert_eq!(e["data"][0]["commit"], k.as_str());
+    let keys: Vec<_> = e["data"][0].as_object().unwrap().keys().cloned().collect();
+    assert_eq!(keys.len(), 2, "event carries only said + commit, got {keys:?}");
+}
+
+#[test]
+fn commitment_matches_the_javascript_vector() {
+    assert_eq!(commit(INV3, INV3_UNITS), INV3_COMMIT_VECTOR);
 }
 
 #[test]
@@ -235,7 +246,7 @@ fn register_invoice_stores_and_emits() {
 fn register_only_registrar() {
     let mut c = setup();
     set_caller(OWNER);
-    c.register_invoice("EX".into(), U128(1), acc(PAYEE), "S".into(), "B".into(), "d".into());
+    c.register_invoice("EX".into(), commit("EX", 1));
 }
 
 #[test]
@@ -243,15 +254,19 @@ fn register_only_registrar() {
 fn register_said_unique() {
     let mut c = setup();
     set_caller(BRIDGE);
-    c.register_invoice(INV3.into(), U128(1), acc(PAYEE), "S".into(), "B".into(), "d".into());
+    c.register_invoice(INV3.into(), commit(INV3, 1));
 }
 
 #[test]
-#[should_panic(expected = "amount must be greater than 0")]
-fn register_amount_positive() {
-    let mut c = setup();
-    set_caller(BRIDGE);
-    c.register_invoice("EZERO".into(), U128(0), acc(PAYEE), "S".into(), "B".into(), "d".into());
+fn register_commit_must_be_64_lowercase_hex() {
+    for bad in ["", "abc", &"A".repeat(64), &"g".repeat(64), &"0".repeat(63), &"0".repeat(65)] {
+        let r = std::panic::catch_unwind(|| {
+            let mut c = setup();
+            set_caller(BRIDGE);
+            c.register_invoice("EBAD".into(), bad.to_string());
+        });
+        assert!(r.is_err(), "commit {bad:?} must be refused");
+    }
 }
 
 #[test]
@@ -259,7 +274,7 @@ fn register_amount_positive() {
 fn register_said_non_empty() {
     let mut c = setup();
     set_caller(BRIDGE);
-    c.register_invoice("".into(), U128(1), acc(PAYEE), "S".into(), "B".into(), "d".into());
+    c.register_invoice("".into(), commit("", 1));
 }
 
 // ------------------------------------------------- scene 1: within limit → paid
@@ -299,6 +314,8 @@ fn scene1_forward_failure_rolls_back_and_refunds() {
     assert_eq!(inv.status, InvoiceStatus::Registered);
     assert_eq!(inv.payer, None);
     assert_eq!(inv.paid_at, None);
+    assert_eq!(inv.amount_units, None, "reveal cleared on rollback");
+    assert_eq!(inv.payee, None, "reveal cleared on rollback");
     let e = last_event();
     assert_eq!(e["event"], "payment_refused");
     assert_eq!(e["data"][0]["reason"], "forward to payee failed; amount returned");
@@ -309,8 +326,7 @@ fn scene1_forward_failure_rolls_back_and_refunds() {
 #[test]
 fn amount_equal_to_limit_is_within_limit() {
     let mut c = setup();
-    set_caller(BRIDGE);
-    c.register_invoice("ELIMIT".into(), U128(AGENT_LIMIT), acc(PAYEE), "S".into(), "B".into(), "d".into());
+    register(&mut c, "ELIMIT", AGENT_LIMIT);
     assert!(matches!(pay(&mut c, AGENT, "ELIMIT", AGENT_LIMIT), PromiseOrValue::Promise(_)));
     assert_eq!(status(&c, "ELIMIT"), InvoiceStatus::Paid);
 }
@@ -582,10 +598,65 @@ fn refused_sender_without_mandate() {
 fn refused_amount_mismatch() {
     let mut c = setup();
     let r = pay(&mut c, AGENT, INV3, INV3_UNITS - 1);
-    assert_refused(r, INV3_UNITS - 1, "amount 83999 does not equal invoice amount 84000");
+    assert_refused(r, INV3_UNITS - 1, COMMIT_MISMATCH_REASON);
     let r = pay(&mut c, AGENT, INV3, INV3_UNITS + 1);
-    assert_refused(r, INV3_UNITS + 1, "amount 84001 does not equal invoice amount 84000");
+    assert_refused(r, INV3_UNITS + 1, COMMIT_MISMATCH_REASON);
     assert_eq!(status(&c, INV3), InvoiceStatus::Registered);
+    assert_eq!(c.get_invoice(INV3.into()).unwrap().invoice.amount_units, None);
+}
+
+fn pay_with(c: &mut Contract, sender: &str, amount: u128, m: String) -> PromiseOrValue<U128> {
+    set_caller(TOKEN);
+    c.ft_on_transfer(acc(sender), U128(amount), m)
+}
+
+#[test]
+fn refused_wrong_payee_in_reveal() {
+    let mut c = setup();
+    let m = format!(r#"{{"invoice":"{INV3}","payee":"{STRANGER}","salt":"{SALT}"}}"#);
+    assert_refused(pay_with(&mut c, AGENT, INV3_UNITS, m), INV3_UNITS, COMMIT_MISMATCH_REASON);
+    assert_eq!(status(&c, INV3), InvoiceStatus::Registered);
+}
+
+#[test]
+fn refused_wrong_salt_in_reveal() {
+    let mut c = setup();
+    let m = format!(r#"{{"invoice":"{INV3}","payee":"{PAYEE}","salt":"{}"}}"#, "ff".repeat(16));
+    assert_refused(pay_with(&mut c, AGENT, INV3_UNITS, m), INV3_UNITS, COMMIT_MISMATCH_REASON);
+}
+
+#[test]
+fn refused_other_agent_with_a_mandate() {
+    // The commitment names the buyer agent: another account with a valid mandate cannot pay it.
+    let mut c = setup();
+    set_caller(OWNER);
+    c.set_mandate(acc(STRANGER), "Tommy (buyer)".into(), "buyer_agent".into(), U128(AGENT_LIMIT), acc(CPO));
+    let r = pay(&mut c, STRANGER, INV3, INV3_UNITS);
+    assert_refused(r, INV3_UNITS, COMMIT_MISMATCH_REASON);
+    assert_eq!(status(&c, INV3), InvoiceStatus::Registered);
+}
+
+#[test]
+fn checkout_hash_is_bound_by_the_commitment() {
+    let mut c = setup();
+    let ch = "ab".repeat(32);
+    let k = commitment_hex("ECHK", &acc(PAYEE), U128(5), &acc(AGENT), SALT, &ch);
+    set_caller(BRIDGE);
+    c.register_invoice("ECHK".into(), k);
+    // without the checkout hash: refused
+    let m = format!(r#"{{"invoice":"ECHK","payee":"{PAYEE}","salt":"{SALT}"}}"#);
+    assert_refused(pay_with(&mut c, AGENT, 5, m), 5, COMMIT_MISMATCH_REASON);
+    // with it, plus a receipt hash: accepted and the receipt hash is stored
+    let rh = "cd".repeat(32);
+    let m = format!(
+        r#"{{"invoice":"ECHK","payee":"{PAYEE}","salt":"{SALT}","checkout_hash":"{ch}","receipt_hash":"{rh}"}}"#
+    );
+    assert!(matches!(pay_with(&mut c, AGENT, 5, m), PromiseOrValue::Promise(_)));
+    let inv = c.get_invoice("ECHK".into()).unwrap().invoice;
+    assert_eq!(inv.status, InvoiceStatus::Paid);
+    assert_eq!(inv.receipt_hash, Some(rh));
+    assert_eq!(inv.amount_units, Some(U128(5)));
+    assert_eq!(inv.payee, Some(acc(PAYEE)));
 }
 
 #[test]
@@ -617,12 +688,28 @@ fn refused_rejected_invoice() {
 #[test]
 fn refused_bad_msg() {
     let mut c = setup();
-    for m in ["", "not json", r#"{"inv":"x"}"#, r#"{"invoice":7}"#, r#"{"invoice":""}"#] {
+    let bad = [
+        "".to_string(),
+        "not json".to_string(),
+        r#"{"inv":"x"}"#.to_string(),
+        r#"{"invoice":7}"#.to_string(),
+        r#"{"invoice":""}"#.to_string(),
+        // v1 msg (no reveal) is refused, not paid
+        format!(r#"{{"invoice":"{INV3}"}}"#),
+        format!(r#"{{"invoice":"{INV3}","payee":"{PAYEE}"}}"#),
+        format!(r#"{{"invoice":"{INV3}","payee":"NOT VALID","salt":"{SALT}"}}"#),
+        format!(r#"{{"invoice":"{INV3}","payee":"{PAYEE}","salt":"short"}}"#),
+        format!(r#"{{"invoice":"{INV3}","payee":"{PAYEE}","salt":"{}"}}"#, SALT.to_uppercase()),
+        format!(r#"{{"invoice":"{INV3}","payee":"{PAYEE}","salt":"{SALT}","checkout_hash":"xyz"}}"#),
+        format!(r#"{{"invoice":"{INV3}","payee":"{PAYEE}","salt":"{SALT}","receipt_hash":"12"}}"#),
+    ];
+    for m in bad {
         set_caller(TOKEN);
-        let r = c.ft_on_transfer(acc(AGENT), U128(5), m.to_string());
-        assert_refused(r, 5, "msg must be {\"invoice\":\"<said>\"}");
-        assert_eq!(last_event()["data"][0]["said"], Value::Null);
+        let r = c.ft_on_transfer(acc(AGENT), U128(5), m.clone());
+        assert_refused(r, 5, BAD_MSG_REASON);
+        assert_eq!(last_event()["data"][0]["said"], Value::Null, "msg {m}");
     }
+    assert_eq!(status(&c, INV3), InvoiceStatus::Registered);
 }
 
 #[test]
@@ -640,7 +727,7 @@ fn events_are_nep297_and_indexed() {
     let mut c = setup();
     drop(pay(&mut c, AGENT, INV4, INV4_UNITS));
     let raw = get_logs().pop().unwrap();
-    assert!(raw.starts_with(r#"EVENT_JSON:{"standard":"signatory","version":"1.0.0","event":"payment_pending","data":[{"#));
+    assert!(raw.starts_with(r#"EVENT_JSON:{"standard":"signatory","version":"2.0.0","event":"payment_pending","data":[{"#));
 
     let all = c.get_events(0, None);
     let names: Vec<_> = all.iter().map(|e| e.event.as_str()).collect();
@@ -659,8 +746,8 @@ fn events_are_nep297_and_indexed() {
 fn get_events_page_is_capped() {
     let mut c = setup();
     for i in 0..(MAX_EVENTS_PAGE + 5) {
-        set_caller(BRIDGE); // one tx per registration (per-receipt log limit is 16 KiB)
-        c.register_invoice(format!("E{i}"), U128(1), acc(PAYEE), "S".into(), "B".into(), "d".into());
+        // one tx per registration (per-receipt log limit is 16 KiB)
+        register(&mut c, &format!("E{i}"), 1);
     }
     assert_eq!(c.get_events(0, Some(1000)).len() as u32, MAX_EVENTS_PAGE);
     assert_eq!(c.get_events(0, None).len() as u32, MAX_EVENTS_PAGE);
@@ -669,12 +756,22 @@ fn get_events_page_is_capped() {
 
 #[test]
 fn invoice_view_json_shape() {
-    let c = setup();
+    let mut c = setup();
     let v = serde_json::to_value(c.get_invoice(INV3.into()).unwrap()).unwrap();
     assert_eq!(v["said"], INV3);
-    assert_eq!(v["amount_units"], "84000");
+    assert_eq!(v["commit"], INV3_COMMIT_VECTOR);
     assert_eq!(v["status"], "registered");
-    assert_eq!(v["payee"], PAYEE);
+    assert_eq!(v["amount_units"], Value::Null);
+    assert_eq!(v["payee"], Value::Null);
     assert_eq!(v["payer"], Value::Null);
+    for gone in ["seller_lei", "buyer_lei", "due"] {
+        assert!(v.get(gone).is_none(), "{gone} must not be on-chain");
+    }
     assert!(c.get_invoice("EUNKNOWN".into()).is_none());
+    // after payment the revealed amount and payee are visible (the transfer shows them too)
+    drop(pay(&mut c, AGENT, INV3, INV3_UNITS));
+    let v = serde_json::to_value(c.get_invoice(INV3.into()).unwrap()).unwrap();
+    assert_eq!(v["amount_units"], "84000");
+    assert_eq!(v["payee"], PAYEE);
+    assert_eq!(v["status"], "paid");
 }

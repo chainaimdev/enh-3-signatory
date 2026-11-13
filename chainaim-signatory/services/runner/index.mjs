@@ -39,8 +39,8 @@ export async function probe(url) {
   }
 }
 
-/** opts: {cfg, evidencePath, signerUrl, bridgeUrl, vlei?: {dir, exportNode, issueTimeoutMs, exportTimeoutMs, template, year, keriaContainer, shellContainer}} */
-export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, fetchImpl = fetch, run = runProcess }) {
+/** opts: {cfg, evidencePath, signerUrl, bridgeUrl, ap2?: boolean, vlei?: {dir, exportNode, issueTimeoutMs, exportTimeoutMs, template, year, keriaContainer, shellContainer}} */
+export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 = false, fetchImpl = fetch, run = runProcess }) {
   const post = async (base, path, body) => {
     const t0 = Date.now();
     try {
@@ -73,6 +73,11 @@ export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, fetch
     signerDecide: (kind, said) => post(signerUrl, `/${kind}`, { said }),
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
   };
+  // change #3: AP2 checkout + payment mandate, only with --ap2 on (deps absent → engine flow unchanged)
+  if (ap2) {
+    deps.ap2Checkout = (said) => post(bridgeUrl, "/checkout", { said });
+    deps.ap2Mandate = (b) => post(signerUrl, "/mandate", b);
+  }
   if (vlei) {
     const sellerAgent = cfg.sellerAgent ?? "jupiterSellerAgent";
     const agentAccount = Object.values(cfg.accounts.aliases).find((e) => e.role === "buyer_agent")?.account;
@@ -247,6 +252,7 @@ async function main() {
       "invoice-year": { type: "string" },
       "keria-container": { type: "string" },
       "shell-container": { type: "string" },
+      ap2: { type: "string" },
     },
   });
   const cfg = loadConfig(flags.config);
@@ -270,7 +276,9 @@ async function main() {
     shellContainer: flags["shell-container"] ?? "tsx_shell",
   };
 
-  const deps = buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei });
+  if (!["on", "off"].includes(flags.ap2 ?? "off")) throw new Error("--ap2 must be on or off");
+  const ap2 = (flags.ap2 ?? "off") === "on"; // change #3: bridge and signer must also run with --ap2 on
+  const deps = buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 });
   const md = await view(cfg.rpcUrl, cfg.token, "ft_metadata");
   if (md.decimals !== cfg.tokenDecimals) throw new Error(`token decimals ${md.decimals} ≠ config ${cfg.tokenDecimals} (G-39)`);
   await view(cfg.rpcUrl, cfg.contractId, "get_config");
@@ -279,7 +287,7 @@ async function main() {
   log(SERVICE, {
     event: "ready", contractId: cfg.contractId, signerUrl, bridgeUrl, evidencePath, pollMs, waitMinutes, allowOrigin,
     vleiDir: vlei.dir, exportNode: vlei.exportNode, issueTimeoutS: vlei.issueTimeoutMs / 1000, exportTimeoutS: vlei.exportTimeoutMs / 1000,
-    maxAmount: flags["max-amount"] ?? "0.25", template: vlei.template,
+    maxAmount: flags["max-amount"] ?? "0.25", template: vlei.template, ap2: ap2 ? "on" : "off",
   });
   startRunnerServer({ cfg, runner, deps, port, allowOrigin, signerUrl, bridgeUrl });
 }

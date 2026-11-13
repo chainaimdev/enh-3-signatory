@@ -4,7 +4,7 @@ Signatory is a B2B payment demo for the NEAR hackathon. A buyer types a purchase
 
 - **Buyer:** Tommy Hilfiger Europe B.V. (LEI `54930012QJWZMYHNJW95`)
 - **Seller:** Jupiter Knitting Company (LEI `3358004DXAMRWRUIYJ05`)
-- **Network:** NEAR testnet, contract `chainaim-signatory.testnet`, Circle testnet USDC (6 decimals)
+- **Network:** NEAR testnet, contract `chainaim-signatory-v2.testnet` (v1 `chainaim-signatory.testnet` kept for its history), Circle testnet USDC (6 decimals)
 - **Demo scale:** real USD ÷ 1,000,000 = on-chain USDC (e.g. a $84,000 order = 0.084 USDC)
 
 ---
@@ -24,6 +24,15 @@ Every step below ran live on NEAR testnet. Open the links:
 | Pay after revoke → refused | Contract refuses ("mandate revoked") and refunds the agent | [BQ8zFtd2…](https://testnet.nearblocks.io/txns/BQ8zFtd2mGGUQqPSUmCDBdNCtXCteK9uqpNhP2S2giAM) |
 | Private callbacks | Outside calls to `on_pay_forward` / `on_settle` fail, state unchanged | [A1AHCDVD…](https://testnet.nearblocks.io/txns/A1AHCDVDv1MG2in33wEs1Xh7YqDFfQ4PK4FssbCYCrKx) · [3z71sVDF…](https://testnet.nearblocks.io/txns/3z71sVDFGDkB8xpx16xZbYqsCdhYDgXF7skKg9HqcCuB) |
 | Tampered invoice | Bridge recomputes the SAID, refuses, nothing is sent to NEAR | (no transaction, by design) |
+
+**v2 contract `chainaim-signatory-v2.testnet` (14 Nov): privacy commitment + AP2 receipts**
+
+| Scenario | What happened | Transaction |
+|---|---|---|
+| Register, commitment only | INV-2026-0017: only the SAID and a sha256 commitment go on-chain (no amount, payee, LEIs or due date) | [GT76nPkn…](https://testnet.nearblocks.io/txns/GT76nPknkDqsUhfapD7UjGa6JAjfcM64nKdjSLeJpnEx) |
+| Reveal at payment → paid | The agent reveals payee + salt; the contract recomputes the commitment, then pays 0.084 USDC | [HYvGfyVe…](https://testnet.nearblocks.io/txns/HYvGfyVegUCsP2NUzSxjmfA36t7MgYx3LVUVBVX4Yip2) |
+| AP2 register | INV-2026-0019: Jupiter-signed UCP checkout (AP2 merchant_authorization, ES256) bound into the commitment | [5GdwhLVP…](https://testnet.nearblocks.io/txns/5GdwhLVPTSsEJRcowFFRdkXe5C4R5gT65ckgXv45xLTQ) |
+| AP2 pay with receipt hash | Buyer agent pays under its signed payment mandate; the `paid` event carries the receipt hash of checkout + mandate | [58GabUaT…](https://testnet.nearblocks.io/txns/58GabUaTVTWuXDCSDfXRhpS4iKZdee8kLrB8U5MuXyCP) |
 
 Read-only views of the live contract (no keys needed, Windows or WSL, Node ≥ 22):
 
@@ -67,9 +76,9 @@ node scripts/view.mjs events            # contract event log (NEP-297)
 
 | Path | What it is |
 |---|---|
-| `chainaim-signatory/contract/` | Rust NEAR contract (near-sdk 5.30.1), 43 unit tests |
-| `chainaim-signatory/services/` | Node services: `signer/` (8771), `bridge/` (8772), `runner/` (8774), `shared/`, `test/` (63 tests) |
-| `chainaim-signatory/scripts/` | `deploy.sh`, `set-mandates.sh`, `health.mjs`, `view.mjs` |
+| `chainaim-signatory/contract/` | Rust NEAR contract (near-sdk 5.30.1), 48 unit tests (`cargo test`) |
+| `chainaim-signatory/services/` | Node services: `signer/` (8771), `bridge/` (8772), `runner/` (8774), `shared/` (commitment, AP2), `test/` (78 tests, `npm test`, frozen evidence fixture) |
+| `chainaim-signatory/scripts/` | **`signatory.sh` (setup / start / stop — the only command you need)**, plus `deploy.sh`, `set-mandates.sh`, `health.mjs`, `view.mjs`, `ap2-keys.mjs` |
 | `chainaim-signatory/config/` | `signatory.json` (network, contract, ports), `accounts.json` (accounts + mandates) |
 | `UI/` | `Agent Escalation Console.html` (the chat UI), `serve.mjs` (static server), `data/` (evidence + accounts, no secrets) |
 | `legentvLEI/` | vLEI / KERI stack (KERIA, witnesses, schema server in Docker), identity scripts, invoice issue + IPEX, `export-signatory-evidence.js` |
@@ -77,93 +86,69 @@ node scripts/view.mjs events            # contract event log (NEP-297)
 
 ---
 
-## 4. Run it yourself
+## 4. Run it yourself — one script
 
-### 4.1 Prerequisites
-
-Tested on Windows 11 with WSL2. Two terminals are used throughout:
-
-- **Git Bash** — vLEI scripts (Docker) and the UI server.
-- **WSL Ubuntu** — NEAR tools and the three services (they read keys from `~/.near-credentials`). Always open it with `wsl -d Ubuntu`.
-
-| Tool | Version used |
-|---|---|
-| Docker Desktop, WSL integration enabled for Ubuntu | current |
-| Node.js (Windows **and** Ubuntu) | ≥ 22 (26.x used) |
-| Rust / cargo, target `wasm32-unknown-unknown` | 1.100.0 |
-| cargo-near | 0.23.0 |
-| near-cli-rs | 0.31.1 |
-| jq, gcc, curl (Ubuntu) | any recent |
-
-If `docker ps` in Ubuntu says *permission denied*: `sudo usermod -aG docker $USER`, reopen Ubuntu, and after a Docker Desktop restart run `sudo chgrp docker /var/run/docker.sock`.
-
-### 4.2 Start the vLEI stack and create identities (Git Bash, ~15–25 min)
+Everything runs through **one command**, from any folder, in **WSL Ubuntu** (`wsl -d Ubuntu`):
 
 ```bash
-cd enh2-final/legentvLEI
-# create legentvLEI/.env with your user ids:  UID=1000  GID=1000
-./stop.sh
-./setup.sh
-./deploy.sh --fresh
-./saidify-and-restart.sh
-./run-all-buyerseller-4D-with-subdelegation.sh --invoice-config ./appconfig/invoiceConfig-near.json
+S=/mnt/c/<path-to>/enh-3-signatory/chainaim-signatory/scripts/signatory.sh
+bash $S setup --fresh-vlei   # first time on a PC (≈ 30 min)
+bash $S start                # every day (≈ 1 min) — prints the UI link
+bash $S stop                 # stop the UI and the services
 ```
 
-This creates GEDA → QVI → both Legal Entities → OOR officers → delegated AI agents and sub-agents, then issues the first invoice. Each identity's passcode (BRAN) is generated into `legentvLEI/task-data/`, which is git-ignored. **Never commit or share that folder.**
+Every mode has `--dry-run` (prints what it would do, changes nothing) and `--help`. The script never reads, prints or copies a key or passcode: it only checks that the files exist.
 
-Export the evidence the UI and bridge read:
+### 4.1 Prerequisites (once)
+
+- Windows 11 + WSL2 Ubuntu, Docker Desktop with WSL integration for Ubuntu
+  (`docker ps` *permission denied* → `sudo usermod -aG docker $USER`, reopen Ubuntu).
+- Node.js ≥ 22 in **Ubuntu and Windows** (the evidence export uses Windows `node.exe` for speed), plus `jq` and `curl` in Ubuntu.
+- Only to rebuild or redeploy the contract: Rust 1.100 + target `wasm32-unknown-unknown`, `cargo-near` 0.23, `near-cli-rs` 0.31.
+
+### 4.2 Keys (once) — never in git, chat or email
+
+The services sign with these files; `setup` tells you which are missing.
+
+| Key file | Put it at | Used by |
+|---|---|---|
+| `<buyer agent>.json`, `<CPO>.json`, `<registrar>.json`, `<owner>.json` (account names in `config/accounts.json`) | `~/.near-credentials/testnet/` in WSL (`chmod 600`) | signer (pay, approve, revoke), bridge (register), `set-mandates.sh` (owner) |
+| `merchant.pem`, `buyer-agent.pem` | `chainaim-signatory/private/ap2-keys/` (git-ignored) | bridge (AP2 checkout), signer (AP2 payment mandate) |
+
+Either get them from the account owner **in person or encrypted** (and never run live payments from two PCs at the same time), or create your own: testnet accounts with near-cli-rs (legacy keychain), `storage_deposit` on the USDC token for the contract, buyer agent and payee, USDC from [faucet.circle.com](https://faucet.circle.com) (NEAR Testnet), `bash scripts/deploy.sh` + `bash scripts/set-mandates.sh`, AP2 keys with `node scripts/ap2-keys.mjs --party merchant` and `--party buyer`. Put your account names in `config/accounts.json` and `config/signatory.json` (and the payee in `legentvLEI/appconfig/invoiceConfig-near*.json`) before issuing invoices.
+
+### 4.3 `setup` — first time on a PC
 
 ```bash
-node export-signatory-evidence.js --strict --out ../UI/data/signatory-evidence.json
-# expect: all agents KEL-verified, invoices issuance-verified, "All checks passed."
+bash $S setup --fresh-vlei
 ```
 
-### 4.3 NEAR accounts, contract and mandates (WSL Ubuntu)
+1. checks node ≥ 22, npm, jq, curl, docker;
+2. **fresh vLEI stack + 4D run** (stop --fresh, setup, deploy --fresh, saidify, 4D, strict evidence export) — this **deletes the vLEI identities on that PC**, so it asks you to type `FRESH`;
+3. `npm install` for the services;
+4. read-only checks: key files present, evidence present, `health.mjs --stage contract` (accounts, storage, contract, mandates);
+5. ends with `setup complete` or a numbered list of what is still missing.
 
-1. Create five testnet accounts with near-cli-rs, saving keys to the **legacy keychain** (`~/.near-credentials/testnet/<account>.json`): contract owner, vLEI registrar, buyer agent, CPO (approver), payee. Our names are in `chainaim-signatory/config/accounts.json`. If you use your own names, update `accounts.json`, `signatory.json`, and the `paymentWalletAddress` in `legentvLEI/appconfig/invoiceConfig-near*.json` **before** issuing invoices (the payee is part of the signed invoice).
-2. Register token storage (`storage_deposit` on the USDC contract) for the contract, the buyer agent and the payee.
-3. Fund the buyer agent with testnet USDC from [faucet.circle.com](https://faucet.circle.com) (network: NEAR Testnet).
-4. Build, deploy and set mandates:
+Without `--fresh-vlei`, setup keeps the existing vLEI stack and only does steps 1, 3–5 (safe to re-run any time). If the vLEI step does not run in WSL on your machine, run it in Git Bash: `bash chainaim-signatory/scripts/signatory.sh setup --fresh-vlei --skip-npm`.
+
+### 4.4 `start` — every day
 
 ```bash
-cd /mnt/c/<path-to>/enh2-final/chainaim-signatory
-node scripts/health.mjs --stage accounts      # until no FAIL
-bash scripts/deploy.sh                         # build wasm, deploy, init, verify get_config
-bash scripts/set-mandates.sh                   # agent 0.10, CPO 0.25; also copies accounts.json to the UI
-node scripts/health.mjs --stage contract
+bash $S start            # add --vlei after a reboot (restarts the vLEI Docker stack, same identities, no 4D)
 ```
 
-> Do not paste any command output that shows a private key, and never run `near account export-account … using-private-key` where others can see the output.
+It stops old copies, starts the **signer (8771), bridge (8772) and runner (8774)** with AP2 on (`--ap2 off` to disable), waits for each, points the UI at the configured contract (`health.mjs --stage all --write-ui-config`), starts the **UI (8765)** and prints:
 
-### 4.4 Start the services (three WSL Ubuntu windows)
+<http://127.0.0.1:8765/Agent%20Escalation%20Console.html>
+
+The top strip should show vLEI, NEAR, Signer, Bridge and Runner up. Logs: `chainaim-signatory/private/run/*.log`.
+
+### 4.5 Tests (no keys, no network)
 
 ```bash
-cd /mnt/c/<path-to>/enh2-final/chainaim-signatory/services
-npm install          # first time only
-npm test             # optional: 63 tests
-
-node signer/index.mjs     # window 1 — port 8771 (buyer agent + CPO keys)
-node bridge/index.mjs     # window 2 — port 8772 (registrar key)
-node runner/index.mjs     # window 3 — port 8774 (no keys; calls vLEI scripts + signer + bridge)
+cd chainaim-signatory/services && npm test     # 78 tests
+cd ../contract && cargo test                   # 48 tests
 ```
-
-The runner issues invoices with Ubuntu bash and exports with **Windows** `node.exe` (`--export-node "/mnt/c/Program Files/nodejs/node.exe"`, the default), because Ubuntu's Node reaches KERIA through the WSL localhost bridge too slowly.
-
-Then point the UI at the services:
-
-```bash
-cd ..
-node scripts/health.mjs --stage all --write-ui-config
-```
-
-### 4.5 Open the UI (Git Bash)
-
-```bash
-cd enh2-final/UI
-node serve.mjs
-```
-
-Open <http://127.0.0.1:8765/Agent%20Escalation%20Console.html>. The top strip should show vLEI, NEAR, Signer, Bridge and Runner as up, with the runner in **Phase B** (a new invoice per request).
 
 ---
 
@@ -212,5 +197,7 @@ Every chat bubble has a **details** section with the real API call, status, dura
 | Export times out from Ubuntu | use Windows `node.exe` (the runner's default `--export-node`) or run the exporter in Git Bash |
 | KERIA `Invalid sad` when issuing | an amount below 0.0001 — use larger numbers (the scripts guard this) |
 | Identity scripts fail with "already incepted" | start clean: `./stop.sh && ./deploy.sh --fresh`, then 4D again |
-| UI shows a service as down | start it, then `node scripts/health.mjs --stage all --write-ui-config` |
+| UI shows a service as down | `bash $S start` again (it restarts everything and rewrites the UI config); see `chainaim-signatory/private/run/<service>.log` |
+| `EADDRINUSE` (port in use) | an old copy is still running: `bash $S stop`, then `bash $S start` |
+| `setup` lists missing key files | put them where §4.2 says (names are in `config/accounts.json`); `setup` never opens them |
 | `docker ps` permission denied in Ubuntu | `sudo chgrp docker /var/run/docker.sock` |

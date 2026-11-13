@@ -1,0 +1,185 @@
+{
+  "root": {
+    "alias": "GLEIF_ROOT",
+    "registryName": "GLEIF_ROOT_REGISTRY"
+  },
+  "qvi": {
+    "alias": "QVI",
+    "lei": "",
+    "registryName": "QVI_REGISTRY"
+  },
+  "organizations": [
+    {
+      "id": "jupiter",
+      "alias": "Jupiter_Knitting_Company",
+      "name": "JUPITER KNITTING COMPANY",
+      "lei": "3358004DXAMRWRUIYJ05",
+      "registryName": "Jupiter_Knitting_Company-oor-registry",
+      "persons": [
+        {
+          "alias": "Jupiter_Chief_Executive_Officer",
+          "legalName": "Chief Executive Officer",
+          "officialRole": "Partner",
+          "agents": [
+            {
+              "alias": "jupiterCeoAgent",
+              "agentType": "AI",
+              "role": "executive_approvals",
+              "permissions": {
+                "canDelegate": false,
+                "scope": "executive_approvals"
+              },
+              "may_act": [],
+              "card": {
+                "name": "Jupiter CEO Agent",
+                "description": "AI agent acting on behalf of the Chief Executive Officer of JUPITER KNITTING COMPANY (Level 1 OOR holder).",
+                "skills": []
+              }
+            }
+          ]
+        },
+        {
+          "alias": "Jupiter_Chief_Sales_Officer",
+          "legalName": "Chief Sales Officer",
+          "officialRole": "Partner",
+          "agents": [
+            {
+              "alias": "jupiterSellerAgent",
+              "agentType": "AI",
+              "role": "seller",
+              "permissions": {
+                "canDelegate": true,
+                "scope": "sales_operations"
+              },
+              "may_act": [
+                "JupiterTreasuryAgent",
+                "JupiterInventoryAgent"
+              ],
+              "subAgents": [
+                {
+                  "alias": "JupiterTreasuryAgent",
+                  "agentType": "AI",
+                  "permissions": {
+                    "canDelegate": false,
+                    "scope": "treasury_operations"
+                  },
+                  "may_act": [],
+                  "description": "Sub-delegated agent for treasury and payment operations",
+                  "advisoryOnly": true
+                },
+                {
+                  "alias": "JupiterInventoryAgent",
+                  "agentType": "AI",
+                  "permissions": {
+                    "canDelegate": false,
+                    "scope": "inventory_operations"
+                  },
+                  "may_act": [],
+                  "description": "Sub-delegated advisory agent for stock and delivery checks (no payment authority)",
+                  "advisoryOnly": true,
+                  "card": {
+                    "name": "Jupiter Inventory Agent",
+                    "description": "Advisory AI agent for JUPITER KNITTING COMPANY, sub-delegated by jupiterSellerAgent. Answers stock and delivery-feasibility questions for a proposed order. It has no payment or signing authority.",
+                    "url": null,
+                    "officialRole": "Partner",
+                    "engagementRole": "Inventory Agent",
+                    "skills": [
+                      {
+                        "id": "stock_check",
+                        "name": "Stock Check",
+                        "description": "Reports whether the requested quantity can be supplied from stock for a proposed order.",
+                        "tags": [
+                          "inventory",
+                          "stock",
+                          "advisory"
+                        ]
+                      },
+                      {
+                        "id": "delivery_feasibility",
+                        "name": "Delivery Feasibility",
+                        "description": "Reports whether the requested delivery date can be met for a proposed order.",
+                        "tags": [
+                          "inventory",
+                          "delivery",
+                          "advisory"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tommy",
+      "alias": "Tommy_Hilfiger_Europe",
+      "name": "TOMMY HILFIGER EUROPE B.V.",
+      "lei": "54930012QJWZMYHNJW95",
+      "registryName": "Tommy_Hilfiger_Europe-oor-registry",
+      "persons": [
+        {
+          "alias": "Tommy_Chief_Executive_Officer",
+          "legalName": "Chief Executive Officer",
+          "officialRole": "Director",
+          "agents": [
+            {
+              "alias": "tommyCeoAgent",
+              "agentType": "AI",
+              "role": "executive_approvals",
+              "permissions": {
+                "canDelegate": false,
+                "scope": "executive_approvals"
+              },
+              "may_act": [],
+              "card": {
+                "name": "Tommy CEO Agent",
+                "description": "AI agent acting on behalf of the Chief Executive Officer of TOMMY HILFIGER EUROPE B.V. (Level 1 OOR holder).",
+                "skills": []
+              }
+            }
+          ]
+        },
+        {
+          "alias": "Tommy_Chief_Procurement_Officer",
+          "legalName": "Chief Procurement Officer",
+          "officialRole": "Authorised Representative",
+          "agents": [
+            {
+              "alias": "tommyBuyerAgent",
+              "agentType": "AI",
+              "role": "buyer",
+              "permissions": {
+                "canDelegate": true,
+                "scope": "procurement_operations"
+              },
+              "may_act": [
+                "TommyTreasuryAgent"
+              ],
+              "subAgents": [
+                {
+                  "alias": "TommyTreasuryAgent",
+                  "agentType": "AI",
+                  "permissions": {
+                    "canDelegate": false,
+                    "scope": "treasury_operations"
+                  },
+                  "may_act": [],
+                  "description": "Sub-delegated agent for treasury and payment operations",
+                  "advisoryOnly": true,
+                  "card": {
+                    "name": "Tommy Treasury Agent",
+                    "description": "Sub-delegated treasury AI agent for TOMMY HILFIGER EUROPE B.V., acting under tommyBuyerAgent.",
+                    "skills": []
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

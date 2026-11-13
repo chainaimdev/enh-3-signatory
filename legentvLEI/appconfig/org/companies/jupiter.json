@@ -1,0 +1,168 @@
+{
+  "@context": "../context.jsonld",
+  "@id": "ca:org/jupiter",
+  "@type": "org:FormalOrganization",
+  "companyId": "jupiter",
+  "alias": "Jupiter_Knitting_Company",
+  "label": "JUPITER KNITTING COMPANY",
+  "lei": "3358004DXAMRWRUIYJ05",
+  "jurisdiction": "IN",
+  "registryName": "Jupiter_Knitting_Company-oor-registry",
+  "tradeRoles": ["seller"],
+  "escalationPolicy": {
+    "alwaysHuman": ["new_counterparty", "price_below_floor", "cash_below_safety_threshold"],
+    "reportTo": "ca:person/jupiter-ceo"
+  },
+
+  "posts": [
+    {
+      "@id": "ca:post/jupiter-ceo",
+      "@type": "org:Post",
+      "label": "Chief Executive Officer",
+      "level": 1,
+      "heldBy": "ca:person/jupiter-ceo"
+    },
+    {
+      "@id": "ca:post/jupiter-cso",
+      "@type": "org:Post",
+      "label": "Chief Sales Officer",
+      "level": 2,
+      "reportsTo": "ca:post/jupiter-ceo",
+      "heldBy": "ca:person/jupiter-cso"
+    }
+  ],
+
+  "people": [
+    {
+      "@id": "ca:person/jupiter-ceo",
+      "@type": "prov:Person",
+      "alias": "Jupiter_Chief_Executive_Officer",
+      "personLegalName": "Chief Executive Officer",
+      "credentialType": "OOR",
+      "officialRole": "Partner",
+      "officialRoleLabel": "Chief Executive Officer",
+      "headOf": "ca:org/jupiter",
+      "approvalLimit": null
+    },
+    {
+      "@id": "ca:person/jupiter-cso",
+      "@type": "prov:Person",
+      "alias": "Jupiter_Chief_Sales_Officer",
+      "personLegalName": "Chief Sales Officer",
+      "credentialType": "OOR",
+      "officialRole": "Partner",
+      "officialRoleLabel": "Chief Sales Officer",
+      "approvalLimit": { "currency": "USD", "max": 250000 },
+      "escalatesTo": "ca:agent/jupiterCeoAgent",
+      "timeout": "PT8H"
+    }
+  ],
+
+  "agents": [
+    {
+      "@id": "ca:agent/jupiterCeoAgent",
+      "@type": "prov:SoftwareAgent",
+      "alias": "jupiterCeoAgent",
+      "agentType": "AI",
+      "actedOnBehalfOf": "ca:person/jupiter-ceo",
+      "mandate": {
+        "authorization_details": [
+          {
+            "type": "executive_approvals",
+            "actions": ["approve_large_sale"],
+            "transactionLimit": { "currency": "USD", "max": 500000 }
+          }
+        ],
+        "validUntil": "2027-11-12T00:00:00Z",
+        "may_act": []
+      },
+      "escalatesTo": "ca:person/jupiter-ceo",
+      "timeout": "PT24H",
+      "card": {
+        "name": "Jupiter CEO Agent",
+        "description": "AI agent acting on behalf of the Chief Executive Officer of JUPITER KNITTING COMPANY (Level 1 OOR holder).",
+        "skills": []
+      }
+    },
+    {
+      "@id": "ca:agent/jupiterSellerAgent",
+      "@type": "prov:SoftwareAgent",
+      "alias": "jupiterSellerAgent",
+      "agentType": "AI",
+      "tradeRole": "seller",
+      "actedOnBehalfOf": "ca:person/jupiter-cso",
+      "mandate": {
+        "authorization_details": [
+          {
+            "type": "sales_operations",
+            "actions": ["negotiate_order", "issue_invoice"],
+            "transactionLimit": { "currency": "USD", "max": 100000 }
+          }
+        ],
+        "validUntil": "2027-11-12T00:00:00Z",
+        "may_act": ["ca:agent/JupiterTreasuryAgent", "ca:agent/JupiterInventoryAgent"]
+      },
+      "escalatesTo": "ca:person/jupiter-cso",
+      "timeout": "PT4H"
+    },
+    {
+      "@id": "ca:agent/JupiterTreasuryAgent",
+      "@type": "prov:SoftwareAgent",
+      "alias": "JupiterTreasuryAgent",
+      "agentType": "AI",
+      "actedOnBehalfOf": "ca:agent/jupiterSellerAgent",
+      "description": "Sub-delegated agent for treasury and payment operations",
+      "advisoryOnly": true,
+      "mandate": {
+        "authorization_details": [
+          {
+            "type": "treasury_operations",
+            "actions": ["cash_flow_validation", "minimum_price_advisory"]
+          }
+        ],
+        "validUntil": "2027-11-12T00:00:00Z",
+        "may_act": []
+      }
+    },
+    {
+      "@id": "ca:agent/JupiterInventoryAgent",
+      "@type": "prov:SoftwareAgent",
+      "alias": "JupiterInventoryAgent",
+      "agentType": "AI",
+      "actedOnBehalfOf": "ca:agent/jupiterSellerAgent",
+      "description": "Sub-delegated advisory agent for stock and delivery checks (no payment authority)",
+      "advisoryOnly": true,
+      "mandate": {
+        "authorization_details": [
+          {
+            "type": "inventory_operations",
+            "actions": ["stock_check", "delivery_feasibility"]
+          }
+        ],
+        "validUntil": "2027-11-12T00:00:00Z",
+        "may_act": []
+      },
+      "card": {
+        "name": "Jupiter Inventory Agent",
+        "description": "Advisory AI agent for JUPITER KNITTING COMPANY, sub-delegated by jupiterSellerAgent. Answers stock and delivery-feasibility questions for a proposed order. It has no payment or signing authority.",
+        "url": null,
+        "officialRole": "Partner",
+        "engagementRole": "Inventory Agent",
+        "skills": [
+          {
+            "id": "stock_check",
+            "name": "Stock Check",
+            "description": "Reports whether the requested quantity can be supplied from stock for a proposed order.",
+            "tags": ["inventory", "stock", "advisory"]
+          },
+          {
+            "id": "delivery_feasibility",
+            "name": "Delivery Feasibility",
+            "description": "Reports whether the requested delivery date can be met for a proposed order.",
+            "tags": ["inventory", "delivery", "advisory"]
+          }
+        ]
+      }
+    }
+  ]
+}

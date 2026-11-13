@@ -1,0 +1,79 @@
+{
+  "root": {
+    "alias": "GLEIF_ROOT",
+    "registryName": "GLEIF_ROOT_REGISTRY"
+  },
+  "qvi": {
+    "alias": "QVI",
+    "lei": "",
+    "registryName": "QVI_REGISTRY"
+  },
+  "organizations": [
+    {
+      "id": "jupiter",
+      "alias": "Jupiter_Knitting_Company",
+      "name": "JUPITER KNITTING COMPANY",
+      "lei": "3358004DXAMRWRUIYJ05",
+      "registryName": "Jupiter_Knitting_Company-oor-registry",
+      "persons": [
+        {
+          "alias": "Jupiter_Chief_Executive_Officer",
+          "legalName": "Chief Executive Officer",
+          "officialRole": "Partner",
+          "agents": [
+            {
+              "alias": "jupiterCeoAgent",
+              "agentType": "AI",
+              "role": "executive_approvals"
+            }
+          ]
+        },
+        {
+          "alias": "Jupiter_Chief_Sales_Officer",
+          "legalName": "Chief Sales Officer",
+          "officialRole": "Partner",
+          "agents": [
+            {
+              "alias": "jupiterSellerAgent",
+              "agentType": "AI",
+              "role": "seller"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tommy",
+      "alias": "Tommy_Hilfiger_Europe",
+      "name": "TOMMY HILFIGER EUROPE B.V.",
+      "lei": "54930012QJWZMYHNJW95",
+      "registryName": "Tommy_Hilfiger_Europe-oor-registry",
+      "persons": [
+        {
+          "alias": "Tommy_Chief_Executive_Officer",
+          "legalName": "Chief Executive Officer",
+          "officialRole": "Director",
+          "agents": [
+            {
+              "alias": "tommyCeoAgent",
+              "agentType": "AI",
+              "role": "executive_approvals"
+            }
+          ]
+        },
+        {
+          "alias": "Tommy_Chief_Procurement_Officer",
+          "legalName": "Chief Procurement Officer",
+          "officialRole": "Authorised Representative",
+          "agents": [
+            {
+              "alias": "tommyBuyerAgent",
+              "agentType": "AI",
+              "role": "buyer"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

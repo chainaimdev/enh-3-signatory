@@ -1,0 +1,48 @@
+{
+  "name": "Tommy CEO Agent",
+  "description": "AI agent acting on behalf of the Chief Executive Officer of TOMMY HILFIGER EUROPE B.V. (Level 1 OOR holder).",
+  "url": "https://tommy-agent.com/",
+  "provider": {
+    "organization": "TOMMY HILFIGER EUROPE B.V.",
+    "url": "https://tommyhilfiger.com"
+  },
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "stateTransitionHistory": true
+  },
+  "skills": [],
+  "extensions": {
+    "gleifIdentity": {
+      "lei": "54930012QJWZMYHNJW95",
+      "legalEntityName": "TOMMY HILFIGER EUROPE B.V.",
+      "registryName": "Tommy_Hilfiger_Europe-oor-registry",
+      "qvi": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43"
+    },
+    "vLEImetadata": {
+      "agentName": "tommyCeoAgent",
+      "oorHolderName": "Tommy_Chief_Executive_Officer",
+      "delegatorAID": "EMBHw77dQ4dvAar4cVekAXeUOicMo98i1Im6ONNxWtV6",
+      "delegateeAID": "EIVVDrMkfyWlWXM50WT6-Gtvk-fi_so03N_1rS28FmMl",
+      "delegatorSAID": "EO1A7gUghDxOQIGOTKLTJPfNBIaobdXPedvfCa_eViqq",
+      "delegateeSAID": "EIVVDrMkfyWlWXM50WT6-Gtvk-fi_so03N_1rS28FmMl",
+      "delegatorOOBI": "http://keria:3902/oobi/EMBHw77dQ4dvAar4cVekAXeUOicMo98i1Im6ONNxWtV6/agent/ENU_fRs6eSBDAH8uIT-Xj8f5Bgi3EI3uIH2j00yXpVs2",
+      "delegateeOOBI": "http://keria:3902/oobi/EIVVDrMkfyWlWXM50WT6-Gtvk-fi_so03N_1rS28FmMl/agent/EDC_ZPdNx-2OngH7YQDcl1lRn4Hr_Y_853sUnygUcGA4",
+      "leAID": "EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5",
+      "leOOBI": "http://keria:3902/oobi/EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5/agent/EMSqy9flKY2rXNP3ICEtCAF4yeKOcP5LMVAYN6sF7qcX",
+      "verificationPath": [
+        "GLEIF_ROOT → QVI",
+        "QVI → TOMMY HILFIGER EUROPE B.V. → Chief Executive Officer → tommyCeoAgent"
+      ]
+    },
+    "gleifVerification": {
+      "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/54930012QJWZMYHNJW95"
+    },
+    "keriIdentifiers": {
+      "agentAID": "EIVVDrMkfyWlWXM50WT6-Gtvk-fi_so03N_1rS28FmMl",
+      "oorHolderAID": "EMBHw77dQ4dvAar4cVekAXeUOicMo98i1Im6ONNxWtV6",
+      "legalEntityAID": "EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5",
+      "qviAID": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43"
+    }
+  }
+}

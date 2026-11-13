@@ -1,0 +1,41 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "org": "http://www.w3.org/ns/org#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "ca": "https://chainaim.com/ns/vlei-org#",
+
+    "label": "skos:prefLabel",
+    "posts": { "@id": "org:hasPost", "@type": "@id", "@container": "@set" },
+    "reportsTo": { "@id": "org:reportsTo", "@type": "@id" },
+    "heldBy": { "@id": "org:heldBy", "@type": "@id" },
+    "headOf": { "@id": "org:headOf", "@type": "@id" },
+    "actedOnBehalfOf": { "@id": "prov:actedOnBehalfOf", "@type": "@id" },
+
+    "people": { "@id": "ca:people", "@type": "@id", "@container": "@set" },
+    "agents": { "@id": "ca:agents", "@type": "@id", "@container": "@set" },
+    "companyId": "ca:companyId",
+    "alias": "ca:alias",
+    "lei": "ca:lei",
+    "jurisdiction": "ca:jurisdiction",
+    "registryName": "ca:registryName",
+    "tradeRoles": { "@id": "ca:tradeRoles", "@container": "@set" },
+    "level": "ca:level",
+    "personLegalName": "ca:personLegalName",
+    "officialRole": "ca:officialRole",
+    "officialRoleLabel": "ca:officialRoleLabel",
+    "credentialType": "ca:credentialType",
+    "agentType": "ca:agentType",
+    "tradeRole": "ca:tradeRole",
+    "description": "ca:description",
+    "advisoryOnly": "ca:advisoryOnly",
+    "timeout": "ca:timeout",
+
+    "mandate": { "@id": "ca:mandate", "@type": "@json" },
+    "approvalLimit": { "@id": "ca:approvalLimit", "@type": "@json" },
+    "escalationPolicy": { "@id": "ca:escalationPolicy", "@type": "@json" },
+    "card": { "@id": "ca:card", "@type": "@json" },
+    "escalatesTo": { "@id": "ca:escalatesTo", "@type": "@id" }
+  }
+}

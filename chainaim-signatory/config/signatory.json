@@ -1,0 +1,18 @@
+{
+  "network": "testnet",
+  "contractId": "chainaim-signatory.testnet",
+  "rpcUrl": "https://test.rpc.fastnear.com",
+  "token": "3e2210e1184b45b64c8a434c0a7e7b23cc04ea7eb7a6c3c32520d03d4afcb8af",
+  "tokenDecimals": 6,
+  "allowOrigin": "http://127.0.0.1:8765",
+  "evidencePath": "../UI/data/signatory-evidence.json",
+  "accountsPath": "config/accounts.json",
+  "uiConfigPath": "../UI/signatory-config.json",
+  "uiAccountsPath": "../UI/data/accounts.json",
+  "wasmPath": "contract/target/near/chainaim_signatory.wasm",
+  "ports": { "signer": 8771, "bridge": 8772, "advisors": 8773, "runner": 8774 },
+  "gasTgas": 150,
+  "sellerAgent": "jupiterSellerAgent",
+  "demoScale": 1000000,
+  "explorer": "https://testnet.nearblocks.io"
+}

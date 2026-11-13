@@ -1,0 +1,30 @@
+{
+  "network": "testnet",
+  "owner": "chainaim-signatory.testnet",
+  "registrar": "chainaim-vlei-registrar.testnet",
+  "payee": "chainaim-jupiter-payee.testnet",
+  "aliases": {
+    "tommyBuyerAgent": {
+      "account": "chainaim-tommy-buyer-agent.testnet",
+      "role": "buyer_agent",
+      "company": "Tommy_Hilfiger_Europe",
+      "lei": "54930012QJWZMYHNJW95"
+    },
+    "Tommy_Chief_Procurement_Officer": {
+      "account": "chainaim-tommy-cpo.testnet",
+      "role": "cpo",
+      "company": "Tommy_Hilfiger_Europe",
+      "lei": "54930012QJWZMYHNJW95"
+    },
+    "Jupiter_Knitting_Company": {
+      "account": "chainaim-jupiter-payee.testnet",
+      "role": "payee",
+      "company": "Jupiter_Knitting_Company",
+      "lei": "3358004DXAMRWRUIYJ05"
+    }
+  },
+  "mandates": [
+    { "alias": "tommyBuyerAgent", "limitUnits": "100000", "approver": "Tommy_Chief_Procurement_Officer" },
+    { "alias": "Tommy_Chief_Procurement_Officer", "limitUnits": "250000", "approver": "owner" }
+  ]
+}

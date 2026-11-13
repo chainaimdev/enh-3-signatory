@@ -1,0 +1,519 @@
+# Docker compose file for vLEI Hackathon 2025 Workshop
+
+# image tags
+x-vlei-image: &vlei-image
+  image: gleif/vlei:1.0.1
+x-witness-demo-image: &witness-demo-image
+  image: gleif/keri:1.2.9
+x-keria-image: &keria-image
+  image: gleif/keria:0.3.0
+x-sally-image: &sally-image
+  image: gleif/sally:1.0.2
+
+x-python-envs: &python-envs
+  PYTHONUNBUFFERED: 1 # Ensure output is logged in real-time
+  PYTHONIOENCODING: UTF-8 # Ensure consistent logging encoding
+  PYTHONWARNINGS: ignore::SyntaxWarning # Ignore regular expression syntax warning
+
+x-healthcheck: &healthcheck
+  interval: 3s
+  timeout: 3s
+  retries: 4
+  start_period: 2s
+
+networks:
+  default:
+    external: true
+    name: vlei_workshop
+
+volumes:
+  witness-vol:
+  verifier-vol:
+  keria-vol:
+  shell-vol:
+  resolver-vol:
+
+  # ==========================================================================
+  # Hosting-readiness fix: task-data is a DOCKER-MANAGED EXTERNAL volume.
+  #
+  # WAS: a host bind mount (`./task-data`) here, and in the DD repo an
+  # absolute laptop path (/mnt/c/SATHYA/.../legentvLEI/task-data). That made
+  # the whole stack un-hostable: a bind mount cannot span machines, the
+  # absolute path does not exist on any server, and the BRAN private-key
+  # files sat loose on the host filesystem.
+  #
+  # NOW: one Docker-managed volume, referenced by a FIXED name from BOTH
+  # compose projects. `external: true` is mandatory here, not stylistic -
+  # without it each compose project would create its OWN prefixed volume
+  # (legentvlei_task-data-vol vs js_task-data-vol) and the two stacks would
+  # silently read different data. Same reasoning as the external
+  # `vlei_workshop` network above.
+  #
+  # Created and seeded by ./migrate-taskdata-to-volume.sh (run once), and
+  # ensured on every deploy by ./deploy.sh step 1.
+  #
+  # SAFETY BONUS: `docker compose down --volumes` (deploy.sh --fresh) does
+  # NOT delete external volumes. The BRANs and AID info files now survive a
+  # --fresh teardown that would previously have been survivable only because
+  # they happened to live outside Docker.
+  #
+  # Override the volume name per-environment with VLEI_TASK_DATA_VOLUME.
+  # ==========================================================================
+  task-data-vol:
+    external: true
+    name: ${VLEI_TASK_DATA_VOLUME:-vlei_task_data}
+
+services:
+  # Schema Server - for vLEI ACDC Schemas
+  schema:
+    # Phase 0 fix D0-2: an explicit container_name is what lets the ~30 schema
+    # call sites be driven with plain `docker exec -i schema ...` instead of
+    # `docker compose exec schema ...`. The compose form needs a compose project
+    # context (compose file + project name + cwd), which the api_server container
+    # does not have - it only gets /var/run/docker.sock.
+    container_name: schema
+    hostname: schema
+    stop_grace_period: 1s
+    <<: *vlei-image
+    environment:
+      <<: *python-envs
+    # Mount custom schemas and copy them into the main schema directory before starting
+    volumes:
+      - ./schemas:/vLEI/custom-schema:ro
+    command:
+      - sh
+      - -c
+      - |
+        echo "=== Starting vLEI Schema Server ==="
+        echo "Copying custom schemas from /vLEI/custom-schema/ to /vLEI/schema/..."
+        ls -la /vLEI/custom-schema/ || echo "No custom schemas found"
+        cp -fv /vLEI/custom-schema/*.json /vLEI/schema/ 2>/dev/null || echo "No JSON files to copy"
+        echo "Schema directory contents:"
+        ls -la /vLEI/schema/*.json 2>/dev/null | head -20 || echo "No schemas in /vLEI/schema/"
+        echo "Starting vLEI-server..."
+        exec vLEI-server -s /vLEI/schema -c /vLEI/schema -o /vLEI/schema --loglevel INFO
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:7723/oobi/EBfdlu8R27Fbx-ehrqwImnK-8Cm79sqbAQ4MmvEAYqao" ]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+    ports:
+      - "7723:7723"
+
+  # Demo Witness Service (6 witnesses from `kli witness demo`)
+  witness:
+    stop_grace_period: 1s
+    <<: *witness-demo-image
+    environment:
+      <<: *python-envs
+    healthcheck:
+      test: python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5642/oobi')"
+      interval: 3s
+      timeout: 3s
+      retries: 4
+      start_period: 10s
+    command: witness demo --loglevel INFO
+    volumes:
+      - ./config/witnesses:/keripy/scripts/keri/cf/main
+    ports:
+      - "5642:5642" # witness named wan
+      - "5643:5643" # witness named wil
+      - "5644:5644" # witness named wes
+      - "5645:5645" # witness named wit
+      - "5646:5646" # witness named wub
+      - "5647:5647" # witness named wyz
+    depends_on:
+      schema:
+        condition: service_healthy
+
+  # KERIA Agent Server
+  keria:
+    # Phase 0 fix D0-2: see the note on `schema` above. ~20 keria call sites.
+    # NOTE: adding container_name changes the container's identity, so the next
+    # `docker compose up` RECREATES this container. keria-vol is a NAMED volume
+    # mounted at /usr/local/var/keri, so every AID, habitat and credential
+    # survives. Deploy with ./deploy.sh --preserve (the default) - NOT --fresh.
+    container_name: keria
+    hostname: keria
+    <<: *keria-image
+    stop_grace_period: 1s
+    restart: unless-stopped  # ← KERIA 0.3.0 has a known crash bug; auto-restart on failure
+    environment:
+      <<: *python-envs
+      KERI_AGENT_CORS: "True"
+    volumes:
+      - ./config/keria/keria.json:/keria/config/keri/cf/keria.json
+      - keria-vol:/usr/local/var/keri
+    command: start --config-dir /keria/config --config-file keria --name keria --loglevel INFO
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "--tries=1", "--no-verbose", "http://127.0.0.1:3902/spec.yaml" ]
+      <<: *healthcheck
+    ports:
+      - "3901:3901"  # admin API port
+      - "3902:3902"  # http API port
+      - "3903:3903"  # boot API port
+    depends_on:
+      schema:
+        condition: service_healthy
+      witness:
+        condition: service_healthy
+
+  # Sample Webhook that will receive IPEX credential presentation bodies as JSON from Sally
+  resource:
+    stop_grace_period: 1s
+    <<: *sally-image
+    environment:
+      <<: *python-envs
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "--tries=1", "--no-verbose", "http://127.0.0.1:9923/health" ]
+      <<: *healthcheck
+    ports:
+      - "9923:9923"
+    entrypoint: [ 'sally', 'hook', 'demo' ]
+
+  # Sally Verifier in Direct mode
+  verifier:
+    stop_grace_period: 1s
+    <<: *sally-image
+    environment: 
+      <<: *python-envs
+      SALLY_KS_NAME: verifier
+      SALLY_SALT: 0ABVqAtad0CBkhDhCEPd514T
+      SALLY_PASSCODE: 4TBjjhmKu9oeDp49J7Xdy
+      SALLY_PORT: 9723
+      WEBHOOK_URL: http://resource:9923
+      GEDA_PRE: ${GEDA_PRE:-ED1e8pD24aqd0dCZTQHaGpfcluPFD2ajGIY3ARgE5Yvr}
+    volumes:
+      - ./config/verifier-sally/verifier.json:/sally/conf/keri/cf/verifier.json
+      - ./config/verifier-sally/incept-no-wits.json:/sally/conf/incept-no-wits.json
+      - ./config/verifier-sally/entry-point.sh:/sally/entry-point.sh
+      - verifier-vol:/usr/local/var/keri
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "--tries=1", "--no-verbose", "http://127.0.0.1:9723/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    ports:
+      - "9723:9723"
+    entrypoint: "/sally/entry-point.sh"
+    depends_on:
+      schema:
+        condition: service_healthy
+      witness:
+        condition: service_healthy
+
+  # KERI-enabled Agent Delegation Verification Service
+  vlei-verification:
+    build:
+      context: ./config/verifier-sally
+      dockerfile: Dockerfile.verification-keri
+      no_cache: true
+    container_name: vlei_verification
+    hostname: vlei-verification
+    stop_grace_period: 1s
+    environment:
+      <<: *python-envs
+      KERIA_URL: http://keria:3902
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:9723/health" ]
+      <<: *healthcheck
+    ports:
+      - "9724:9723"
+    depends_on:
+      keria:
+        condition: service_healthy
+      schema:
+        condition: service_healthy
+
+  tsx-shell:
+    image: gleif/wkshp-tsx-shell:latest
+    build:
+      context: ./sig-wallet
+      no_cache: true
+    container_name: tsx_shell
+    hostname: tsx_shell
+    restart: unless-stopped
+    stop_grace_period: 1s
+    user: "${UID}:${GID}"   
+    volumes:
+      - ./task-scripts/workshop-env-vars.sh:/vlei/workshop-env-vars.sh
+      - ./task-scripts/tsx-script-runner.sh:/vlei/tsx-script-runner.sh
+      # 2026-08-06 REVERTED to a host bind mount. The volume migration moved
+      # the CONTAINER side to task-data-vol but never updated the ~40 host-side
+      # bash call sites in run-all-buyerseller-4C-with-agents.sh and
+      # task-scripts/**, which still read/write ./task-data on the host.
+      # Result: the TS tasks wrote to the volume, the bash steps then read an
+      # empty host directory, and the workflow died at [2/8] with
+      #   cat: ./task-data/geda-aid.txt: No such file or directory
+      # Host and container MUST see one directory until those scripts are
+      # converted. Re-apply task-data-vol only together with that conversion.
+      - ./task-data:/task-data
+      - ./sig-wallet:/vlei/sig-wallet
+      - ./appconfig:/vlei/appconfig:ro  # Config files including schemaSaids.json
+    entrypoint: tail -f /dev/null
+    tty: true
+
+
+  # ==========================================================================
+  # Hosting-readiness fix: docker-socket-proxy sits between api-server and the
+  # real Docker socket. api-server's shell scripts need `docker exec` into
+  # tsx_shell (and nothing else) - before this, api-server had the REAL
+  # /var/run/docker.sock mounted directly, meaning anything that compromised
+  # api-server (e.g. the command-injection bug just fixed in server.js) had
+  # full Docker control: create/delete any container, read any other
+  # container's mounted secrets, pull arbitrary images, etc.
+  #
+  # This proxy exposes a narrow, allow-listed subset of the Docker API over
+  # plain TCP on the internal network only (no published port). Only
+  # CONTAINERS (list/inspect) and EXEC (create+start, i.e. `docker exec`) are
+  # permitted; every other category (IMAGES, VOLUMES, NETWORKS, BUILD,
+  # SWARM, SYSTEM, etc.) is denied by default. api-server talks to this proxy
+  # via DOCKER_HOST instead of the real socket - the docker CLI inside
+  # api-server's scripts respects DOCKER_HOST automatically, so no script
+  # changes were needed.
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: docker_socket_proxy
+    restart: unless-stopped
+    environment:
+      # Handshake / read-only, needed for the docker CLI to work at all.
+      VERSION: 1
+      PING: 1
+      # What api-server's scripts actually use: list/inspect containers by
+      # name, then exec into them.
+      CONTAINERS: 1
+      EXEC: 1
+      POST: 1
+      # Everything else defaults to 0 (denied) in this image unless listed -
+      # explicit here for the reviewer, not because it changes behavior:
+      IMAGES: 0
+      VOLUMES: 0
+      NETWORKS: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      INFO: 0
+      NODES: 0
+      PLUGINS: 0
+      SERVICES: 0
+      SESSION: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+    volumes:
+      # Read-only mount of the REAL socket - only this proxy container ever
+      # touches it directly now.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # No ports published - only reachable from other containers on this
+    # compose network (api-server), same as every other internal-only service.
+
+  # ==========================================================================
+  # Phase 1: containerised vLEI verification / IPEX API server.
+  #
+  # Service name is `api-server` (container `api_server`) to match the existing
+  # tsx-shell/tsx_shell and vlei-shell/vlei_shell convention in this file.
+  #
+  # It shells out to the OTHER containers over the mounted docker socket using
+  # plain `docker exec`. That only works because Phase 0 fix D0-2 converted the
+  # call sites away from `docker compose exec` - this container has no compose
+  # project context. Any surviving `docker compose exec` WILL fail in here; the
+  # image deliberately ships the docker CLI without the compose plugin so the
+  # failure is immediate and obvious rather than silent.
+  #
+  # Deliberately NOT copied from tsx-shell / vlei-verification: `no_cache: true`.
+  # That forces a full rebuild on every single `docker compose up` and is the
+  # reason those two services are slow to start.
+  # ==========================================================================
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+      args:
+        NODE_VERSION: ${API_NODE_VERSION:-22}
+        DOCKER_CLI_VERSION: ${API_DOCKER_CLI_VERSION:-27.5.1}
+    # NOTE: no `image:` key on purpose. A registry-shaped tag like
+    # `legentvlei/api-server:latest` makes compose attempt a Docker Hub pull first
+    # ("pull access denied for legentvlei/api-server") before falling back to the
+    # local build. Omitting it lets compose name the image <project>-api-server,
+    # build it locally, and cache layers normally - no pull, no forced rebuild.
+    container_name: api_server
+    hostname: api_server
+    restart: unless-stopped
+    stop_grace_period: 5s
+
+    # Same UID:GID as tsx-shell, so files this container writes into the
+    # bind-mounted ./task-data stay owned by you and readable by tsx-shell.
+    user: "${UID:-1000}:${GID:-1000}"
+
+    environment:
+      # NOTE: deliberately does NOT merge *python-envs. This is a Node service;
+      # PYTHONUNBUFFERED / PYTHONIOENCODING / PYTHONWARNINGS do nothing here.
+      PORT: 4000
+      # Repo root INSIDE the container. The image itself lives at /app.
+      VLEI_DIR: /vlei-repo
+      # Container-network KERIA endpoints. api-server/.env points at
+      # localhost:390x, which is correct from the Windows host and wrong from
+      # in here. dotenv does NOT override already-set env vars, so these win.
+      KERIA_ADMIN_URL: http://keria:3901
+      KERIA_BOOT_URL:  http://keria:3903
+      KERIA_OOBI_BASE: http://keria:3902
+      # Windows absolute paths in api-server/.env rewritten to container paths.
+      # Both resolve inside the bind mount, so the KRAM server bran persists on
+      # the host across container rebuilds.
+      KRAM_SERVER_BRAN_PATH:  /vlei-repo/api-server/.kram-server-bran.txt
+      # Hosting-readiness fix: was ONLY the buyer's info file. Now that
+      # seller-originated routes (seller/verify/buyer, seller/verify/ext/buyer)
+      # also carry kramVerify, the seller's AID needs to be resolvable here
+      # too, or every seller-originated authenticated call 401s as an
+      # "unknown caller AID".
+      KRAM_CALLER_INFO_PATHS: /vlei-repo/task-data/tommyBuyerAgent-info.json,/vlei-repo/task-data/jupiterSellerAgent-info.json
+      MAX_MESSAGE_AGE_MS: ${MAX_MESSAGE_AGE_MS:-300000}
+      MAX_FUTURE_SKEW_MS: ${MAX_FUTURE_SKEW_MS:-30000}
+
+      # --- test/kram-verify-middleware.test.js fixtures -------------------
+      # Required by the A.6 round-trip test (see that file's header). They are
+      # the buyer's REAL info + bran, read from the bind-mounted task-data, so
+      # the test signs with a real KERI key and resolves it live from KERIA.
+      # Harmless to the running server - server.js never reads them - and
+      # setting them here is what makes `docker compose run --rm api-server
+      # npm test` work with no extra -e flags.
+      # Override per-run with:  docker compose run -e BUYER_ALIAS=... --rm ...
+      BUYER_INFO_PATH: /vlei-repo/task-data/${KRAM_TEST_BUYER_ALIAS:-tommyBuyerAgent}-info.json
+      BUYER_BRAN_PATH: /vlei-repo/task-data/${KRAM_TEST_BUYER_ALIAS:-tommyBuyerAgent}-bran.txt
+      # Hosting-readiness fix: buyer/seller now DO sign their verify/*
+      # calls (vlei-verification-client.ts uses KramSigner.produceHttpHeaders()
+      # when SIGNING_MODE=kram), and 5 of the verify routes now carry
+      # kramVerify. Left at false by default still - deliberately NOT flipped
+      # to true as part of this pass, since it's untested end-to-end (no way
+      # to run the actual Docker stack from here). Test with false first
+      # (confirms the new signing code path itself doesn't break anything),
+      # THEN set KRAM_REQUIRED=true in .env and retest a full negotiation
+      # before relying on it. IPEX routes (issue-and-grant, admit) and
+      # /api/status are NOT yet signed from the DD side - do not add
+      # kramVerify to those without adding matching signing first, or they
+      # will 401 once KRAM_REQUIRED=true.
+      KRAM_REQUIRED: ${KRAM_REQUIRED:-false}
+
+      # Hosting-readiness fix: point the docker CLI (used inside the shelled-
+      # out scripts) at the narrow socket-proxy instead of a real socket.
+      # No script changes needed - `docker exec` etc. respect DOCKER_HOST.
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
+
+    # Hosting-readiness pass: narrowed from a full repo mount (`./:/vlei-repo`)
+    # to just the files/dirs server.js actually touches (task-data, task-scripts,
+    # appconfig, the 3 test-agent-verification-*.sh scripts it shells out to, and
+    # its own KRAM server bran file). Previously the whole repo - including
+    # .env files, .git, sig-wallet source, this docker-compose.yml itself - was
+    # readable/writable from inside this container. The Docker socket mount is
+    # unchanged here; it's a separate, larger fix (socket-proxy or removing the
+    # docker-exec pattern entirely) tracked as a follow-up, not done in this pass.
+    volumes:
+      # 2026-08-06 REVERTED to a host bind mount, matching tsx-shell above -
+      # see the rationale there. Still the SAME directory tsx-shell and the DD
+      # agents see, just at a different in-container path, because server.js
+      # resolves it via VLEI_DIR (/vlei-repo) per ADR-001 D3.
+      - ./task-data:/vlei-repo/task-data
+      - ./task-scripts:/vlei-repo/task-scripts:ro
+      - ./appconfig:/vlei-repo/appconfig:ro
+      - ./test-agent-verification-DEEP.sh:/vlei-repo/test-agent-verification-DEEP.sh:ro
+      - ./test-agent-verification-DEEP-EXT.sh:/vlei-repo/test-agent-verification-DEEP-EXT.sh:ro
+      - ./test-agent-verification-DEEP-credential.sh:/vlei-repo/test-agent-verification-DEEP-credential.sh:ro
+      - ./api-server/.kram-server-bran.txt:/vlei-repo/api-server/.kram-server-bran.txt
+      # Hosting-readiness fix: the real Docker socket is no longer mounted
+      # here directly - see docker-socket-proxy above. api-server reaches
+      # Docker only through that narrow, allow-listed proxy now.
+
+    # Hosting-readiness pass: no longer published to the host. Nothing on the
+    # host side needs to reach this directly - the DD trading agents (dd-seller/
+    # dd-buyer) already call it via the internal Docker network at
+    # http://api_server:4000, which this change does not affect. This just
+    # removes the publicly-bindable host port as an attack surface. If you need
+    # to curl it directly from the host for debugging, temporarily add back:
+    #   ports:
+    #     - "${API_SERVER_PORT:-4000}:4000"
+    expose:
+      - "4000"
+
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:4000/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
+
+    depends_on:
+      schema:
+        condition: service_healthy
+      keria:
+        condition: service_healthy
+      tsx-shell:
+        condition: service_started   # tsx-shell has no healthcheck
+      docker-socket-proxy:
+        condition: service_started   # proxy image has no healthcheck
+
+  # Utility container for running
+  vlei-shell:
+    image: gleif/dws-base:0.3.1
+    container_name: vlei_shell
+    hostname: vlei_shell
+    environment:
+      <<: *python-envs
+    stop_grace_period: 1s
+    volumes:
+      - shell-vol:/usr/local/var/keri
+      - ./task-scripts/workshop-env-vars.sh:/vlei/workshop-env-vars.sh
+      - ./config/geda:/vlei/config
+      - ./task-scripts:/vlei/task-scripts
+    entrypoint: tail -f /dev/null
+    tty: true
+
+#  dws:
+#    image: gleif/did-webs-service:0.3.1
+#    stop_grace_period: 1s
+#    environment:
+#      <<: *python-envs
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://127.0.0.1:7680/health" ]
+#      <<: *healthcheck
+#    ports:
+#      - "7680:7680"
+#    volumes:
+#      - ./did-webs:/dws
+#      - shell-vol:/usr/local/var/keri
+#    entrypoint: [
+#      "dws", "did", "webs", "service",
+#      "--http", "7680",
+#      "--name", "geda",
+#      "--alias", "geda",
+#      "--config-dir", "/dws/config/controller",
+#      "--config-file", "geda",
+#      "--did-path", "dws",
+#      "--loglevel", "INFO"
+#    ]
+#
+#  dws-resolver:
+#    image: gleif/did-webs-resolver-service:0.3.1
+#    container_name: dws-resolver
+#    hostname: dws-resolver
+#    environment:
+#      <<: *python-envs
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://127.0.0.1:7677/health" ]
+#      <<: *healthcheck
+#    depends_on:
+#      dws:
+#        condition: service_healthy
+#    stop_grace_period: 1s
+#    ports:
+#      - "7677:7677"
+#    volumes:
+#      - ./dws_resolver:/dws/config/
+#      - ./dws_resolver/resolver-init.sh:/dws/resolver-init.sh
+#      - resolver-vol:/usr/local/var/keri
+#    entrypoint: /dws/resolver-init.sh
+
+
+

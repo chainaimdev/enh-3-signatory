@@ -1,0 +1,57 @@
+{
+  "name": "Tommy Treasury Agent",
+  "description": "Sub-delegated treasury AI agent for TOMMY HILFIGER EUROPE B.V., acting under tommyBuyerAgent.",
+  "url": "http://localhost:7070/",
+  "provider": {
+    "organization": "TOMMY HILFIGER EUROPE B.V.",
+    "url": "https://jupiterknitting.com"
+  },
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "stateTransitionHistory": true
+  },
+  "skills": [],
+  "extensions": {
+    "gleifIdentity": {
+      "lei": "54930012QJWZMYHNJW95",
+      "legalEntityName": "TOMMY HILFIGER EUROPE B.V.",
+      "registryName": "Tommy_Hilfiger_Europe-oor-registry",
+      "qvi": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43",
+      "officialRole": "ChiefFinancialOfficer",
+      "engagementRole": "Treasury Agent"
+    },
+    "vLEImetadata": {
+      "agentName": "TommyTreasuryAgent",
+      "oorHolderName": "Tommy_Chief_Procurement_Officer",
+      "parentAgentName": "tommyBuyerAgent",
+      "isSubDelegation": true,
+      "scope": "treasury_operations",
+      "canDelegate": false,
+      "delegatorAID": "EIZ6V8SKmpHxbnxWa1Cp15oeJQVZJAZd3L7R5uHvaRY0",
+      "delegateeAID": "ENk8LoeBgqqbkA8XRrRaFeUv6TLC_dq7Rpzuo24UzjF5",
+      "delegatorOOBI": "http://keria:3902/oobi/EIZ6V8SKmpHxbnxWa1Cp15oeJQVZJAZd3L7R5uHvaRY0/agent/EJLvnX36lz-5rVxsPIXVzPlnic1A--utqCcv4gVwt8P8",
+      "delegateeOOBI": "http://keria:3902/oobi/ENk8LoeBgqqbkA8XRrRaFeUv6TLC_dq7Rpzuo24UzjF5/agent/EFCUEAavx93o8Il58ClkBYLH6C5eGscsWSaHg1bmtBMT",
+      "oorHolderAID": "EHIgIhg0npXfvO6dATEnrQxvrdEOJSeJq4w5lIClBQv_",
+      "oorHolderOOBI": "http://keria:3902/oobi/EHIgIhg0npXfvO6dATEnrQxvrdEOJSeJq4w5lIClBQv_/agent/ENU_fRs6eSBDAH8uIT-Xj8f5Bgi3EI3uIH2j00yXpVs2",
+      "leAID": "EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5",
+      "leOOBI": "http://keria:3902/oobi/EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5/agent/EMSqy9flKY2rXNP3ICEtCAF4yeKOcP5LMVAYN6sF7qcX",
+      "verificationPath": [
+        "GLEIF_ROOT → QVI",
+        "QVI → TOMMY HILFIGER EUROPE B.V. → Chief Procurement Officer → tommyBuyerAgent → TommyTreasuryAgent"
+      ],
+      "timestamp": "2026-11-13T06:02:52.096Z"
+    },
+    "gleifVerification": {
+      "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/54930012QJWZMYHNJW95"
+    },
+    "keriIdentifiers": {
+      "agentAID": "ENk8LoeBgqqbkA8XRrRaFeUv6TLC_dq7Rpzuo24UzjF5",
+      "parentAgentAID": "EIZ6V8SKmpHxbnxWa1Cp15oeJQVZJAZd3L7R5uHvaRY0",
+      "oorHolderAID": "EHIgIhg0npXfvO6dATEnrQxvrdEOJSeJq4w5lIClBQv_",
+      "legalEntityAID": "EAPFvsQPk6T3MFEAyDgd0jOGur6cMTUhpjsx3xlMz6B5",
+      "qviAID": "EGtRZEStS1_654qzHzaRm4WozxiymCVK7lN53-cJAH43",
+      "publicKey": "DI2WZo18quYumlVdNsTSIgGrbCmRWFi5y7UXegx1WBMf"
+    }
+  }
+}

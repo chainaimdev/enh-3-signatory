@@ -1,0 +1,17 @@
+{
+  "name": "chainaim-signatory-services",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Signer (S-4) and bridge (S-5) for the chainaim-signatory contract. Run in WSL Ubuntu next to ~/.near-credentials.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "signer": "node signer/index.mjs",
+    "bridge": "node bridge/index.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "near-api-js": "7.4.0"
+  }
+}

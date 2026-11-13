@@ -1,0 +1,30 @@
+################################################################################
+# api-server/.dockerignore
+#
+# node_modules is the important line. The host tree is WINDOWS-BUILT; letting it
+# into the build context would both bloat the context and risk `COPY . .`
+# landing it on top of the Linux tree that `npm ci` just produced.
+################################################################################
+
+node_modules
+npm-debug.log*
+.npm
+
+# Secrets / host-specific config. The container gets all of these from
+# docker-compose.yml `environment:` instead - the committed .env points at
+# C:\SATHYA\... paths and localhost KERIA ports, both wrong inside a container.
+.env
+.env.*
+.kram-server-bran.txt
+
+# VCS / editor / OS noise
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Docker's own files - never needed inside the image
+Dockerfile
+.dockerignore

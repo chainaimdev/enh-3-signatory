@@ -1,0 +1,20 @@
+{
+  "evidenceUrl": "./data/signatory-evidence.json",
+  "accountsUrl": "./data/accounts.json",
+  "rpcUrl": "https://test.rpc.fastnear.com",
+  "contractId": "chainaim-signatory.testnet",
+  "signerUrl": "http://127.0.0.1:8771",
+  "bridgeUrl": "http://127.0.0.1:8772",
+  "advisorsUrl": "",
+  "demoScale": 1000000,
+  "realCurrency": "USD",
+  "pollMs": 2000,
+  "probeMs": 1500,
+  "explorer": "https://testnet.nearblocks.io",
+  "explorerTxPath": "/txns/",
+  "explorerAccountPath": "/address/",
+  "sellerAgent": "jupiterSellerAgent",
+  "buyerAgent": "tommyBuyerAgent",
+  "txIndexUrl": "https://tx.test.fastnear.com",
+  "runnerUrl": "http://127.0.0.1:8774"
+}

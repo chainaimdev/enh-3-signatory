@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: a trade floor. Buyer ladder | invoice, scenarios, timeline | seller ladder. Every value comes from config or evidence. */
+  --bg:#f2f4f7; --surface:#ffffff; --surface-2:#eceff4; --ink:#17212f; --muted:#5a6676; --line:#d8dee7;
+  --accent:#2f4fb5; --accent-ink:#ffffff;
+  --buyer:#0d7466; --buyer-soft:#e0f2ee; --seller:#a95410; --seller-soft:#faecdc;
+  --registrar:#2f4fb5; --contract:#6b3fa0; --ok:#1d7439; --ok-soft:#e2f2e7; --warn:#8f5d00; --warn-soft:#fcf0d4; --bad:#b02424; --bad-soft:#fae5e5;
+  --font-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f141b; --surface:#161d27; --surface-2:#1d2633; --ink:#e5eaf1; --muted:#9ba7b8; --line:#2a3544;
+    --accent:#8ea4ff; --accent-ink:#0f141b;
+    --buyer:#52c4b2; --buyer-soft:#12302c; --seller:#f0a65e; --seller-soft:#34230f;
+    --registrar:#8ea4ff; --contract:#c3a3f5; --ok:#62cf86; --ok-soft:#13301d; --warn:#f0c55c; --warn-soft:#342a10; --bad:#ff8080; --bad-soft:#3a1717;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --surface:#161d27; --surface-2:#1d2633; --ink:#e5eaf1; --muted:#9ba7b8; --line:#2a3544;
+  --accent:#8ea4ff; --accent-ink:#0f141b;
+  --buyer:#52c4b2; --buyer-soft:#12302c; --seller:#f0a65e; --seller-soft:#34230f;
+  --registrar:#8ea4ff; --contract:#c3a3f5; --ok:#62cf86; --ok-soft:#13301d; --warn:#f0c55c; --warn-soft:#342a10; --bad:#ff8080; --bad-soft:#3a1717;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.5}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:600}
+h1{font-size:18px} h2{font-size:15px} h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:500}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.id{font-family:var(--font-mono);font-size:12px;white-space:nowrap}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header.top{background:var(--surface);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand small{color:var(--muted)}
+.strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chipst{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:2px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.chipst b{font-weight:600}
+.chipst.ok{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+.chipst.warn{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.chipst.bad{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+.chipst.off{color:var(--muted)}
+.tabsrow{background:var(--surface);border-bottom:1px solid var(--line);padding:6px 20px}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap;max-width:1440px;margin:0 auto}
+nav.tabs a{padding:7px 14px;border-radius:8px;text-decoration:none;color:var(--muted);border:1px solid transparent;font-weight:500;white-space:nowrap}
+nav.tabs a[aria-current="page"]{background:var(--surface-2);color:var(--ink);border-color:var(--line)}
+nav.tabs a .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.badge{display:inline-block;min-width:18px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;margin-left:6px;text-align:center}
+main{padding:16px 20px 32px;max-width:1440px;margin:0 auto}
+section.view{display:none}
+section.view.active{display:block}
+
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.linkbtn{border:0;background:none;padding:0 2px;color:var(--accent);cursor:pointer;font-size:12px;text-decoration:underline;text-underline-offset:2px}
+.reason{color:var(--warn);font-size:12px;margin-top:4px}
+.reason div{margin:0}
+.tag-b{color:var(--buyer);font-weight:600} .tag-s{color:var(--seller);font-weight:600}
+
+/* banners */
+.banner{border-radius:12px;padding:10px 14px;margin-bottom:12px;border:1px solid var(--line);background:var(--surface)}
+.banner.bad{border-color:var(--bad);background:var(--bad-soft);color:var(--ink)}
+.banner.bad b{color:var(--bad)}
+.banner.warn{border-color:var(--warn);background:var(--warn-soft)}
+.banner ul{margin:6px 0 0;padding-left:18px}
+.full{max-width:720px;margin:48px auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
+.full h2{margin-bottom:8px}
+.full code{font-family:var(--font-mono);font-size:13px;background:var(--surface-2);padding:1px 6px;border-radius:6px}
+
+/* floor */
+.floor{display:grid;grid-template-columns:290px minmax(0,1fr) 290px;gap:16px;align-items:start}
+.ladder{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ladder.buyer{border-top:3px solid var(--buyer)} .ladder.seller{border-top:3px solid var(--seller)}
+.ladder > header{display:flex;flex-direction:column;gap:2px;margin-bottom:2px}
+.ladder > header small{color:var(--muted)}
+.node{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface-2);min-width:0}
+.node.l1{margin-left:14px;border-style:dashed}
+.node.l2{margin-left:28px;border-style:dashed}
+.node.failed{border-color:var(--bad)}
+.node .nm{font-weight:600;font-size:13px;display:flex;justify-content:space-between;gap:6px;align-items:baseline;flex-wrap:wrap;overflow-wrap:anywhere}
+.node .meta{font-size:12px;color:var(--muted)}
+.node .badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.kind{font-size:11px;color:var(--muted);font-weight:500}
+
+.center{display:flex;flex-direction:column;gap:12px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.card h2{margin-bottom:10px}
+.card .sub{color:var(--muted);font-size:12px;margin:-6px 0 10px}
+.kv{display:grid;grid-template-columns:150px minmax(0,1fr);gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.amounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.amount{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface-2)}
+.amount .n{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:18px;font-weight:600;text-align:right}
+.amount .l{color:var(--muted);font-size:12px}
+.cardfoot{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
+
+.rail{display:flex;flex-direction:column;gap:8px}
+.step{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:4px 10px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface-2)}
+.step .num{font-family:var(--font-mono);font-weight:600;color:var(--muted)}
+.step .ttl{font-weight:500}
+.step .btn{grid-column:3;grid-row:1}
+.step .reason{grid-column:2 / span 2}
+
+.timeline{display:flex;flex-direction:column;gap:8px}
+.ev{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);max-width:88%}
+.ev.buyer{background:var(--buyer-soft);border-color:color-mix(in srgb,var(--buyer) 35%,var(--line));align-self:flex-start}
+.ev.seller{background:var(--seller-soft);border-color:color-mix(in srgb,var(--seller) 35%,var(--line));align-self:flex-end}
+.ev.cross{background:var(--surface-2);align-self:center;max-width:94%}
+.ev.sys{background:transparent;border-style:dashed;align-self:center;max-width:94%;color:var(--muted)}
+.ev time{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.ev .actor{font-weight:600;font-size:12px}
+.ev .actor.b{color:var(--buyer)} .ev .actor.s{color:var(--seller)}
+.ev .txt{font-size:13px;overflow-wrap:anywhere}
+
+/* tables */
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px}
+.tbl{overflow-x:auto}
+table.data{width:100%;border-collapse:collapse;font-size:13px}
+table.data th{text-align:left;color:var(--muted);font-weight:500;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.data td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.data td.num{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);font-weight:500;white-space:nowrap}
+.pill.ai{color:var(--accent);border-color:var(--accent)}
+.pill.human{color:var(--seller);border-color:var(--seller)}
+.pill.ok{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+.pill.bad{color:var(--bad);border-color:var(--bad);background:var(--bad-soft)}
+.pill.warn{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.empty{color:var(--muted);font-size:13px;padding:8px 0}
+.note{color:var(--muted);font-size:12px;margin-top:8px}
+.skel{color:var(--muted)}
+/* UI-2: NEAR state */
+.stale{opacity:.55}
+.lim{font-size:12px;margin-top:4px}
+.lim b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:600}
+.pick{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px}
+.btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--surface-2)}
+.step .more{grid-column:2 / span 2;font-size:12px}
+.result{grid-column:2 / span 2;font-size:12px;border-radius:8px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);overflow-wrap:anywhere}
+.result.ok{border-color:var(--ok)} .result.bad{border-color:var(--bad)}
+.result .mono{font-size:12px}
+.approval{margin-top:6px;border:1px solid var(--warn);background:var(--warn-soft);border-radius:8px;padding:6px 8px;font-size:12px}
+.approval .row{margin-top:4px}
+details.raw summary{cursor:pointer;color:var(--muted);font-size:12px}
+details.raw pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--font-mono);font-size:11px;margin:4px 0 0}
+a.tx{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+/* UI-2R chat (§5.1-B) */
+.chathd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.chathd h2{margin:0}
+#convo-card input,#convo-card select{flex:1 1 200px;min-width:0;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+#convo-card .row > select{flex:1 1 200px}
+.people{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px;font-size:12px}
+.person{--c:var(--muted);display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-left:3px solid var(--c);border-radius:10px;padding:4px 8px;background:var(--surface-2);min-width:0}
+.person b{font-weight:600}
+.chatlog{display:flex;flex-direction:column;gap:8px;max-height:680px;overflow-y:auto;padding:4px 2px}
+.bub{--c:var(--muted);display:grid;grid-template-columns:32px minmax(0,1fr);gap:8px;align-items:start;max-width:94%}
+.bub.seller,.person.seller{--c:var(--seller)} .bub.buyer,.person.buyer{--c:var(--buyer)} .bub.registrar,.person.registrar{--c:var(--registrar)} .bub.contract,.person.contract{--c:var(--contract)} .bub.human,.person.human{--c:var(--muted)}
+.bub .av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:2px solid var(--c);font-size:15px;line-height:1}
+.bub .bb{border:1px solid var(--line);border-left:4px solid var(--c);border-radius:4px 12px 12px 12px;padding:6px 10px;background:var(--surface-2);min-width:0;font-size:13px}
+.bub .hd{display:flex;gap:6px;flex-wrap:wrap;align-items:baseline;font-size:12px}
+.bub .who{font-weight:600;color:var(--c)}
+.bub .txt{overflow-wrap:anywhere;margin-top:2px}
+.bub time{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.bub.you{margin-left:auto;grid-template-columns:minmax(0,1fr)}
+.bub.you .bb{border-left-width:1px;border-right:4px solid var(--accent);border-radius:12px 4px 12px 12px;background:var(--surface)}
+.chatlog.replay .bub .bb{border-style:dashed;border-left-style:solid}
+.hist{font-size:11px;color:var(--muted);font-style:italic}
+.typing{font-size:12px;color:var(--muted);margin-top:4px}
+.sysline{align-self:center;font-size:12px;color:var(--muted);text-align:center;max-width:94%;overflow-wrap:anywhere}
+.summary{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);font-size:13px}
+.summary h3{margin:6px 0 4px}
+.prevrun{border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--surface)}
+.prevrun > summary{cursor:pointer;font-size:13px}
+.composer{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;vertical-align:middle}
+.offbtn{margin-top:6px}
+@media (prefers-reduced-motion: no-preference){
+  section.view.active{animation:fade .15s ease-out}
+  @keyframes fade{from{opacity:.4}to{opacity:1}}
+  .spin{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+}
+@media (max-width:1100px){
+  .floor{grid-template-columns:minmax(0,1fr)}
+  .ev{max-width:100%}
+}
+@media (max-width:760px){
+  header.top,.tabsrow{padding-left:16px;padding-right:16px}
+  nav.tabs{flex-wrap:nowrap;overflow-x:auto}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  .kv{grid-template-columns:minmax(0,1fr)}
+  .kv dt{margin-top:4px}
+  .amounts{grid-template-columns:minmax(0,1fr)}
+  .ev{grid-template-columns:minmax(0,1fr)}
+  .chipst{white-space:normal}
+  .node.l1{margin-left:8px} .node.l2{margin-left:16px}
+  .step{grid-template-columns:24px minmax(0,1fr)}
+  .step .btn{grid-column:2;grid-row:auto;justify-self:start}
+  .step .reason,.step .more,.result{grid-column:2}
+  main{padding:12px 16px 24px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>Signatory</h1>
+    <small>Private AI decides. Signed credentials prove. NEAR enforces.</small>
+  </div>
+  <div class="strip" id="strip" aria-label="Status"></div>
+</header>
+<div class="tabsrow">
+  <nav class="tabs" aria-label="Views">
+    <a href="#live" data-tab="live">Live floor<span class="badge" id="badge-live" hidden></span></a>
+    <a href="#buyer" data-tab="buyer"><span class="dot" style="background:var(--buyer)"></span><span id="tab-buyer">Buyer</span><span class="badge" id="badge-buyer" hidden></span></a>
+    <a href="#seller" data-tab="seller"><span class="dot" style="background:var(--seller)"></span><span id="tab-seller">Seller</span><span class="badge" id="badge-seller" hidden></span></a>
+    <a href="#proof" data-tab="proof">Proof trail</a>
+  </nav>
+</div>
+
+<main id="main">
+<div id="banners"></div>
+<section class="view" id="view-live">
+  <div class="floor">
+    <aside class="ladder buyer" id="ladder-buyer" aria-label="Buyer authority ladder"></aside>
+    <div class="center">
+      <div class="card" id="convo-card">
+        <div class="chathd"><h2>Chat</h2>
+          <div class="row" role="group" aria-label="Chat view"><button id="v-live" class="btn" type="button" aria-pressed="true">Live</button><button id="v-replay" class="btn" type="button" aria-pressed="false">Replay</button></div></div>
+        <p class="sub">Every bubble is a real step: live bubbles come from the runner's event stream (and your own clicks), replays from recorded NEAR events and the vLEI evidence. No artificial delays.</p>
+        <div id="chat-people" class="people"></div>
+        <div id="pane-live">
+          <div class="chatlog" id="chat-live" aria-live="polite"></div>
+          <div class="composer">
+            <div class="row"><input id="req" type="text" autocomplete="off" maxlength="500" placeholder="Request as the buyer, e.g. Need 8,000 t-shirts, about $84,000" aria-label="Request to the buyer agent"><button id="run-text" class="btn primary" type="button" disabled>Send</button></div>
+            <details class="raw"><summary>or run a specific invoice</summary><div class="row"><select id="pick" aria-label="Runnable invoice"></select><button id="run-pick" class="btn" type="button" disabled>Run invoice</button></div></details>
+            <div id="run-reason"></div>
+          </div>
+        </div>
+        <div id="pane-replay" hidden>
+          <div class="row"><select id="replay-pick" aria-label="Completed invoice to replay"></select><button id="replay-go" class="btn" type="button" disabled>Replay</button></div>
+          <div class="reason" id="replay-reason"></div>
+          <div class="chatlog replay" id="chat-replay"></div>
+        </div>
+      </div>
+      <div class="card" id="invoice-card" aria-live="polite"></div>
+      <div class="card"><h2>Scenarios</h2><div class="rail" id="rail"></div></div>
+      <div class="card"><h2>All recorded events</h2><p class="sub">vLEI events from the evidence file, then NEAR contract events from get_events (tx found by exact log match in the tx index). Entries with no recorded time show none.</p><div class="timeline" id="timeline"></div></div>
+    </div>
+    <aside class="ladder seller" id="ladder-seller" aria-label="Seller authority ladder"></aside>
+  </div>
+</section>
+<section class="view" id="view-buyer"></section>
+<section class="view" id="view-seller"></section>
+<section class="view" id="view-proof"></section>
+</main>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const el = (tag, attrs, ...kids) => {
+  const n = document.createElement(tag);
+  if (attrs) for (const k in attrs){
+    if (k === "class") n.className = attrs[k];
+    else if (k === "text") n.textContent = attrs[k];
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), attrs[k]);
+    else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) n.setAttribute(k, attrs[k]);
+  }
+  for (const c of kids){ if (c === null || c === undefined || c === false) continue; n.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return n;
+};
+const isStr = v => typeof v === "string";
+const isObj = v => v !== null && typeof v === "object" && !Array.isArray(v);
+const DASH = "—";
+
+/* ---------- theme (data-theme hooks in the CSS) ---------- */
+const THEMES = ["auto","light","dark"];
+function applyTheme(t){
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  else document.documentElement.removeAttribute("data-theme");
+}
+let theme = "auto";
+try { const t = localStorage.getItem("signatory-theme"); if (THEMES.includes(t)) theme = t; } catch (e) {}
+applyTheme(theme);
+
+/* ---------- fmt ---------- */
+const fmt = {
+  short(id){ return isStr(id) && id.length > 16 ? id.slice(0,8) + "…" + id.slice(-5) : (isStr(id) ? id : DASH); },
+  date(iso){
+    if (!isStr(iso)) return null;
+    const d = new Date(iso); if (isNaN(d)) return null;
+    const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()];
+    return `${d.getUTCDate()} ${m} ${d.getUTCFullYear()} ${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")} UTC`;
+  },
+  day(iso){ const s = fmt.date(iso); return s ? s.replace(/ \d\d:\d\d UTC$/, "") : DASH; },
+  bytes(s){ return isStr(s) ? new TextEncoder().encode(s).length : 0; },
+  // Exact decimal × integer scale with BigInt (no floating point). Returns {text, exact} or null.
+  scale(dec, scale){
+    if (!isStr(dec) || !/^\d+(\.\d+)?$/.test(dec) || !Number.isSafeInteger(scale) || scale <= 0) return null;
+    const [i, f = ""] = dec.split(".");
+    const denom = 10n ** BigInt(f.length);
+    const val = BigInt(i + f) * BigInt(scale);
+    const whole = val / denom, rem = val % denom;
+    const cents = (rem * 100n) / denom;
+    return { text: whole.toLocaleString("en-US") + "." + String(cents).padStart(2, "0"), exact: (rem * 100n) % denom === 0n };
+  },
+  // Integer token units (decimal string from the contract) → decimal text at `d` decimals (BigInt, no floats).
+  units(u, d){
+    if (!/^\d+$/.test(String(u)) || !Number.isInteger(d) || d < 0) return null;
+    const s = String(u).padStart(d + 1, "0");
+    const w = s.slice(0, s.length - d), f = d ? s.slice(s.length - d).replace(/0+$/, "") : "";
+    return f ? `${w}.${f}` : w;
+  },
+  // Block timestamp in ns (string) → "13 Nov 2026 08:41:02 UTC".
+  ns(ns){
+    if (!/^\d+$/.test(String(ns))) return null;
+    const d = new Date(Number(BigInt(ns) / 1000000n)); if (isNaN(d)) return null;
+    const s = fmt.date(d.toISOString()); return s ? s.replace(/ UTC$/, `:${String(d.getUTCSeconds()).padStart(2,"0")} UTC`) : null;
+  },
+  clock(ms){ const d = new Date(ms); return isNaN(d) ? DASH : d.toLocaleTimeString("en-GB"); },
+};
+// Decimal string → integer units at `d` decimals (BigInt), null if it does not fit exactly.
+function decToUnits(dec, d){
+  if (!isStr(dec) || !/^\d+(\.\d+)?$/.test(dec) || !Number.isInteger(d)) return null;
+  const [i, f = ""] = dec.split(".");
+  if (f.length > d) return null;
+  return BigInt(i + f.padEnd(d, "0"));
+}
+// The amount exactly as serialized in the signed credential (acdcRaw), so no float re-formatting.
+function rawNumber(raw, key){
+  if (!isStr(raw)) return null;
+  const m = raw.match(new RegExp('"' + key + '"\\s*:\\s*(-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)'));
+  return m ? m[1] : null;
+}
+
+/* ---------- copy ---------- */
+function copyBtn(value, label){
+  const b = el("button",{class:"linkbtn",type:"button","aria-label":`Copy ${label}`,text:"copy"});
+  b.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(value); b.textContent = "copied"; }
+    catch (e) { b.textContent = "copy failed"; }
+    setTimeout(() => { b.textContent = "copy"; }, 1500);
+  });
+  return b;
+}
+const idSpan = (id, label) => isStr(id) && id ? el("span",{class:"row",style:"gap:4px"}, el("span",{class:"id",title:id,text:fmt.short(id)}), copyBtn(id, label)) : el("span",{class:"skel",text:DASH});
+
+/* ---------- config (§2.3) ---------- */
+const DEFAULTS = {
+  evidenceUrl:"./data/signatory-evidence.json", accountsUrl:"./data/accounts.json", rpcUrl:"", contractId:"",
+  signerUrl:"", bridgeUrl:"", advisorsUrl:"", demoScale:1000000, realCurrency:"USD", pollMs:2000, probeMs:1500,
+  explorer:"", explorerTxPath:"/txns/", explorerAccountPath:"/address/", sellerAgent:"", buyerAgent:"",
+  runnerUrl:"",   // UI-2R: runner :8774 (written by health.mjs --write-ui-config after GET /health passes)
+  txIndexUrl:""   // UI-2: FastNear tx index (POST /v0/account, /v0/transactions) to find the tx of each contract event
+};
+function validateConfig(c){
+  if (!isObj(c)) throw new Error("not a JSON object");
+  const out = {...DEFAULTS};
+  for (const k of Object.keys(DEFAULTS)){
+    if (!(k in c)) continue;
+    const want = typeof DEFAULTS[k];
+    if (typeof c[k] !== want) throw new Error(`"${k}" must be a ${want}`);
+    out[k] = c[k];
+  }
+  for (const k of ["demoScale","pollMs","probeMs"]) if (!Number.isSafeInteger(out[k]) || out[k] <= 0) throw new Error(`"${k}" must be a positive integer`);
+  if (!out.sellerAgent || !out.buyerAgent) throw new Error('"sellerAgent" and "buyerAgent" are required');
+  for (const k of ["rpcUrl","signerUrl","bridgeUrl","advisorsUrl","runnerUrl","explorer","txIndexUrl"]) if (out[k] && !/^https?:\/\//.test(out[k])) throw new Error(`"${k}" must start with http:// or https://`);
+  return out;
+}
+
+/* ---------- evidence (§3) ---------- */
+function validateEvidence(e){
+  const need = (cond, what) => { if (!cond) throw new Error(what); };
+  need(isObj(e), "not a JSON object");
+  need(isStr(e.generatedAt), "generatedAt missing");
+  need(Array.isArray(e.companies) && e.companies.length > 0, "companies[] missing or empty");
+  e.companies.forEach((c, i) => {
+    need(isObj(c) && isStr(c.alias) && isStr(c.name) && isStr(c.lei), `companies[${i}] needs alias, name, lei`);
+    need(Array.isArray(c.officers) && Array.isArray(c.agents), `companies[${i}] needs officers[] and agents[]`);
+    c.officers.forEach((o, j) => need(isObj(o) && isStr(o.alias), `companies[${i}].officers[${j}].alias missing`));
+    c.agents.forEach((a, j) => need(isObj(a) && isStr(a.alias) && isStr(a.delegatorAlias), `companies[${i}].agents[${j}] needs alias and delegatorAlias`));
+  });
+  need(isObj(e.checks) && typeof e.checks.passed === "boolean" && Array.isArray(e.checks.failures), "checks {passed, failures[]} missing");
+  if (e.invoice !== null && e.invoice !== undefined){
+    need(isObj(e.invoice) && isStr(e.invoice.said), "invoice.said missing");
+    need(isObj(e.invoice.ipex), "invoice.ipex missing");
+  }
+  if (e.invoices !== null && e.invoices !== undefined){
+    need(Array.isArray(e.invoices), "invoices must be an array");
+    e.invoices.forEach((x, i) => need(isObj(x) && isStr(x.said) && isObj(x.ipex), `invoices[${i}] needs said and ipex`));
+  }
+  return e;
+}
+
+/* ---------- store ---------- */
+const S = {
+  cfg:null, ev:null, evErr:null,
+  buyer:null, seller:null,           // company objects from evidence
+  probes:{ signer:{st:"pending"}, bridge:{st:"pending"}, advisors:{st:"pending"}, runner:{st:"pending"} },
+  near:{ st:"pending" },
+  // UI-2 (truth stays on chain; nothing below is written to browser storage, N5)
+  acc:null, accErr:null,                 // accounts.json: vLEI alias → NEAR account
+  chain:{ st:"pending", at:0, why:null, config:null, token:null, mandates:{}, invoices:{}, events:[],
+          tx:{}, txLogs:{}, txNote:null, txTriedAt:0, txTriedCount:-1 },
+  sel:null,                              // selected invoice SAID
+  busy:null,                             // label of the action now running
+  results:{},                            // scene key → [{svc, call, http, body, note?}]
+  session:[],                            // answers this page received that left nothing on chain (e.g. tamper refusal)
+  sessionTx:new Set(),                   // tx hashes returned by the services in this page session
+  // UI-2R Phase A
+  runnerInv:{ st:"none", list:[], why:null },   // GET {runnerUrl}/invoices
+  live:{ run:null, posting:false, err:null },   // current/last runner run (SSE, §5.1-A) + inline refusal (409/404/400)
+  chat:[],                                      // [{kind:"run", run} | {kind:"click", row}] in arrival order (this page session)
+  replay:{ said:null, rows:[], shown:0, timer:null },
+  view:"live",
+};
+const SERVICES = [["signer","Signer","signerUrl"],["bridge","Bridge","bridgeUrl"],["advisors","Advisors","advisorsUrl"],["runner","Runner","runnerUrl"]];
+
+async function getJson(url){
+  let res;
+  try { res = await fetch(url, {cache:"no-store"}); }
+  catch (e) { throw new Error(`fetch failed (${e.message})`); }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  try { return await res.json(); } catch (e) { throw new Error("invalid JSON"); }
+}
+
+async function probe(key, urlKey){
+  const url = S.cfg[urlKey];
+  if (!url){ S.probes[key] = {st:"none"}; return; }
+  const target = url.replace(/\/+$/,"") + "/health";
+  try {
+    const res = await fetch(target, {cache:"no-store", signal: AbortSignal.timeout(S.cfg.probeMs)});
+    S.probes[key] = res.ok ? {st:"up", url} : {st:"down", url, why:`HTTP ${res.status}`};
+  } catch (e) { S.probes[key] = {st:"down", url, why: e.name === "TimeoutError" ? `no answer in ${S.cfg.probeMs} ms` : e.message}; }
+}
+
+async function probeNear(){
+  if (!S.cfg.contractId){ S.near = {st:"none"}; return; }
+  if (!S.cfg.rpcUrl){ S.near = {st:"down", why:"rpcUrl not configured"}; return; }
+  try {
+    const res = await fetch(S.cfg.rpcUrl, {method:"POST", headers:{"Content-Type":"application/json"}, cache:"no-store",
+      body: JSON.stringify({jsonrpc:"2.0", id:"signatory", method:"status", params:[]}), signal: AbortSignal.timeout(S.cfg.probeMs * 3)});
+    const j = await res.json();
+    if (!res.ok || !j.result) throw new Error(j.error ? (j.error.message || "RPC error") : `HTTP ${res.status}`);
+    S.near = {st:"up", chain: isStr(j.result.chain_id) ? j.result.chain_id : null};
+  } catch (e) { S.near = {st:"down", why: e.message}; }
+}
+
+/* ---------- NEAR reads (UI-2): view calls on the contract, nothing signed here ---------- */
+async function rpcCall(method, params){
+  const res = await fetch(S.cfg.rpcUrl, {method:"POST", headers:{"Content-Type":"application/json"}, cache:"no-store",
+    body: JSON.stringify({jsonrpc:"2.0", id:"signatory", method, params}), signal: AbortSignal.timeout(S.cfg.probeMs * 4)});
+  let j; try { j = await res.json(); } catch (e) { throw new Error(`RPC HTTP ${res.status}, response not JSON`); }
+  if (j.error) throw new Error(isStr(j.error.data) ? j.error.data : (j.error.cause && j.error.cause.name) || j.error.message || "RPC error");
+  if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
+  return j.result;
+}
+const b64 = s => { let out = ""; for (const b of new TextEncoder().encode(s)) out += String.fromCharCode(b); return btoa(out); };
+async function viewCall(account, method, args){
+  const r = await rpcCall("query", {request_type:"call_function", finality:"final", account_id:account, method_name:method, args_base64:b64(JSON.stringify(args || {}))});
+  if (r.error) throw new Error(r.error);
+  const text = new TextDecoder().decode(new Uint8Array(r.result));
+  return text === "" ? null : JSON.parse(text);
+}
+const PAGE = 100; // contract MAX_EVENTS_PAGE
+async function refreshChain(){
+  if (!S.cfg.contractId){ S.chain.st = "none"; return; }
+  if (!S.cfg.rpcUrl){ S.chain.st = "down"; S.chain.why = "rpcUrl not configured"; return; }
+  const c = S.cfg.contractId;
+  try {
+    const config = await viewCall(c, "get_config");
+    if (!S.chain.token || S.chain.token.id !== config.token){
+      const md = await viewCall(config.token, "ft_metadata");
+      S.chain.token = {id: config.token, symbol: md.symbol, decimals: md.decimals};
+    }
+    const mandates = {};
+    for (const acct of mandateAccounts()) mandates[acct] = await viewCall(c, "get_mandate", {account: acct});
+    const invs = {};
+    for (const i of invoices()) invs[i.said] = await viewCall(c, "get_invoice", {said: i.said});
+    let events = S.chain.events.slice();
+    if (config.events_count < events.length){ events = []; S.chain.tx = {}; }   // contract re-deployed
+    while (events.length < config.events_count){
+      const page = await viewCall(c, "get_events", {from_index: events.length});
+      if (!Array.isArray(page) || !page.length) break;
+      events.push(...page);
+      if (page.length < PAGE) break;
+    }
+    Object.assign(S.chain, {st:"up", at:Date.now(), why:null, config, mandates, invoices:invs, events});
+  } catch (e) { S.chain.st = "down"; S.chain.why = e.message; return; }
+  await mapTxs();
+}
+async function pollInvoice(said, done){
+  for (let n = 0; n < 10; n++){
+    try {
+      const v = await viewCall(S.cfg.contractId, "get_invoice", {said});
+      S.chain.invoices[said] = v; renderAll();
+      if (done(v)) return;
+    } catch (e) { /* the next refresh shows the RPC state */ }
+    await new Promise(r => setTimeout(r, S.cfg.pollMs));
+  }
+}
+// A contract event has no tx hash, so find it: tx index lists the contract's txs; a tx owns the event when one of
+// its receipts on the contract, in the event's block, logged exactly "EVENT_JSON:" + event.json.
+const TXHASH = /^[1-9A-HJ-NP-Za-km-z]{43,44}$/;
+async function mapTxs(){
+  const ch = S.chain;
+  const unmapped = () => ch.events.filter(e => !ch.tx[e.index]);
+  const match = () => {
+    for (const e of unmapped()) for (const [hash, recs] of Object.entries(ch.txLogs))
+      if (recs.some(r => String(r.bh) === String(e.block_height) && r.logs.includes("EVENT_JSON:" + e.json))){ ch.tx[e.index] = hash; break; }
+  };
+  match();
+  if (!unmapped().length){ ch.txNote = null; return; }
+  if (!S.cfg.txIndexUrl){ ch.txNote = "tx index not configured (txIndexUrl)"; return; }
+  if (ch.txTriedCount === ch.events.length && Date.now() - ch.txTriedAt < 30000) return;   // index may lag a few seconds
+  ch.txTriedCount = ch.events.length; ch.txTriedAt = Date.now();
+  const base = S.cfg.txIndexUrl.replace(/\/+$/, "");
+  const post = async (path, body) => {
+    const r = await fetch(base + path, {method:"POST", headers:{"Content-Type":"application/json"}, cache:"no-store", body: JSON.stringify(body), signal: AbortSignal.timeout(S.cfg.probeMs * 6)});
+    if (!r.ok) throw new Error(`${path} HTTP ${r.status}`);
+    return r.json();
+  };
+  try {
+    const acc = await post("/v0/account", {account_id: S.cfg.contractId});
+    const listed = Array.isArray(acc.account_txs) ? acc.account_txs.map(t => t.transaction_hash) : [];
+    const hashes = [...new Set([...listed, ...S.sessionTx])].filter(h => isStr(h) && TXHASH.test(h) && !ch.txLogs[h]);
+    for (let k = 0; k < hashes.length; k += 20){
+      const r = await post("/v0/transactions", {tx_hashes: hashes.slice(k, k + 20)});
+      for (const t of (r.transactions || [])){
+        const hash = t.transaction && t.transaction.hash;
+        if (!isStr(hash)) continue;
+        ch.txLogs[hash] = (t.receipts || []).filter(x => x.receipt && x.receipt.receiver_id === S.cfg.contractId && x.execution_outcome)
+          .map(x => ({bh: x.execution_outcome.block_height, logs: (x.execution_outcome.outcome && x.execution_outcome.outcome.logs) || []}));
+      }
+    }
+    match();
+    const left = unmapped().length;
+    ch.txNote = left ? `${left} event(s) not matched to a tx yet (tx index lists ${listed.length}${Number.isInteger(acc.txs_count) ? " of " + acc.txs_count : ""} contract txs)` : null;
+  } catch (e) { ch.txNote = `tx index not reachable (${e.message})`; }
+}
+
+/* ---------- services (UI-2): signer :8771, bridge :8772; answers are shown verbatim ---------- */
+async function callService(urlKey, path, body){
+  const svc = urlKey === "signerUrl" ? "signer" : "bridge";
+  const base = S.cfg[urlKey].replace(/\/+$/, "");
+  let res;
+  try { res = await fetch(base + path, {method:"POST", headers:{"Content-Type":"application/json"}, cache:"no-store", body: JSON.stringify(body), signal: AbortSignal.timeout(180000)}); }
+  catch (e) { return {svc, call:`POST ${path}`, http:0, body:{ok:false, error:`${svc} not reachable at ${base} (${e.name === "TimeoutError" ? "no answer in 180 s" : e.message})`}}; }
+  let j;
+  try { j = await res.json(); } catch (e) { j = {ok:false, error:`HTTP ${res.status}, answer is not JSON`}; }
+  if (!isObj(j)) j = {ok:false, error:`HTTP ${res.status}, unexpected answer`};
+  if (isStr(j.txHash) && TXHASH.test(j.txHash)) S.sessionTx.add(j.txHash);
+  return {svc, call:`POST ${path}`, http:res.status, body:j};
+}
+
+/* ---------- derived ---------- */
+const companyOfAgent = alias => S.ev ? S.ev.companies.find(c => c.agents.some(a => a.alias === alias)) || null : null;
+const failuresFor = c => {
+  if (!S.ev || !c) return [];
+  const names = [c.alias, c.name, c.lei, ...c.officers.map(o => o.alias), ...c.agents.map(a => a.alias)].filter(Boolean);
+  return S.ev.checks.failures.filter(f => isStr(f) && names.some(n => f.includes(n)));
+};
+const nodeFailed = alias => S.ev ? S.ev.checks.failures.some(f => isStr(f) && f.includes(alias)) : false;
+// Invoices: invoices[] when present (vLEI #5), else the single `invoice` (UI-1 export shape).
+const invoices = () => !S.ev ? [] : Array.isArray(S.ev.invoices) && S.ev.invoices.length ? S.ev.invoices : isObj(S.ev.invoice) ? [S.ev.invoice] : [];
+const inv = () => { const l = invoices(); return l.find(x => x.said === S.sel) || l[0] || null; };
+const attrsOf = i => i && isObj(i.acdc) && isObj(i.acdc.a) ? i.acdc.a : null;
+const invA = () => attrsOf(inv());
+const invNo = i => (attrsOf(i) && attrsOf(i).invoiceNumber) || fmt.short(i.said);
+const invDec = i => rawNumber(i.acdcRaw, "totalAmount") || (attrsOf(i) && typeof attrsOf(i).totalAmount === "number" ? String(attrsOf(i).totalAmount) : null);
+const invUnits = i => S.chain.token ? decToUnits(invDec(i), S.chain.token.decimals) : null;
+const onChain = i => S.chain.invoices[i.said];          // undefined = not read · null = not registered · object = InvoiceView
+const invBySaid = said => invoices().find(x => x.said === said) || null;
+
+/* accounts.json (UI-2) */
+const accountOfAlias = alias => S.acc && isObj(S.acc.aliases) && isObj(S.acc.aliases[alias]) && isStr(S.acc.aliases[alias].account) ? S.acc.aliases[alias].account : null;
+function aliasOf(acct){
+  if (!isStr(acct)) return DASH;
+  if (S.acc && isObj(S.acc.aliases)) for (const [k, v] of Object.entries(S.acc.aliases)) if (isObj(v) && v.account === acct) return k;
+  if (S.chain.config){ if (acct === S.chain.config.registrar) return "vLEI registrar (bridge)"; if (acct === S.chain.config.owner) return "contract owner"; }
+  return acct;
+}
+const mandateAccounts = () => !S.acc || !Array.isArray(S.acc.mandates) ? [] : S.acc.mandates.map(m => accountOfAlias(m.alias)).filter(Boolean);
+const agentAccount = () => accountOfAlias(S.cfg.buyerAgent);
+const agentMandate = () => { const a = agentAccount(); return a ? S.chain.mandates[a] : undefined; };
+const tokenText = u => S.chain.token ? `${fmt.units(u, S.chain.token.decimals) ?? DASH} ${S.chain.token.symbol}` : `${u} units`;
+const realText = u => { if (!S.chain.token) return null; const r = fmt.scale(fmt.units(u, S.chain.token.decimals), S.cfg.demoScale); return r ? `${r.text} ${S.cfg.realCurrency}` : null; };
+const explorerUrl = (path, id) => S.cfg.explorer ? S.cfg.explorer.replace(/\/+$/, "") + path + encodeURIComponent(id) : null;
+function txLink(hash){
+  if (!isStr(hash)) return el("span",{class:"skel",text:DASH});
+  const url = explorerUrl(S.cfg.explorerTxPath, hash);
+  return el("span",{class:"row",style:"gap:4px"}, url ? el("a",{class:"tx",href:url,target:"_blank",rel:"noopener noreferrer",title:hash,text:fmt.short(hash)}) : el("span",{class:"id",title:hash,text:fmt.short(hash)}), copyBtn(hash, "tx hash"));
+}
+function accLink(acct){
+  const url = explorerUrl(S.cfg.explorerAccountPath, acct);
+  return url ? el("a",{class:"tx",href:url,target:"_blank",rel:"noopener noreferrer",text:acct}) : el("span",{class:"id",text:acct});
+}
+const stale = () => S.chain.st === "down" && S.chain.at ? " stale" : "";
+const STATUS_CLS = {paid:"pill ok", pending:"pill warn", rejected:"pill bad", registered:"pill"};
+function statusPill(i){
+  const v = onChain(i);
+  if (S.chain.st === "none") return el("span",{class:"pill",text:"NEAR not configured"});
+  if (v === undefined) return el("span",{class:"pill warn",text: S.chain.st === "down" ? "NEAR status not read" : "NEAR: reading…"});
+  if (v === null) return el("span",{class:"pill" + stale(),text:"not registered"});
+  return el("span",{class:(STATUS_CLS[v.status] || "pill") + stale(),text:v.status + (v.status === "paid" && S.chain.events.some(e => e.event === "paid" && e.json.includes(i.said) && e.json.includes('"via":"approved"')) ? " · via approval" : "")});
+}
+const eventsFor = said => S.chain.events.filter(e => e.json.includes(`"said":"${said}"`));
+
+function serviceReason(key, label){
+  const p = S.probes[key];
+  if (p.st === "none") return `${label} not configured`;
+  if (p.st === "down") return `${label} not reachable at ${p.url} (${p.why})`;
+  if (p.st === "pending") return `${label}: checking…`;
+  return null;
+}
+function contractReason(){
+  if (S.near.st === "none" || S.chain.st === "none") return "NEAR contract not configured";
+  if (S.near.st === "down") return `NEAR RPC not reachable (${S.near.why})`;
+  if (S.chain.st === "down") return `NEAR contract not readable (${S.chain.why})` + (S.chain.at ? ` · showing values read at ${fmt.clock(S.chain.at)}` : "");
+  if (S.near.st === "pending" || S.chain.st === "pending") return "NEAR: checking…";
+  return null;
+}
+function evidenceReasons(i = inv()){
+  const r = [];
+  if (!S.ev) r.push("vLEI evidence not loaded");
+  else {
+    if (!S.ev.checks.passed) r.push(`vLEI checks failed (${S.ev.checks.failures.length})`);
+    if (!i) r.push("No invoice in evidence");
+    else if (i.ipex.admitSuccess !== true) r.push("IPEX admit not completed");
+    else if (i.ipex.credentialHeld !== true) r.push("credential not held by the buyer (credentialHeld, G-34)");
+  }
+  return r;
+}
+const busyReason = () => S.busy ? `another action is running (${S.busy})` : (runActive() ? "a runner run is in progress" : null);
+
+/* ---------- view: header strip ---------- */
+function chip(cls, label, value, title){ return el("span",{class:"chipst " + cls, title: title || null}, el("b",{text:label}), value); }
+function renderStrip(){
+  const s = $("#strip"); s.replaceChildren();
+  if (!S.ev) s.append(chip("bad","vLEI","evidence not loaded"));
+  else if (S.ev.checks.passed) s.append(chip("ok","vLEI", S.ev.checks.strict ? "✓ strict checks passed" : "✓ checks passed (not strict)"));
+  else s.append(chip("bad","vLEI",`✗ ${S.ev.checks.failures.length} failure${S.ev.checks.failures.length === 1 ? "" : "s"}`));
+  if (S.ev){
+    const t = new Date(S.ev.generatedAt), stale = !isNaN(t) && Date.now() - t.getTime() > 24*3600*1000;
+    s.append(chip(stale ? "warn" : "off","Evidence", stale ? `stale — re-export (${fmt.date(S.ev.generatedAt)})` : `exported ${fmt.date(S.ev.generatedAt) || DASH}`));
+  }
+  if (S.near.st === "none") s.append(chip("off","NEAR","contract not configured"));
+  else if (S.near.st === "down") s.append(chip("bad","NEAR","RPC down", S.near.why));
+  else if (S.chain.st === "down") s.append(chip("bad","NEAR", S.chain.at ? `RPC down · last read ${fmt.clock(S.chain.at)}` : "contract not readable", S.chain.why));
+  else if (S.near.st === "up" && S.chain.st === "up") s.append(chip("ok","NEAR",`${S.near.chain || "chain ?"} · ${S.cfg.contractId} · ${S.chain.events.length} event${S.chain.events.length === 1 ? "" : "s"} · read ${fmt.clock(S.chain.at)}`));
+  else if (S.near.st === "up") s.append(chip("ok","NEAR",`${S.near.chain || "chain ?"} · ${S.cfg.contractId}`));
+  else s.append(chip("off","NEAR","checking…"));
+  for (const [key, label] of SERVICES){
+    const p = S.probes[key];
+    s.append(p.st === "up" ? chip("ok",label,"up") : p.st === "down" ? chip("bad",label,"down", `${p.url}: ${p.why}`) : p.st === "none" ? chip("off",label,"not configured") : chip("off",label,"checking…"));
+  }
+  const tb = el("button",{class:"linkbtn",type:"button",text:`theme: ${theme}`,"aria-label":"Switch colour theme"});
+  tb.addEventListener("click", () => {
+    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; applyTheme(theme);
+    try { localStorage.setItem("signatory-theme", theme); } catch (e) {}
+    tb.textContent = `theme: ${theme}`;
+  });
+  s.append(tb);
+}
+
+/* ---------- view: banners (E1, E2) ---------- */
+function renderBanners(){
+  const b = $("#banners"); b.replaceChildren();
+  if (S.evErr){
+    b.append(el("div",{class:"banner bad",role:"alert"}, el("b",{text:"vLEI evidence not loaded: "}), el("span",{class:"mono",text:S.cfg.evidenceUrl}), " ", S.evErr,
+      el("div",{class:"note",text:"Re-export from legentvLEI: node export-signatory-evidence.js --strict --out ../UI/data/signatory-evidence.json, then reload."})));
+  } else if (S.ev && !S.ev.checks.passed){
+    b.append(el("div",{class:"banner bad",role:"alert"}, el("b",{text:`vLEI checks failed (${S.ev.checks.failures.length}). Register and pay are disabled.`}),
+      el("ul",null, ...S.ev.checks.failures.map(f => el("li",{text:String(f)})))));
+  }
+  if (S.accErr) b.append(el("div",{class:"banner warn",role:"alert"}, el("b",{text:"accounts.json not loaded: "}), el("span",{class:"mono",text:S.cfg.accountsUrl}), " ", S.accErr,
+    el("div",{class:"note",text:"Mandate limits and NEAR accounts cannot be shown. set-mandates.sh copies it from chainaim-signatory/config."})));
+  if (S.chain.st === "down" && S.chain.at)   // N2
+    b.append(el("div",{class:"banner warn",role:"status"}, el("b",{text:"NEAR RPC not reachable. "}), `Values below are the last ones read at ${fmt.clock(S.chain.at)} (greyed). `, el("span",{class:"mono",text:S.chain.why || ""})));
+}
+
+/* ---------- view: ladders ---------- */
+function agentNode(a, level){
+  const n = el("div",{class:`node l${level}` + (nodeFailed(a.alias) ? " failed" : "")});
+  n.append(el("div",{class:"nm"}, el("span",{text:a.alias}), el("span",{class:"kind",text: level === 2 ? "AI sub-agent" : "AI agent"})));
+  const role = [a.role, a.scope && a.scope !== a.role ? a.scope : null].filter(Boolean).join(" · ");
+  n.append(el("div",{class:"meta",text: role || "role not in evidence"}));
+  n.append(el("div",{class:"meta"}, idSpan(a.aid, `AID of ${a.alias}`)));
+  const badges = el("div",{class:"badges"});
+  if (a.delegationVerified === true) badges.append(el("span",{class:"pill ok",text:"KEL ✓"}));
+  else if (a.delegationVerified === false) badges.append(el("span",{class:"pill bad",text:"KEL ✗"}));
+  else badges.append(el("span",{class:"pill warn",text:"KEL not checked"}));
+  if (a.advisoryOnly === true) badges.append(el("span",{class:"pill",text:"advisory only"}));
+  if (nodeFailed(a.alias)) badges.append(el("span",{class:"pill bad",text:"check failed"}));
+  n.append(badges);
+  if (isStr(a.kel) && a.kel) n.append(el("div",{class:"meta"}, `KEL ${fmt.bytes(a.kel).toLocaleString("en-US")} bytes `, copyBtn(a.kel, `KEL of ${a.alias}`)));
+  if (a.advisoryOnly === true) n.append(el("div",{class:"meta",text:"no payment authority"}));
+  else n.append(mandateLine(a.alias, false));
+  if (a.alias === S.cfg.buyerAgent) n.append(turnOffAgent());
+  return n;
+}
+// Limit line from get_mandate (UI-2). onlyIfMapped: officers without a NEAR account show nothing.
+function mandateLine(alias, onlyIfMapped){
+  const acct = accountOfAlias(alias);
+  if (!acct){
+    if (onlyIfMapped) return null;
+    return el("div",{class:"meta",text: S.acc ? "no NEAR mandate (alias not in accounts.json)" : "limit: accounts.json not loaded"});
+  }
+  if (S.chain.st === "none") return el("div",{class:"meta",text:"limit: NEAR contract not configured"});
+  const m = S.chain.mandates[acct];
+  if (m === undefined) return el("div",{class:"meta",text: S.chain.st === "down" ? `limit: not read (${S.chain.why})` : "limit: reading get_mandate…"});
+  const box = el("div",{class:"lim" + stale()}, el("div",{class:"meta"}, "NEAR ", accLink(acct)));
+  if (m === null){ box.append(el("div",{class:"meta",text:"no mandate on chain (get_mandate → null)"})); return box; }
+  const real = realText(m.limit_units);
+  box.append(el("div",null, "limit ", el("b",{text:tokenText(m.limit_units)}), real ? ` · ${real}` : ""));
+  box.append(el("div",{class:"meta",text:`approver ${aliasOf(m.approver)}` + (aliasOf(m.approver) !== m.approver ? ` (${m.approver})` : "")}));
+  if (m.revoked) box.append(el("div",{class:"badges"}, el("span",{class:"pill bad",text:"mandate revoked"}), el("span",{class:"meta",text:"re-enable = owner action: bash scripts/set-mandates.sh (the owner key is never in a service)"})));
+  if (stale()) box.append(el("div",{class:"meta",text:`last read ${fmt.clock(S.chain.at)}`}));
+  return box;
+}
+// "Turn off agent" on the buyer agent's node (UI-2R): signer /revoke as the agent's approver. Re-enable is owner-only.
+function turnOffAgent(){
+  const acct = agentAccount(), m = agentMandate();
+  const reasons = [];
+  if (!acct) reasons.push(`${S.cfg.buyerAgent} has no NEAR account in accounts.json`);
+  else if (m === null) reasons.push("no mandate on chain");
+  else if (m === undefined) reasons.push(contractReason() || "mandate not read yet");
+  else if (m.revoked) reasons.push("agent is turned off (mandate revoked on chain)");
+  const sr = serviceReason("signer","Signer"); if (sr) reasons.push(sr);
+  const cr = contractReason(); if (cr && !reasons.includes(cr)) reasons.push(cr);
+  const bz = busyReason(); if (bz) reasons.push(bz);
+  return el("div",{class:"offbtn"},
+    el("button",{class:"btn",type:"button",disabled: reasons.length ? "disabled" : null,
+      text: S.busy === "turn off agent" ? "Turning off…" : "Turn off agent",
+      onclick: () => {
+        if (!confirm(`Revoke ${S.cfg.buyerAgent} (${acct}) on NEAR now? Its next payment will be refused. Only the contract owner can re-enable it (bash scripts/set-mandates.sh).`)) return;
+        runAction("turn off agent", async () => {
+          const r = await callService("signerUrl","/revoke",{account: acct});
+          S.results.revoke = [r];
+          clickRow(m && m.approver ? aliasOf(m.approver) : "approver", "NEAR contract", `turn off ${S.cfg.buyerAgent} (revoke)`, r);
+        });
+      }}),
+    reasons.length ? el("div",{class:"reason"}, ...reasons.map(r => el("div",{text:"Blocked: " + r}))) : null,
+    resultBox(S.results.revoke));
+}
+// Approval card on the approver's node (scene 2): one per pending invoice whose payer's mandate names this approver.
+function approvalCards(alias){
+  const acct = accountOfAlias(alias); if (!acct) return [];
+  const out = [];
+  for (const i of invoices()){
+    const v = onChain(i);
+    if (!v || v.status !== "pending") continue;
+    const pm = v.payer ? S.chain.mandates[v.payer] : null;
+    if (!pm || pm.approver !== acct) continue;
+    const pend = eventsFor(i.said).filter(e => e.event === "payment_pending").pop();
+    let limit = null; try { limit = pend ? JSON.parse(pend.json).data[0].limit_units : null; } catch (e) {}
+    out.push(el("div",{class:"approval"},
+      el("div",null, el("b",{text:`Escalation: ${invNo(i)} is pending — your decision`})),
+      el("div",{text:`${tokenText(v.amount_units)} from ${aliasOf(v.payer)}` + (limit ? ` · above the agent limit ${tokenText(limit)}` : "")}),
+      settleButtons(i)));
+  }
+  return out;
+}
+function renderLadder(target, c, side, missingAlias){
+  const box = $(target); box.replaceChildren();
+  if (!S.ev){ box.append(el("header",null, el("h2",{text: side === "buyer" ? "Buyer" : "Seller"}), el("small",{text:"evidence not loaded"})), el("div",{class:"node skel",text:DASH})); return; }
+  if (!c){ box.append(el("header",null, el("h2",{text: side === "buyer" ? "Buyer" : "Seller"}), el("small",{text:`${missingAlias} is not in the evidence`})), el("div",{class:"node skel",text:DASH})); return; }
+  box.append(el("header",null, el("h2",{text:c.name}), el("small",{text:`${side === "buyer" ? "buyer" : "seller"} · LEI ${c.lei}`}), el("small",null, "LE ", idSpan(c.leAid, `LE AID of ${c.name}`))));
+  const used = new Set();
+  for (const o of c.officers){
+    const n = el("div",{class:"node" + (nodeFailed(o.alias) ? " failed" : "")});
+    n.append(el("div",{class:"nm"}, el("span",{text:o.alias}), el("span",{class:"kind",text:"Human · OOR"})));
+    n.append(el("div",{class:"meta",text: isStr(o.officialRole) && o.officialRole ? o.officialRole : "official role not in evidence"}));
+    n.append(el("div",{class:"meta"}, idSpan(o.aid, `AID of ${o.alias}`)));
+    const badges = el("div",{class:"badges"});
+    if (isObj(o.oorCredential) && isStr(o.oorCredential.said)) badges.append(el("span",{class:"pill ok",title:o.oorCredential.said,text:"OOR SAID"}));
+    else badges.append(el("span",{class:"pill bad",text:"no OOR"}));
+    if (nodeFailed(o.alias)) badges.append(el("span",{class:"pill bad",text:"check failed"}));
+    n.append(badges);
+    const ml = mandateLine(o.alias, true); if (ml) n.append(ml);
+    n.append(...approvalCards(o.alias));
+    box.append(n);
+    for (const a of c.agents.filter(a => a.delegatorAlias === o.alias)){
+      used.add(a.alias); box.append(agentNode(a, 1));
+      for (const sub of c.agents.filter(x => x.delegatorAlias === a.alias)){ used.add(sub.alias); box.append(agentNode(sub, 2)); }
+    }
+  }
+  const rest = c.agents.filter(a => !used.has(a.alias));
+  if (rest.length){
+    box.append(el("h3",{text:"Agents with no officer above them in this export"}));
+    rest.forEach(a => box.append(agentNode(a, 1)));
+  }
+}
+
+/* ---------- view: invoice card (U6 + UI-2) ---------- */
+function renderInvoice(){
+  const card = $("#invoice-card"); card.replaceChildren();
+  card.append(el("h2",{text:"Invoice"}));
+  if (!S.ev){ card.append(el("div",{class:"empty",text:"vLEI evidence not loaded."})); return; }
+  const list = invoices(), i = inv(), a = invA();
+  if (!i){ card.append(el("div",{class:"empty",text:"No invoice in evidence."})); return; }
+  if (list.length > 1) card.append(el("div",{class:"pick",role:"group","aria-label":"Choose invoice"},
+    ...list.map(x => el("button",{class:"btn",type:"button","aria-pressed":String(x === i),onclick:() => { S.sel = x.said; renderAll(); }}, `${invNo(x)} `, statusPill(x)))));
+  card.append(el("p",{class:"sub",text: `${i.selfAttested ? "self-attested by" : "issued by"} ${i.issuerAlias || DASH}` + (isObj(i.issuerDelegatedFrom) ? ` · delegated from ${i.issuerDelegatedFrom.officerAlias || DASH}` : "")}));
+  if (!a){ card.append(el("div",{class:"empty",text:"Invoice credential body (acdc.a) not in evidence."})); return; }
+
+  const dec = invDec(i);
+  const real = fmt.scale(dec, S.cfg.demoScale);
+  card.append(el("div",{class:"amounts"},
+    el("div",{class:"amount"}, el("div",{class:"l",text:"on-chain (credential)"}), el("div",{class:"n",text: dec ? `${dec} ${a.currency || ""}`.trim() : DASH})),
+    el("div",{class:"amount"}, el("div",{class:"l",text:`real terms · demo scale 1:${S.cfg.demoScale.toLocaleString("en-US")}`}),
+      el("div",{class:"n",text: real ? `${real.text} ${S.cfg.realCurrency}${real.exact ? "" : " (rounded down)"}` : DASH}))));
+
+  const kv = el("dl",{class:"kv"});
+  const row = (k, v) => kv.append(el("dt",{text:k}), el("dd",null, v === null || v === undefined || v === "" ? DASH : v));
+  row("Invoice no.", a.invoiceNumber);
+  row("Issuer", el("span",null, `${i.issuerAlias || DASH} `, idSpan(i.issuerAid, "issuer AID")));
+  if (isObj(i.issuerDelegatedFrom)){
+    const d = i.issuerDelegatedFrom;
+    row("Delegated from", el("span",null, `${d.officerAlias || DASH} `, idSpan(d.officerAid, "officer AID"), " · OOR ", idSpan(d.officerOorSaid, "officer OOR SAID")));
+  } else row("Delegated from", "not in evidence");
+  row("Holder", el("span",null, `${i.holderAlias || DASH} `, idSpan(i.holderAid, "holder AID")));
+  row("Seller LEI", a.sellerLEI); row("Buyer LEI", a.buyerLEI);
+  if (Array.isArray(a.lineItems) && a.lineItems.length){
+    const li = a.lineItems[0];
+    row("Line item", `${li.description || DASH} · quantity ${li.quantity ?? DASH} · unit price ${rawNumber(i.acdcRaw, "unitPrice") ?? li.unitPrice ?? DASH} · amount ${rawNumber(i.acdcRaw, "amount") ?? li.amount ?? DASH}`);
+  }
+  row("Invoice date", fmt.day(a.invoiceDate)); row("Due date", fmt.day(a.dueDate));
+  if (isObj(a.paymentTerms) && isStr(a.paymentTerms.terms)) row("Terms", a.paymentTerms.terms);
+  row("Payment", [a.paymentMethod, a.paymentChainID].filter(Boolean).join(" · "));
+  row("Payee", a.paymentWalletAddress);
+  const ip = i.ipex;
+  row("IPEX", el("span",null, "grant ", idSpan(ip.grantSaid, "IPEX grant SAID"), " → admit ",
+    el("span",{class: ip.admitSuccess === true ? "pill ok" : "pill bad", text: ip.admitSuccess === true ? "✓" : ip.admitSuccess === false ? "✗ not completed" : "not recorded"}),
+    " · held ", el("span",{class: ip.credentialHeld === true ? "pill ok" : "pill bad", text: ip.credentialHeld === true ? "✓" : "✗"})));
+  row("Invoice SAID", idSpan(i.said, "invoice SAID"));
+  // NEAR state (get_invoice)
+  const v = onChain(i);
+  row("On NEAR", el("span",{class:"row",style:"gap:6px"}, statusPill(i), stale() ? el("span",{class:"meta",text:`last read ${fmt.clock(S.chain.at)}`}) : null));
+  if (v){
+    const u = invUnits(i);
+    const same = u !== null && BigInt(v.amount_units) === u;
+    row("NEAR amount", el("span",{class:stale().trim()}, `${tokenText(v.amount_units)} `, el("span",{class: same ? "pill ok" : "pill bad", text: same ? "= credential" : "≠ credential"})));
+    row("NEAR payee", el("span",{class:stale().trim()}, accLink(v.payee), " ", el("span",{class: v.payee === a.paymentWalletAddress ? "pill ok" : "pill bad", text: v.payee === a.paymentWalletAddress ? "= credential" : "≠ credential"})));
+    if (v.payer) row("Paid by", accLink(v.payer));
+    if (v.paid_at) row("Paid at", fmt.ns(v.paid_at));
+  }
+  card.append(kv);
+  const hist = historyLine(i); if (hist) card.append(hist);
+
+  const reasons = [...evidenceReasons(i)];
+  const br = serviceReason("bridge","Bridge"); if (br) reasons.push(br);
+  const cr = contractReason(); if (cr) reasons.push(cr);
+  if (v) reasons.push(`already registered on NEAR (status ${v.status})`);
+  const bz = busyReason(); if (bz) reasons.push(bz);
+  const key = "reg:" + i.said;
+  card.append(el("div",{class:"cardfoot"},
+    el("button",{class:"btn primary",type:"button",disabled: reasons.length ? "disabled" : null,
+      text: S.busy === `register ${invNo(i)}` ? "Registering…" : "Register on NEAR",
+      onclick: () => runAction(`register ${invNo(i)}`, async () => { S.results[key] = [await callService("bridgeUrl","/register",{said:i.said})]; })}),
+    reasons.length ? el("div",{class:"reason"}, ...reasons.map(r => el("div",{text:"Blocked: " + r}))) : el("div",{class:"note",text:"The bridge re-checks the SAID and R-IPEX itself before it registers; the button only mirrors that."}),
+    resultBox(S.results[key])));
+}
+
+// This invoice's contract events in one line, each with its tx.
+function historyLine(i){
+  const evs = eventsFor(i.said);
+  if (!evs.length) return null;
+  const box = el("div",{class:"note" + stale()}, el("b",{text:`${invNo(i)} on NEAR: `}));
+  evs.forEach((e, k) => { if (k) box.append(" → "); box.append(e.event, " "); box.append(S.chain.tx[e.index] ? txLink(S.chain.tx[e.index]) : el("span",{class:"skel",text:`#${e.index}`})); });
+  return box;
+}
+
+// Service answers, shown verbatim (X1).
+function resultBox(list){
+  if (!Array.isArray(list) || !list.length) return null;
+  const good = list.every(r => r.body.ok === true && !(isObj(r.body.outcome) && r.body.outcome.event === "payment_refused"));
+  const box = el("div",{class:"result " + (good ? "ok" : "bad"),role:"status"});
+  for (const r of list){
+    const b = r.body;
+    const line = el("div",null, el("span",{class:"mono",text:`${r.svc} ${r.call} → ${r.http ? "HTTP " + r.http : "no answer"} `}),
+      el("span",{class: b.ok === true ? "pill ok" : "pill bad", text: b.ok === true ? "ok" : "refused / error"}));
+    if (isObj(b.demo)) line.append(" ", el("span",{class:"pill warn",text: b.demo.label || "demo"}));
+    box.append(line);
+    if (isObj(b.outcome)) box.append(el("div",null, "contract event ", el("b",{text:String(b.outcome.event)}),
+      isStr(b.outcome.reason) ? `: "${b.outcome.reason}"` : "", isStr(b.outcome.via) ? ` (via ${b.outcome.via})` : ""));
+    if (b.usedUnits !== undefined) box.append(el("div",{text:`used ${tokenText(b.usedUnits)} · refunded to the agent ${tokenText(b.refundedUnits)}`}));
+    if (b.alreadyRegistered) box.append(el("div",{text:"already registered — no transaction sent"}));
+    if (b.ok === false && b.sent === false) box.append(el("div",{text:"nothing sent to NEAR (sent:false)"}));
+    if (isStr(b.reason)) box.append(el("div",null, "reason: ", el("span",{class:"mono",text:b.reason})));
+    if (isStr(b.error)) box.append(el("div",null, "error: ", el("span",{class:"mono",text:b.error})));
+    if (isStr(b.txHash)) box.append(el("div",null, "tx ", txLink(b.txHash)));
+    if (r.note) box.append(el("div",{text:r.note}));
+    box.append(el("details",{class:"raw"}, el("summary",{text:"full answer"}), el("pre",{text:JSON.stringify(b, null, 2)})));
+  }
+  return box;
+}
+
+/* ---------- actions (UI-2): every write goes through the signer or the bridge ---------- */
+async function runAction(label, fn){
+  if (S.busy) return;
+  S.busy = label; renderAll();
+  try { await fn(); }
+  catch (e) { S.session.push({at:Date.now(), text:`${label}: ${e.message}`}); }
+  finally {
+    S.busy = null;
+    await Promise.all([probe("signer","signerUrl"), probe("bridge","bridgeUrl")]);
+    await refreshChain(); renderAll();
+  }
+}
+async function payFlow(key, i){
+  const out = S.results[key] = [];
+  if (onChain(i) === null){
+    const r = await callService("bridgeUrl","/register",{said:i.said}); out.push(r); renderAll();
+    if (r.body.ok !== true) return;
+  }
+  const p = await callService("signerUrl","/pay",{said:i.said}); out.push(p); renderAll();
+  const evt = isObj(p.body.outcome) ? p.body.outcome.event : null;
+  if (p.body.ok === true && evt !== "payment_refused") await pollInvoice(i.said, v => v && v.status !== "registered");
+}
+async function settleFlow(what, i){
+  if (S.live.run && waitingSaid(S.live.run) === i.said) return decideRun(S.live.run, what);   // the run waits on this: decide through it
+  const r = await callService("signerUrl", "/" + what, {said:i.said});
+  (S.results.s2 = S.results.s2 || []).push(r);
+  if (!runActive()) clickRow(aliasOf(r.body.by) !== DASH && r.body.by ? aliasOf(r.body.by) : "approver", "NEAR contract", `${what} ${invNo(i)}`, r);
+  renderAll();
+  if (r.body.ok === true) await pollInvoice(i.said, v => v && v.status !== "pending");
+}
+async function tamperFlow(i){
+  const out = S.results.s3 = [];
+  const read = async () => { try { return {v: await viewCall(S.cfg.contractId, "get_invoice", {said:i.said})}; } catch (e) { return null; } };
+  const before = S.cfg.contractId ? await read() : null;
+  const r = await callService("bridgeUrl","/register",{said:i.said, tamperField:"paymentWalletAddress"});
+  const after = S.cfg.contractId ? await read() : null;
+  r.note = !before || !after ? "contract state: get_invoice could not be read before and after"
+    : JSON.stringify(before.v) === JSON.stringify(after.v) ? `contract state unchanged: get_invoice before = after (${before.v ? "status " + before.v.status : "not registered"})`
+    : "contract state CHANGED between the two get_invoice reads";
+  out.push(r);
+  S.session.push({at:Date.now(), text:`Tamper demo on ${invNo(i)} (altered copy, paymentWalletAddress): bridge ${r.body.ok === true ? "ACCEPTED" : "refused"} — ${r.body.reason || r.body.error || "no reason given"}. ${r.note}.`});
+}
+async function revokeFlow(i){
+  const out = S.results.s4 = [];
+  if (onChain(i) === null){
+    const r = await callService("bridgeUrl","/register",{said:i.said}); out.push(r); renderAll();
+    if (r.body.ok !== true) return;
+  }
+  const rv = await callService("signerUrl","/revoke",{account: agentAccount()}); out.push(rv); renderAll();
+  if (rv.body.ok !== true) return;
+  const p = await callService("signerUrl","/pay",{said:i.said}); out.push(p);
+  out.push({svc:"page", call:"note", http:200, body:{ok:true}, note:"The agent mandate is now revoked on chain. Reset for the next run: bash scripts/set-mandates.sh (Signatory repo)."});
+}
+function settleButtons(i){
+  // Not blocked by a runner run: an escalated run waits for exactly this decision.
+  const reasons = [serviceReason("signer","Signer"), contractReason(), S.busy ? `another action is running (${S.busy})` : null].filter(Boolean);
+  const mk = what => el("button",{class: what === "approve" ? "btn primary" : "btn", type:"button", disabled: reasons.length ? "disabled" : null,
+    text: S.busy === `${what} ${invNo(i)}` ? "Sending…" : what === "approve" ? "Approve" : "Reject",
+    onclick: () => runAction(`${what} ${invNo(i)}`, () => settleFlow(what, i))});
+  return el("div",null, el("div",{class:"row"}, mk("approve"), mk("reject")),
+    reasons.length ? el("div",{class:"reason"}, ...reasons.map(r => el("div",{text:"Blocked: " + r}))) : null);
+}
+
+/* ---------- view: scenario rail ---------- */
+// Picks the evidence invoice for a scene from real amounts vs the agent's on-chain limit; prefers one still payable.
+function sceneInvoice(kind){
+  const m = agentMandate();
+  if (!S.chain.token || m === undefined) return {i:null, why: contractReason() || "agent limit not read yet (get_mandate)"};
+  if (m === null) return {i:null, why:`${S.cfg.buyerAgent} has no mandate on chain`};
+  const L = BigInt(m.limit_units);
+  const fits = invoices().filter(x => { const u = invUnits(x); return u !== null && (kind === "above" ? u > L : u <= L); });
+  const open = fits.find(x => { const v = onChain(x); return v === null || (v && v.status === "registered"); });
+  return {i: open || fits[0] || null, L, why: fits.length ? null : `no invoice in the evidence ${kind === "above" ? "above" : "within"} the agent limit ${tokenText(m.limit_units)}`};
+}
+function settledReason(i){
+  const v = onChain(i); if (!v) return null;
+  if (v.status === "paid"){
+    const p = eventsFor(i.said).filter(e => e.event === "paid").pop();
+    return `${invNo(i)} is already paid on NEAR${p ? ` (event #${p.index}, ${fmt.ns(p.timestamp_ns)})` : ""} — shown as completed history. Re-pay is disabled: the contract would refuse it ("invoice not payable (status paid)"). A fresh run needs a newly issued invoice.`;
+  }
+  if (v.status === "rejected") return `${invNo(i)} was rejected and refunded; the contract refuses further payment ("invoice not payable (status rejected)")`;
+  if (v.status === "pending") return `${invNo(i)} is pending the approver — use Approve / Reject`;
+  return null;
+}
+function renderRail(){
+  const rail = $("#rail"); rail.replaceChildren();
+  const m = agentMandate();
+  const revoked = m && m.revoked ? `${S.cfg.buyerAgent} mandate is revoked on chain — pay would be refused; reset with bash scripts/set-mandates.sh` : null;
+  const s1 = sceneInvoice("within"), s2 = sceneInvoice("above");
+  const common = i => { const r = [...evidenceReasons(i)]; const sr = serviceReason("signer","Signer"); if (sr) r.push(sr); const cr = contractReason(); if (cr) r.push(cr);
+    if (i && onChain(i) === null){ const br = serviceReason("bridge","Bridge"); if (br) r.push(br + " (needed to register first)"); } return r; };
+  const amt = i => i && invUnits(i) !== null ? tokenText(String(invUnits(i))) : (i ? `${invDec(i) || DASH}` : "");
+  const steps = [];
+
+  { const i = s1.i, r = i ? common(i) : [s1.why, serviceReason("signer","Signer")]; if (i){ const sr = settledReason(i); if (sr) r.push(sr); if (revoked) r.push(revoked); }
+    steps.push({key:"s1", t: i ? `Pay ${invNo(i)} · ${amt(i)} within the agent limit${s1.L !== undefined ? " " + tokenText(String(s1.L)) : ""}` : "Pay the invoice within the agent limit",
+      i, reasons:r, label: i ? `pay ${invNo(i)}` : "", run: () => payFlow("s1", i)}); }
+  { const i = s2.i, r = i ? common(i) : [s2.why, serviceReason("signer","Signer")]; let extra = null;
+    if (i){ const v = onChain(i); if (v && v.status === "pending") extra = settleButtons(i); else { const sr = settledReason(i); if (sr) r.push(sr); } if (revoked) r.push(revoked); }
+    steps.push({key:"s2", t: i ? `Pay ${invNo(i)} · ${amt(i)} above the agent limit → ${aliasOf(m && m.approver)} approves or rejects` : "Pay above the agent limit → officer approval",
+      i, reasons: extra ? ["pending: decide with Approve / Reject below (or on the approver's node)"] : r, extra, label: i ? `pay ${invNo(i)}` : "", run: () => payFlow("s2", i)}); }
+  { const i = inv(), r = [];
+    if (!S.ev) r.push("vLEI evidence not loaded"); else if (!i) r.push("No invoice in evidence");
+    const br = serviceReason("bridge","Bridge"); if (br) r.push(br);
+    steps.push({key:"s3", t: i ? `Tamper demo on ${invNo(i)}: altered copy (paymentWalletAddress) sent to the bridge — must be refused, nothing sent to NEAR` : "Tamper demo (altered copy refused by the bridge)",
+      i, reasons:r, label: i ? `tamper ${invNo(i)}` : "", run: () => tamperFlow(i)}); }
+  { const i = s1.i && onChain(s1.i) !== undefined && (onChain(s1.i) === null || onChain(s1.i).status === "registered") ? s1.i : null;
+    const r = i ? common(i) : [s1.i ? `no unpaid invoice within the agent limit (${invNo(s1.i)} is ${onChain(s1.i) ? onChain(s1.i).status : "not read"}); revoking now would only leave the mandate revoked with no payment to refuse — needs a newly issued invoice` : (s1.why || "no invoice")];
+    if (revoked) r.push(`${S.cfg.buyerAgent} mandate is already revoked — reset with bash scripts/set-mandates.sh`);
+    if (!agentAccount()) r.push(`${S.cfg.buyerAgent} has no NEAR account in accounts.json`);
+    steps.push({key:"s4", t: i ? `Revoke ${S.cfg.buyerAgent} (as ${aliasOf(m && m.approver)}) → pay ${invNo(i)} is refused` : "Revoke the agent → next pay refused",
+      i, reasons:r, label: i ? `revoke + pay ${invNo(i)}` : "", run: () => revokeFlow(i)}); }
+
+  steps.forEach((s, idx) => {
+    const bz = busyReason(); const reasons = s.reasons.filter(Boolean).concat(bz && S.busy !== s.label ? [bz] : []);
+    const btnOff = !!(reasons.length || S.busy || s.extra);
+    rail.append(el("div",{class:"step"},
+      el("span",{class:"num",text:String(idx + 1)}),
+      el("span",{class:"ttl",text:s.t}),
+      el("button",{class:"btn",type:"button",disabled: btnOff ? "disabled" : null, text: S.busy && S.busy === s.label ? "Running…" : "Run", onclick: () => runAction(s.label, s.run)}),
+      reasons.length ? el("div",{class:"reason"}, ...reasons.map(r => el("div",{text:(s.extra ? "" : "Blocked: ") + r}))) : null,
+      s.extra ? el("div",{class:"more"}, s.extra) : null,
+      s.i && s.key !== "s3" ? (h => h ? el("div",{class:"more"}, h) : null)(historyLine(s.i)) : null,
+      resultBox(S.results[s.key])));
+  });
+}
+
+/* ---------- view: timeline ---------- */
+function describeEvent(e){
+  let d = {}; try { d = JSON.parse(e.json).data[0] || {}; } catch (x) {}
+  const no = isStr(d.said) ? (invBySaid(d.said) ? invNo(invBySaid(d.said)) : fmt.short(d.said)) : "(no invoice)";
+  const amt = d.amount_units !== undefined ? tokenText(String(d.amount_units)) : "";
+  switch (e.event){
+    case "invoice_registered": return ["cross", aliasOf(S.chain.config && S.chain.config.registrar), "", `registered ${no} on NEAR · ${amt} · payee ${aliasOf(d.payee)} · due ${fmt.day(d.due)}`];
+    case "payment_pending":   return ["buyer", aliasOf(d.payer), "b", `paid ${no} ${amt}, above its limit ${tokenText(String(d.limit_units))} → held by the contract, pending ${aliasOf(d.approver)}`];
+    case "payment_approved":  return ["buyer", aliasOf(d.approver), "b", `approved ${no} ${amt}`];
+    case "payment_rejected":  return ["buyer", aliasOf(d.approver), "b", `rejected ${no} · ${amt} refunded to ${aliasOf(d.payer)}`];
+    case "agent_revoked":     return ["buyer", aliasOf(d.by), "b", `revoked the mandate of ${aliasOf(d.account)}`];
+    case "paid":              return ["seller", "NEAR contract", "s", `paid ${no}: ${amt} ${aliasOf(d.payer)} → ${aliasOf(d.payee)} (via ${d.via})`];
+    case "payment_refused":   return ["cross", "NEAR contract", "", `refused payment of ${no} by ${aliasOf(d.payer)}: "${d.reason}" · ${amt} returned`];
+    default:                  return ["sys", null, "", e.event];
+  }
+}
+function renderTimeline(){
+  const tl = $("#timeline"); tl.replaceChildren();
+  if (!S.ev){ tl.append(el("div",{class:"empty",text:"vLEI evidence not loaded."})); return; }
+  const ev = (cls, when, actor, actorCls, text, ...extra) => el("div",{class:"ev " + cls}, el("time",{text: when || ""}), el("div",null, actor ? el("div",{class:"actor " + actorCls,text:actor}) : null, el("div",{class:"txt",text}), ...extra));
+  const list = invoices();
+  for (const i of list){
+    const a = attrsOf(i);
+    tl.append(ev("seller", a ? fmt.date(a.dt) : null, i.issuerAlias, "s", `Invoice ${a && a.invoiceNumber ? a.invoiceNumber + " " : ""}issued (${i.selfAttested ? "self-attested" : "issued"}) · SAID ${fmt.short(i.said)}`));
+    if (i.ipex.grantSaid) tl.append(ev("cross", null, `${i.issuerAlias} → ${i.holderAlias || DASH}`, "", `IPEX grant ${fmt.short(i.ipex.grantSaid)}` + (i.ipex.grantCredentialSaid === i.said ? " · carries this invoice" : " · carries a different credential")));
+    tl.append(ev("buyer", null, i.holderAlias, "b", (i.ipex.admitSuccess === true ? "IPEX admit ✓" : "IPEX admit not completed") + (list.length > 1 && a ? ` · ${a.invoiceNumber}` : "")));
+  }
+  if (!list.length) tl.append(ev("sys", null, null, "", "No invoice in evidence."));
+  tl.append(ev("sys", fmt.date(S.ev.generatedAt), null, "", `Evidence exported${S.ev.checks.strict ? " (strict)" : ""} · ${S.ev.checks.passed ? "all checks passed" : S.ev.checks.failures.length + " check failure(s)"}`));
+  // NEAR contract events (get_events), with the tx found in the tx index
+  if (S.chain.st === "none") tl.append(ev("sys", null, null, "", "NEAR contract not configured."));
+  else if (!S.chain.at) tl.append(ev("sys", null, null, "", S.chain.st === "down" ? `NEAR events not read (${S.chain.why})` : "Reading NEAR events…"));
+  else {
+    for (const e of S.chain.events){
+      const [cls, actor, ac, text] = describeEvent(e);
+      const hash = S.chain.tx[e.index];
+      const node = ev(cls + stale(), fmt.ns(e.timestamp_ns), actor, ac, text,
+        el("div",{class:"meta"}, `NEAR event #${e.index} · ${e.event} · block ${e.block_height} · tx `, hash ? txLink(hash) : el("span",{class:"skel",text:"not matched"})));
+      tl.append(node);
+    }
+    if (!S.chain.events.length) tl.append(ev("sys", null, null, "", "No NEAR contract events yet."));
+    if (S.chain.txNote) tl.append(ev("sys", null, null, "", S.chain.txNote));
+  }
+  for (const s of S.session) tl.append(ev("sys", new Date(s.at).toISOString().replace("T"," ").slice(0,19) + " UTC", "this page (not on chain)", "", s.text));
+}
+
+/* ---------- UI-2R chat (§5.1): real runner API — POST /run, SSE run|step, POST /runs/:id/decide ---------- */
+const runActive = () => !!S.live.posting || !!(S.live.run && !S.live.run.finished);
+const runReason = () => runActive() ? `a run is active${S.live.run ? " (" + S.live.run.runId + ")" : ""}` : null;
+const runnerBase = () => S.cfg.runnerUrl.replace(/\/+$/, "");
+const jsonOrError = async res => { try { return await res.json(); } catch (e) { return {ok:false, error:`HTTP ${res.status}, answer is not JSON`}; } };
+
+// GET /invoices → {ok, invoices:[{said, invoiceNumber, amount, amountUnits, currency, realAmount, dueDate, payee, status, runnable, reason?}]}
+// GET /health   → {ok, activeRun:{runId,state,said,result,createdAt,events}|null, signer, bridge}
+async function fetchRunnerInvoices(){
+  if (!S.cfg.runnerUrl){ S.runnerInv = {st:"none", list:[], why:null, active:null}; return; }
+  if (S.probes.runner.st !== "up"){ S.runnerInv = {st:"down", list:[], why:null, active:null}; return; }
+  try {
+    const [ri, rh] = await Promise.all([
+      fetch(runnerBase() + "/invoices", {cache:"no-store", signal: AbortSignal.timeout(S.cfg.probeMs * 6)}),
+      fetch(runnerBase() + "/health", {cache:"no-store", signal: AbortSignal.timeout(S.cfg.probeMs * 2)})]);
+    const j = await jsonOrError(ri), h = await jsonOrError(rh);
+    if (!ri.ok || j.ok !== true || !Array.isArray(j.invoices)) throw new Error(j.error || `HTTP ${ri.status}`);
+    S.runnerInv = {st:"up", list: j.invoices.filter(x => isObj(x) && isStr(x.said)), why:null, active: isObj(h.activeRun) ? h.activeRun : null};
+  } catch (e) { S.runnerInv = {st:"err", list:[], why: e.name === "TimeoutError" ? "no answer" : e.message, active:null}; }
+}
+const runnable = () => S.runnerInv.list.filter(x => x.runnable === true);
+const runnerInvLabel = x => [x.invoiceNumber || fmt.short(x.said), x.amount ? `${x.amount} ${x.currency || ""}`.trim() : null, x.realAmount, x.status].filter(Boolean).join(" · ");
+
+// SSE over fetch: "id:", "event:", "data:" (Signatory §S-7); comments and "retry:" ignored.
+async function readSse(url, signal, headers, onEvent){
+  const res = await fetch(url, {headers, cache:"no-store", signal});
+  if (!res.ok || !res.body){ const j = await jsonOrError(res); throw new Error(j.error || `HTTP ${res.status}`); }
+  const rd = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buf = "";
+  for (;;){
+    const {value, done} = await rd.read();
+    if (done) break;
+    buf += value.replace(/\r\n?/g, "\n");
+    let k;
+    while ((k = buf.indexOf("\n\n")) >= 0){
+      const block = buf.slice(0, k); buf = buf.slice(k + 2);
+      let name = "message"; const data = [];
+      for (const line of block.split("\n")){
+        if (!line || line.startsWith(":")) continue;
+        const c = line.indexOf(":"), field = c < 0 ? line : line.slice(0, c);
+        let v = c < 0 ? "" : line.slice(c + 1); if (v.startsWith(" ")) v = v.slice(1);
+        if (field === "event") name = v; else if (field === "data") data.push(v);
+      }
+      if (data.length) onEvent(name, data.join("\n"));
+    }
+  }
+}
+
+let refreshSoon = null;
+function scheduleRefresh(){
+  if (refreshSoon) return;
+  refreshSoon = setTimeout(async () => { refreshSoon = null; await refreshChain(); await fetchRunnerInvoices(); renderAll(); }, 600);
+}
+async function startRun(body){
+  if (runActive() || S.busy) return;
+  S.live.posting = true; S.live.err = null; renderConversation();
+  let res, j;
+  try { res = await fetch(runnerBase() + "/run", {method:"POST", headers:{"Content-Type":"application/json"}, cache:"no-store", body: JSON.stringify(body), signal: AbortSignal.timeout(30000)}); }
+  catch (e) { S.live.posting = false; S.live.err = {error:`runner not reachable at ${runnerBase()} (${e.message})`}; renderConversation(); return; }
+  j = await jsonOrError(res);
+  S.live.posting = false;
+  if (!res.ok || j.ok !== true || !isStr(j.runId)){   // 409 active / not runnable, 404 unknown SAID, 400 bad input (C4)
+    S.live.err = {http: res.status, error: j.error || `HTTP ${res.status}`, activeRunId: isStr(j.activeRunId) ? j.activeRunId : null, req: body};
+    renderConversation(); return;
+  }
+  if (body.text) $("#req").value = "";
+  attachRun(j.runId, body);
+}
+function attachRun(runId, req){
+  if (S.live.run && S.live.run.runId === runId) return;
+  const run = {runId, req, started:null, steps:[], finished:null, lastSeq:0, decide:{busy:null, err:null}, streamErr:null, ctl:null};
+  S.live.run = run; S.live.err = null; S.chat.push({kind:"run", run});
+  renderAll(); streamRun(run);
+}
+async function streamRun(run){
+  const url = `${runnerBase()}/runs/${encodeURIComponent(run.runId)}/events`;
+  for (let attempt = 0; !run.finished && attempt < 6; attempt++){
+    const ctl = new AbortController(); run.ctl = ctl;
+    const headers = {Accept:"text/event-stream"};
+    if (run.lastSeq) headers["Last-Event-ID"] = String(run.lastSeq);   // runner replays only what we missed
+    try { await readSse(url, ctl.signal, headers, (name, text) => onRunEvent(run, name, text)); run.streamErr = null; }
+    catch (e) { if (e.name === "AbortError") break; run.streamErr = e.message; }
+    if (run.finished) break;
+    renderConversation();
+    await new Promise(r => setTimeout(r, 3000));   // the runner's own "retry: 3000"
+  }
+  if (!run.finished && !run.streamErr) run.streamErr = "event stream closed before the run finished";
+  await refreshChain(); await fetchRunnerInvoices(); renderAll();
+}
+function onRunEvent(run, name, text){
+  let d; try { d = JSON.parse(text); } catch (e) { return; }
+  if (!isObj(d)) return;
+  if (Number.isInteger(d.seq)){ if (d.seq <= run.lastSeq) return; run.lastSeq = d.seq; }
+  if (name === "run" && d.state === "started") run.started = d;
+  else if (name === "run" && d.state === "finished"){ run.finished = d; if (run.ctl) run.ctl.abort(); }
+  else if (name === "step"){ const k = run.steps.findIndex(s => s.step === d.step); if (k >= 0) run.steps[k] = d; else run.steps.push(d); }
+  for (const h of [d.txHash]) if (isStr(h) && TXHASH.test(h)) S.sessionTx.add(h);
+  renderConversation(); scheduleRefresh();
+}
+// The SAID a live run is waiting on (outcome = waiting, no decision done yet), else null.
+function waitingSaid(run){
+  if (!run || run.finished || !run.started) return null;
+  const out = run.steps.find(s => s.step === "outcome"), dec = run.steps.find(s => s.step === "decision");
+  return out && out.status === "waiting" && !(dec && dec.status === "done") ? run.started.said : null;
+}
+async function decideRun(run, decision){
+  if (run.decide.busy) return;
+  run.decide = {busy:decision, err:null}; renderConversation();
+  try {
+    const res = await fetch(`${runnerBase()}/runs/${encodeURIComponent(run.runId)}/decide`, {method:"POST", headers:{"Content-Type":"application/json"}, cache:"no-store", body: JSON.stringify({decision}), signal: AbortSignal.timeout(180000)});
+    const j = await jsonOrError(res);
+    run.decide = {busy:null, err: j.ok === true ? null : `${decision}: ${j.error || "HTTP " + res.status}`};
+  } catch (e) { run.decide = {busy:null, err:`${decision}: runner not reachable (${e.message})`}; }
+  renderAll();
+}
+// Your own signer clicks outside a run (Turn off agent; Approve/Reject on a pending invoice no run is waiting on).
+function clickRow(actor, target, what, r){
+  const b = r.body, out = isObj(b.outcome) ? b.outcome : null;
+  const text = b.ok === true ? `${what}${out ? ` → ${out.event}${isStr(out.reason) ? ` "${out.reason}"` : ""}${isStr(out.via) ? ` (via ${out.via})` : ""}` : ""}`
+    : `${what} → refused: ${b.error || b.reason || "no reason given"}`;
+  S.chat.push({kind:"click", row:{actor, target, step:"your click", text, status: b.ok === true ? (out ? out.event : "done") : "failed",
+    txHash: b.txHash || null, ts: new Date().toISOString(), src:`signer ${r.call}`, data: b}});
+}
+
+/* chat view */
+const AV = {seller:"🟧", buyer:"🟩", registrar:"🔷", contract:"🟪", human:"👤"};
+function actorClass(actor){
+  if (!isStr(actor)) return "";
+  const a = actor.toLowerCase();
+  if (a === "vlei_registrar" || a.includes("registrar") || (S.acc && actor === S.acc.registrar)) return "registrar";
+  if (a === "contract" || a === "near contract" || actor === S.cfg.contractId) return "contract";
+  if (S.acc && isObj(S.acc.aliases)){
+    const ent = isObj(S.acc.aliases[actor]) ? S.acc.aliases[actor] : Object.values(S.acc.aliases).find(v => isObj(v) && v.account === actor);
+    if (ent && ent.role === "cpo") return "human";
+    if (ent && ent.role === "buyer_agent") return "buyer";
+    if (ent && ent.role === "payee") return "seller";
+  }
+  if (S.ev) for (const c of S.ev.companies){
+    if (c.officers.some(o => o.alias.toLowerCase() === a)) return "human";
+    if (c.agents.some(x => x.alias.toLowerCase() === a) || c.alias.toLowerCase() === a) return c === S.seller ? "seller" : c === S.buyer ? "buyer" : "";
+  }
+  return "";
+}
+function who(actor){
+  const id = isObj(actor) ? actor.id : actor, account = isObj(actor) && isStr(actor.account) ? actor.account : null;
+  const name = id === "vlei_registrar" ? "vLEI registrar" : id === "contract" ? "NEAR contract" : (isStr(id) && id) || account || "runner";
+  const cls = actorClass(isStr(id) ? id : "") || actorClass(account || "");
+  return {name, cls, av: AV[cls] || "▫", account};
+}
+function whenText(t){
+  if (t === null || t === undefined) return null;
+  if (/^\d{16,}$/.test(String(t))) return fmt.ns(String(t));
+  const ms = Date.parse(String(t)); return isNaN(ms) ? String(t) : fmt.ns(String(ms) + "000000");
+}
+const STCLS = s => /fail|refus|reject|error|no_match|timeout|cancel/i.test(s) ? "pill bad" : /done|paid|admitted|issued|registered/i.test(s) ? "pill ok" : /running|waiting|pending/i.test(s) ? "pill warn" : "pill";
+function issuedAt(said){ const i = invBySaid(said); if (!i) return null; const t = i.issuance && i.issuance.telEvent && i.issuance.telEvent.dt; return whenText(t || (attrsOf(i) && attrsOf(i).dt)); }
+function hashOf(d){
+  if (isStr(d.txHash) && TXHASH.test(d.txHash)) return d.txHash;
+  if (isStr(d.txUrl)){ const m = d.txUrl.split(/[/?#]/).filter(Boolean).pop(); if (m && TXHASH.test(m)) return m; }
+  return null;
+}
+function bubble(d, o = {}){
+  const a = who(d.actor), t = d.target ? who(d.target) : null, st = isStr(d.status) ? d.status : null;
+  const body = el("div",{class:"bb"},
+    el("div",{class:"hd"}, el("span",{class:"who",title:a.account || null,text:a.name}), t ? el("span",{class:"meta",title:t.account || null,text:"→ " + t.name}) : null,
+      d.step ? el("span",{class:"pill",text:String(d.step)}) : null, st ? el("span",{class:STCLS(st),text:st}) : null,
+      o.replay ? el("span",{class:"pill",text:"replay"}) : null, (d.ts || d.at) ? el("time",{text: whenText(d.ts || d.at) || ""}) : null));
+  if (d.history) body.append(el("div",{class:"hist",text:`vLEI proof · issued ${issuedAt(o.said) || "(time not in evidence)"} — pre-issued, not a live action`}));
+  if (d.text) body.append(el("div",{class:"txt",text:String(d.text)}));
+  const h = hashOf(d), foot = el("div",{class:"meta"});
+  if (h) foot.append("tx ", txLink(h), " ");
+  if (d.src) foot.append(d.src);
+  if (foot.childNodes.length) body.append(foot);
+  if (st === "running" && !o.replay) body.append(el("div",{class:"typing",role:"status"}, el("span",{class:"spin","aria-hidden":"true"}), ` Typing… (waiting on ${t ? t.name : "NEAR"})`));
+  if (d.data !== undefined && d.data !== null) body.append(el("details",{class:"raw"}, el("summary",{text:"details"}), el("pre",{text:JSON.stringify(d.data, null, 2)})));
+  if (o.extra) body.append(o.extra);
+  return el("div",{class:"bub " + a.cls}, el("div",{class:"av","aria-hidden":"true",text:a.av}), body);
+}
+function youBubble(req, ts){
+  const text = isStr(req.text) ? req.text : `Run ${(invBySaid(req.said) && invNo(invBySaid(req.said))) || fmt.short(req.said)}`;
+  return el("div",{class:"bub you"}, el("div",{class:"bb"}, el("div",{class:"hd"}, el("span",{class:"who",text:"You (buyer)"}), ts ? el("time",{text:whenText(ts) || ""}) : null), el("div",{class:"txt",text})));
+}
+function startedLine(s){
+  const parts = [];
+  if (isObj(s.invoice)) parts.push(`invoice ${s.invoice.invoiceNumber} · ${s.invoice.amount} ${s.invoice.currency}${s.invoice.realAmount ? " (" + s.invoice.realAmount + ")" : ""} · NEAR status ${s.invoice.status}`);
+  if (isObj(s.mandate)) parts.push(`agent limit ${s.mandate.limit} ${S.chain.token ? S.chain.token.symbol : ""}${s.mandate.revoked ? " · mandate REVOKED" : ""} · approver ${aliasOf(s.mandate.approver)}`);
+  if (isObj(s.request) && isObj(s.request.parsed)){
+    const p = s.request.parsed;
+    parts.push(`request read as ${p.amountSource ? `"${p.amountSource}" → ${p.amount} USDC` : "no amount"}${p.invoiceNumber ? " · " + p.invoiceNumber : ""}${p.quantity ? " · quantity " + p.quantity : ""}${p.item ? " · " + p.item : ""}`);
+  }
+  return el("div",{class:"sysline"}, `run ${s.runId} started · ` + parts.join(" · "));
+}
+function escalationBubble(run){
+  const said = waitingSaid(run); if (!said) return null;
+  const out = run.steps.find(s => s.step === "outcome");
+  const reasons = [serviceReason("runner","Runner"), S.busy ? `another action is running (${S.busy})` : null].filter(Boolean);
+  const mk = what => el("button",{class: what === "approve" ? "btn primary" : "btn", type:"button", disabled: reasons.length || run.decide.busy ? "disabled" : null,
+    text: run.decide.busy === what ? "Sending…" : what === "approve" ? "Approve" : "Reject", onclick: () => decideRun(run, what)});
+  const extra = el("div",null, el("div",{class:"row",style:"margin-top:6px"}, mk("approve"), mk("reject")),
+    run.decide.busy ? el("div",{class:"typing"}, el("span",{class:"spin","aria-hidden":"true"}), ` Typing… (sending your ${run.decide.busy} to NEAR)`) : null,
+    reasons.length ? el("div",{class:"reason"}, ...reasons.map(r => el("div",{text:"Blocked: " + r}))) : null,
+    run.decide.err ? el("div",{class:"result bad"}, el("span",{class:"mono",text:run.decide.err})) : null);
+  return bubble({actor: out.target, target:{id:"contract"}, step:"escalation", status:"waiting",
+    text:`Escalated to you: ${invBySaid(said) ? invNo(invBySaid(said)) : fmt.short(said)} is above the agent's limit and held by the contract. Approve or reject.`}, {extra});
+}
+function summaryText(run){
+  const f = run.finished, s = run.started || {}, lines = [`Run ${run.runId}: ${f.result} — ${f.text || ""}`];
+  if (isObj(s.invoice)) lines.push(`Invoice ${s.invoice.invoiceNumber} ${s.invoice.amount} ${s.invoice.currency} SAID ${s.invoice.said}`);
+  for (const st of run.steps) lines.push(`${st.index}. ${st.step} ${st.status} ${st.ts}${hashOf(st) ? " tx " + hashOf(st) : ""}`);
+  const ev = invBySaid(f.said || s.said);
+  if (ev){
+    lines.push(`IPEX grant ${ev.ipex.grantSaid}; admit ${ev.ipex.admitSuccess === true}; held ${ev.ipex.credentialHeld === true}`);
+    const an = ev.issuance && ev.issuance.anchor; if (an) lines.push(`Issuance anchor: issuer KEL ${an.t} s=${an.kelSeq} ${an.ixnSaid}; TEL iss ${ev.issuance.telEvent && ev.issuance.telEvent.said}`);
+  }
+  return lines.join("\n");
+}
+function summaryCard(run){
+  const f = run.finished, s = run.started || {}, said = f.said || s.said, ev = said ? invBySaid(said) : null;
+  const card = el("div",{class:"summary"}, el("div",{class:"row"}, el("b",{text:"Run summary"}), el("span",{class:STCLS(f.result),text:f.result}),
+    el("span",{class:"meta",text:`${run.runId} · finished ${whenText(f.ts) || ""}`})));
+  if (f.text) card.append(el("div",{text:f.text}));
+  if (run.steps.length){
+    const t = el("table",{class:"data"}, el("thead",null, el("tr",null, ...["Step","Status","Time","Tx"].map(h => el("th",{text:h})))));
+    const tb = el("tbody");
+    for (const st of run.steps) tb.append(el("tr",null, el("td",{text:`${st.index}. ${st.step}${st.history ? " (vLEI proof)" : ""}`}), el("td",null, el("span",{class:STCLS(st.status),text:st.status})),
+      el("td",{class:"mono",text: whenText(st.ts) || DASH}), el("td",null, hashOf(st) ? txLink(hashOf(st)) : el("span",{class:"skel",text:DASH}))));
+    t.append(tb); card.append(el("div",{class:"tbl"}, t));
+  }
+  if (ev){
+    card.append(el("h3",{text:"vLEI proof"}));
+    const kv = el("dl",{class:"kv"}), row = (k, v) => kv.append(el("dt",{text:k}), el("dd",null, v));
+    row("Invoice SAID", idSpan(ev.said, "invoice SAID"));
+    row("IPEX grant", idSpan(ev.ipex.grantSaid, "IPEX grant SAID"));
+    row("Admit / held", `${ev.ipex.admitSuccess === true ? "✓" : "✗"} / ${ev.ipex.credentialHeld === true ? "✓" : "✗"}`);
+    const an = ev.issuance && ev.issuance.anchor;
+    row("Issuance anchor", an ? el("span",null, `issuer KEL ${an.t} s=${an.kelSeq} `, idSpan(an.ixnSaid, "anchor SAID"), " · TEL iss ", idSpan(ev.issuance.telEvent && ev.issuance.telEvent.said, "TEL iss SAID"),
+      ` · ${ev.issuanceVerified === true ? "verified by the exporter" : "not verified"}`) : "not in evidence");
+    card.append(kv);
+  }
+  const v = said ? S.chain.invoices[said] : undefined;
+  card.append(el("h3",{text:"On NEAR now"}));
+  card.append(el("div",{class: stale().trim()}, v ? `get_invoice: ${v.status} · ${tokenText(v.amount_units)}${realText(v.amount_units) ? " (" + realText(v.amount_units) + ")" : ""}${v.payer ? " · payer " + aliasOf(v.payer) : ""}${v.paid_at ? " · paid " + fmt.ns(v.paid_at) : ""}`
+    : v === null ? "get_invoice: not registered" : "get_invoice: not read yet"));
+  card.append(el("div",{class:"row",style:"margin-top:6px"}, copyBtn(summaryText(run), "run summary")));
+  return card;
+}
+function runBlock(run){
+  const box = el("div",{class:"chatlog",style:"max-height:none;overflow:visible"});
+  box.append(youBubble(run.req, run.started && run.started.ts));
+  if (run.started) box.append(startedLine(run.started));
+  else if (!run.finished) box.append(el("div",{class:"sysline"}, el("span",{class:"spin","aria-hidden":"true"}), ` connecting to run ${run.runId}…`));
+  for (const st of run.steps) box.append(bubble(st, {said: run.started && run.started.said}));
+  const esc = escalationBubble(run); if (esc) box.append(esc);
+  if (run.streamErr && !run.finished) box.append(el("div",{class:"result bad",role:"alert"}, "event stream: ", el("span",{class:"mono",text:run.streamErr})));
+  if (run.finished) box.append(summaryCard(run));
+  return box;
+}
+function renderPeople(){
+  const p = $("#chat-people"); p.replaceChildren();
+  const person = (cls, name, sub, ...extra) => el("div",{class:"person " + cls}, el("span",null, `${AV[cls] || "▫"} `, el("b",{text:name})), sub ? el("span",{class:"meta",text:sub}) : null, ...extra);
+  const m = agentMandate();
+  p.append(person("seller", S.cfg.sellerAgent, "seller agent"));
+  p.append(person("buyer", S.cfg.buyerAgent, m ? `buyer agent · limit ${tokenText(m.limit_units)}${m.revoked ? " · REVOKED" : ""}` : "buyer agent", turnOffAgent()));
+  p.append(person("registrar", "vLEI registrar", "bridge"));
+  p.append(person("contract", "NEAR contract", S.cfg.contractId || "not configured"));
+  const cpo = S.acc && isObj(S.acc.aliases) ? Object.keys(S.acc.aliases).find(k => S.acc.aliases[k].role === "cpo") : null;
+  if (cpo) p.append(person("human", cpo, "human approver"));
+}
+function renderRunControls(){
+  const reasons = [];
+  const rr = serviceReason("runner","Runner"); if (rr) reasons.push(rr);
+  else if (S.runnerInv.st === "err") reasons.push(`runner GET /invoices failed: ${S.runnerInv.why}`);
+  else if (S.runnerInv.st === "up" && !runnable().length) reasons.push("No unpaid invoice — issue a new invoice (vLEI §3.3)");
+  else if (S.runnerInv.st !== "up") reasons.push("runner invoices: reading…");
+  const ar = runReason(); if (ar) reasons.push(ar);
+  if (S.busy) reasons.push(`another action is running (${S.busy})`);
+  const off = reasons.length > 0;
+  const pick = $("#pick"), cur = pick.value, opts = runnable();
+  const sig = S.runnerInv.st + JSON.stringify(opts.map(runnerInvLabel)) + opts.map(x => x.said).join();
+  if (pick.dataset.sig !== sig){
+    pick.replaceChildren(...(opts.length ? opts.map(x => el("option",{value:x.said,text:runnerInvLabel(x)})) : [el("option",{value:"",text: S.runnerInv.st === "up" ? "no runnable invoice" : "runner invoices not available"})]));
+    pick.dataset.sig = sig;
+    if (opts.some(x => x.said === cur)) pick.value = cur;
+  }
+  $("#req").disabled = off; $("#run-text").disabled = off || !$("#req").value.trim(); pick.disabled = off; $("#run-pick").disabled = off || !pick.value;
+  const box = $("#run-reason"); box.replaceChildren();
+  if (reasons.length) box.append(el("div",{class:"reason"}, ...reasons.map(r => el("div",{text:"Blocked: " + r}))));
+  const other = S.runnerInv.active && (!S.live.run || S.runnerInv.active.runId !== S.live.run.runId) && S.runnerInv.active.state !== "finished" ? S.runnerInv.active : null;
+  if (other && !runActive()) box.append(el("div",{class:"note"}, `The runner reports another active run (${other.runId}, ${other.state}); a new request will be refused with 409. `,
+    el("button",{class:"linkbtn",type:"button",text:"open it here",onclick: () => attachRun(other.runId, {said: other.said})})));
+  if (S.live.err){   // C4: refusals (409 / 404 / 400) inline
+    const e = S.live.err;
+    box.append(el("div",{class:"result bad",role:"alert"}, `runner refused${e.http ? " (HTTP " + e.http + ")" : ""}: `, el("span",{class:"mono",text:String(e.error)}),
+      e.activeRunId && (!S.live.run || S.live.run.runId !== e.activeRunId) ? el("span",null, " ", el("button",{class:"linkbtn",type:"button",text:`open run ${e.activeRunId}`,onclick: () => attachRun(e.activeRunId, e.req || {})})) : null));
+  }
+  if (S.live.posting) box.append(el("div",{class:"typing"}, el("span",{class:"spin","aria-hidden":"true"}), " sending request to the runner…"));
+}
+function renderConversation(){
+  renderPeople(); renderRunControls();
+  const log = $("#chat-live"); log.replaceChildren();
+  if (!S.chat.length) log.append(el("div",{class:"empty",text:"No run in this page session yet. Type a request below, or open “or run a specific invoice”."}));
+  const lastRun = [...S.chat].reverse().find(x => x.kind === "run");
+  for (const item of S.chat){
+    if (item.kind === "click"){ log.append(bubble(item.row)); continue; }
+    const r = item.run;
+    if (item === lastRun) log.append(runBlock(r));
+    else log.append(el("details",{class:"prevrun"}, el("summary",{text:`${r.runId} · ${r.started && isObj(r.started.invoice) ? r.started.invoice.invoiceNumber : "no invoice"} · ${r.finished ? r.finished.result : "not finished"}${r.finished ? " · " + (whenText(r.finished.ts) || "") : ""}`}), runBlock(r)));
+  }
+  renderReplay();
+}
+
+/* replay: completed invoices, same bubbles, labelled, separate pane, real timestamps, no pacing */
+function eventStep(e){
+  let d = {}; try { d = JSON.parse(e.json).data[0] || {}; } catch (x) {}
+  const no = isStr(d.said) && invBySaid(d.said) ? invNo(invBySaid(d.said)) : "";
+  const amt = d.amount_units !== undefined ? tokenText(String(d.amount_units)) : "";
+  switch (e.event){
+    case "invoice_registered": return [{id:"vlei_registrar"}, {id:"contract"}, `Registered ${no} on NEAR · ${amt} · payee ${aliasOf(d.payee)}`];
+    case "payment_pending":   return [aliasOf(d.payer), {id:"contract"}, `Paid ${no} ${amt} — above the limit ${tokenText(String(d.limit_units))}: held, escalated to ${aliasOf(d.approver)}`];
+    case "payment_approved":  return [aliasOf(d.approver), {id:"contract"}, `Approved ${no} ${amt}`];
+    case "payment_rejected":  return [aliasOf(d.approver), {id:"contract"}, `Rejected ${no} · ${amt} refunded to ${aliasOf(d.payer)}`];
+    case "agent_revoked":     return [aliasOf(d.by), {id:"contract"}, `Turned off agent ${aliasOf(d.account)} (revoke)`];
+    case "paid":              return [{id:"contract"}, aliasOf(d.payee), `Paid ${no}: ${amt} from ${aliasOf(d.payer)} (via ${d.via})`];
+    case "payment_refused":   return [{id:"contract"}, aliasOf(d.payer), `Refused ${no}: "${d.reason}" · ${amt} returned`];
+    default:                  return [{id:"contract"}, null, e.event];
+  }
+}
+const completed = () => invoices().filter(i => { const v = onChain(i); return v && (v.status === "paid" || v.status === "rejected"); });
+function replayRows(i){
+  const a = attrsOf(i) || {}, rows = [];
+  rows.push({src:"vLEI evidence (IPEX grant)", step:"offer", history:true, actor:i.issuerAlias, target:i.holderAlias, status:"done",
+    text:`Invoice ${invNo(i)} for ${invDec(i) || DASH} ${a.currency || ""}, issued as vLEI credential ${i.said} and offered by IPEX grant ${i.ipex.grantSaid}`});
+  rows.push({src:"vLEI evidence (IPEX admit)", step:"accept", history:true, actor:i.holderAlias, target:i.issuerAlias, status: i.ipex.admitSuccess === true && i.ipex.credentialHeld === true ? "done" : "failed",
+    text:`IPEX admit ${i.ipex.admitSuccess === true ? "✓" : "✗"} · credential held ${i.ipex.credentialHeld === true ? "✓" : "✗"}`});
+  const own = eventsFor(i.said);
+  if (own.length){
+    const first = own[0].index, last = own[own.length - 1].index;
+    for (const e of S.chain.events){
+      if (e.index < first || e.index > last) continue;
+      if (!(e.json.includes(`"said":"${i.said}"`) || e.event === "agent_revoked")) continue;
+      const [actor, target, text] = eventStep(e);
+      rows.push({src:`NEAR event #${e.index} · block ${e.block_height}`, step:e.event, actor, target, text, status:e.event, txHash: S.chain.tx[e.index] || null, at: String(e.timestamp_ns)});
+    }
+  }
+  return rows;
+}
+function startReplay(){
+  const i = invBySaid($("#replay-pick").value); if (!i) return;
+  S.replay = {said:i.said, rows: replayRows(i), shown:0, timer:null};
+  S.replay.shown = S.replay.rows.length;
+  renderReplay();
+}
+function renderReplay(){
+  const done = completed(), pick = $("#replay-pick"), cur = pick.value || S.replay.said;
+  const sig = done.map(x => x.said + onChain(x).status).join();
+  if (pick.dataset.sig !== sig){
+    pick.replaceChildren(...(done.length ? done.map(x => el("option",{value:x.said,text:`${invNo(x)} · ${onChain(x).status}`})) : [el("option",{value:"",text:"no completed invoice"})]));
+    pick.dataset.sig = sig;
+    if (done.some(x => x.said === cur)) pick.value = cur;
+  }
+  const reasons = [];
+  if (S.chain.st === "none" || !S.chain.at) reasons.push(contractReason() || "NEAR events not read yet");
+  else if (!done.length) reasons.push("no completed (paid / rejected) invoice on NEAR yet");
+  $("#replay-go").disabled = reasons.length > 0;
+  $("#replay-reason").replaceChildren(...reasons.map(r => el("div",{text:"Blocked: " + r})));
+  const th = $("#chat-replay"); th.replaceChildren();
+  if (S.replay.said){
+    const i = invBySaid(S.replay.said);
+    if (S.replay.said && S.chain.at) S.replay.rows = replayRows(i || {said:S.replay.said, ipex:{}});   // tx links fill in as they are matched
+    th.append(el("div",{class:"sysline",text:`replay of ${i ? invNo(i) : fmt.short(S.replay.said)} — ${S.replay.rows.length} recorded steps (2 from the vLEI evidence, ${S.replay.rows.length - 2} NEAR events), recorded times`}));
+    S.replay.rows.forEach(r => th.append(bubble(r, {replay:true, said:S.replay.said})));
+  }
+}
+function setView(v){
+  S.view = v;
+  $("#pane-live").hidden = v !== "live"; $("#pane-replay").hidden = v !== "replay";
+  $("#v-live").setAttribute("aria-pressed", String(v === "live")); $("#v-replay").setAttribute("aria-pressed", String(v === "replay"));
+}
+function wireConversation(){
+  $("#req").addEventListener("input", renderRunControls);
+  $("#req").addEventListener("keydown", e => { if (e.key === "Enter" && !$("#run-text").disabled) $("#run-text").click(); });
+  $("#run-text").addEventListener("click", () => { const t = $("#req").value.trim(); if (t) startRun({text:t}); });
+  $("#run-pick").addEventListener("click", () => { const s = $("#pick").value; if (s) startRun({said:s}); });
+  $("#replay-go").addEventListener("click", startReplay);
+  $("#v-live").addEventListener("click", () => setView("live"));
+  $("#v-replay").addEventListener("click", () => setView("replay"));
+  setView("live");
+}
+
+/* ---------- view: company tabs (U14) ---------- */
+function renderCompany(target, c, side, missingAlias){
+  const sec = $(target); sec.replaceChildren();
+  if (!S.ev){ sec.append(el("div",{class:"card"}, el("div",{class:"empty",text:"vLEI evidence not loaded."}))); return; }
+  if (!c){ sec.append(el("div",{class:"card"}, el("div",{class:"empty",text:`${missingAlias} is not in the evidence.`}))); return; }
+  sec.append(el("div",{class:"card"}, el("h2",{text:`${c.name} · ${side}`}), el("p",{class:"sub",text:`Only ${c.name}'s own identities and capabilities. LEI ${c.lei}.`})));
+
+  const t = el("table",{class:"data"}, el("thead",null, el("tr",null, ...["Alias","Type","Role","AID","Delegated from","KEL check","OOR SAID"].map(h => el("th",{text:h})))));
+  const tb = el("tbody");
+  for (const o of c.officers) tb.append(el("tr",null, el("td",{text:o.alias}), el("td",null, el("span",{class:"pill human",text:"Human"})), el("td",{text:o.officialRole || DASH}),
+    el("td",null, idSpan(o.aid, `AID of ${o.alias}`)), el("td",{text:"QVI (OOR credential)"}), el("td",{text:"n/a"}),
+    el("td",null, isObj(o.oorCredential) ? idSpan(o.oorCredential.said, `OOR SAID of ${o.alias}`) : el("span",{class:"pill bad",text:"none"}))));
+  for (const a of c.agents) tb.append(el("tr",null, el("td",{text:a.alias}), el("td",null, el("span",{class:"pill ai",text: a.advisoryOnly ? "AI · advisory" : "AI"})),
+    el("td",{text:[a.role, a.scope && a.scope !== a.role ? a.scope : null].filter(Boolean).join(" · ") || DASH}),
+    el("td",null, idSpan(a.aid, `AID of ${a.alias}`)), el("td",{text:a.delegatorAlias}),
+    el("td",null, el("span",{class: a.delegationVerified === true ? "pill ok" : a.delegationVerified === false ? "pill bad" : "pill warn", text: a.delegationVerified === true ? "KEL ✓" : a.delegationVerified === false ? "KEL ✗" : "not checked"})),
+    el("td",{text:"n/a"})));
+  t.append(tb);
+  const idCard = el("div",{class:"card",style:"margin-top:16px"}, el("h2",{text:"Identities"}), el("div",{class:"tbl"}, t));
+  sec.append(idCard);
+
+  const mine = invoices().filter(x => { const xa = attrsOf(x); return xa && (xa.sellerLEI === c.lei || xa.buyerLEI === c.lei); });
+  const invCard = el("div",{class:"card"}, el("h2",{text:"Invoices"}));
+  if (mine.length){
+    const it = el("table",{class:"data"}, el("thead",null, el("tr",null, ...["Invoice","Role","Amount","IPEX admit","On NEAR"].map(h => el("th",{text:h})))));
+    const body = el("tbody");
+    for (const x of mine){
+      const xa = attrsOf(x), dec = invDec(x) || DASH;
+      body.append(el("tr",null, el("td",{text:xa.invoiceNumber || fmt.short(x.said)}), el("td",{text: xa.sellerLEI === c.lei ? "seller" : "buyer"}),
+        el("td",{class:"num",text:`${dec} ${xa.currency || ""}`.trim()}),
+        el("td",null, el("span",{class: x.ipex.admitSuccess === true ? "pill ok" : "pill bad", text: x.ipex.admitSuccess === true ? "✓" : "not completed"})),
+        el("td",null, statusPill(x))));
+    }
+    it.append(body);
+    invCard.append(el("div",{class:"tbl"}, it));
+  } else invCard.append(el("div",{class:"empty",text:"No invoice for this company in the evidence."}));
+
+  const capCard = el("div",{class:"card"}, el("h2",{text:"Capabilities"}));
+  const caps = [];
+  const mainAgent = c.agents.find(x => x.alias === (side === "buyer" ? S.cfg.buyerAgent : S.cfg.sellerAgent));
+  if (side === "buyer"){
+    caps.push([`Pay invoice as ${mainAgent ? mainAgent.alias : S.cfg.buyerAgent}`, [serviceReason("signer","Signer"), contractReason()]]);
+    if (mainAgent) caps.push([`Approve above limit as ${mainAgent.delegatorAlias}`, [serviceReason("signer","Signer"), contractReason()]]);
+    caps.push(["Revoke an agent (officer / CEO)", [serviceReason("signer","Signer"), contractReason()]]);
+  } else {
+    caps.push(["Register invoice on NEAR (bridge)", [serviceReason("bridge","Bridge"), contractReason()]]);
+    caps.push(["Receive payment at the invoice payee account", [contractReason()]]);
+  }
+  const ul = el("div",{class:"rail"});
+  caps.forEach(([t, rs]) => { const r = rs.filter(Boolean); ul.append(el("div",null, el("div",{text:t}),
+    r.length ? el("div",{class:"reason"}, ...r.map(x => el("div",{text:"Blocked: " + x}))) : el("div",{class:"note",text:"service and contract reachable — each invoice's NEAR status decides (see Live floor scenarios)"}))); });
+  capCard.append(ul);
+  sec.append(el("div",{class:"grid2"}, invCard, capCard));
+}
+
+/* ---------- view: proof trail (U13) ---------- */
+function renderProof(){
+  const sec = $("#view-proof"); sec.replaceChildren();
+  if (!S.ev){ sec.append(el("div",{class:"card"}, el("div",{class:"empty",text:"vLEI evidence not loaded."}))); return; }
+  const e = S.ev;
+  const card = el("div",{class:"card"}, el("h2",{text:"Proof trail"}),
+    el("p",{class:"sub",text:"One row per claim. \"Export\" = checked by export-signatory-evidence.js; \"Fields\" = the page compares exported values; \"Listed\" = shown as exported, not checked."}));
+  if (e.checks.failures.length) card.append(el("div",{class:"banner bad"}, el("b",{text:"Export check failures"}), el("ul",null, ...e.checks.failures.map(f => el("li",{text:String(f)})))));
+  const t = el("table",{class:"data"}, el("thead",null, el("tr",null, ...["Claim","Evidence","Check","Result"].map(h => el("th",{text:h})))));
+  const tb = el("tbody");
+  const res = (ok, yes, no) => el("span",{class: ok === true ? "pill ok" : ok === false ? "pill bad" : "pill warn", text: ok === true ? yes : ok === false ? no : "not checked"});
+  const add = (claim, evid, check, result) => tb.append(el("tr",null, el("td",{text:claim}), el("td",null, evid), el("td",{text:check}), el("td",null, result)));
+  const src = isObj(e.source) ? e.source : {};
+  add("GEDA → QVI", el("span",null, "GEDA ", idSpan(src.gedaAid, "GEDA AID"), " · QVI ", idSpan(src.qviAid, "QVI AID")), "Listed", res(null));
+  for (const c of e.companies){
+    for (const o of c.officers){
+      const oor = isObj(o.oorCredential) ? o.oorCredential : null;
+      const fieldsOk = oor ? (oor.issuerAid === src.qviAid && oor.issueeAid === o.aid) : false;
+      add(`OOR · ${o.alias} (${c.name})`, oor ? idSpan(oor.said, `OOR SAID of ${o.alias}`) : DASH, "Fields: issuer = QVI, issuee = officer (OOR ACDC not exported)", res(oor ? fieldsOk : false, "fields match", oor ? "fields differ" : "no OOR"));
+    }
+    for (const a of c.agents) add(`Delegation · ${a.alias} ← ${a.delegatorAlias}`, idSpan(a.aid, `AID of ${a.alias}`), "Export: child dip names parent + parent seal in KEL", res(a.delegationVerified, "KEL ✓", "KEL ✗"));
+  }
+  const i = inv(), a = invA();
+  if (i){
+    const seller = S.seller, buyer = S.buyer;
+    const fieldsOk = !!(i.acdc && i.acdc.d === i.said && i.acdc.i === i.issuerAid && a && seller && a.sellerLEI === seller.lei && buyer && a.buyerLEI === buyer.lei);
+    add("Invoice credential", el("span",null, "SAID ", idSpan(i.said, "invoice SAID"), " · schema ", idSpan(i.schemaSaid, "schema SAID"), " · registry ", idSpan(i.registry, "registry SAID")),
+      "Fields: acdc.d = SAID, acdc.i = issuer, seller/buyer LEI match companies (SAID digest is recomputed by the bridge, UI-3)", res(fieldsOk, "fields match", "fields differ"));
+    add("Invoice issuer authority", el("span",null, `${i.issuerAlias || DASH} ← ${isObj(i.issuerDelegatedFrom) ? i.issuerDelegatedFrom.officerAlias : DASH}`),
+      e.checks.strict ? "Export (strict): issuer = seller agent, officer holds OOR, delegation in KEL" : "Export run without --strict", res(e.checks.strict ? e.checks.passed : null, "passed", "failed"));
+    add("IPEX grant", idSpan(i.ipex.grantSaid, "IPEX grant SAID"), "Fields: grant carries the invoice SAID", res(i.ipex.grantCredentialSaid ? i.ipex.grantCredentialSaid === i.said : null, "match", "different credential"));
+    add("IPEX admit", el("span",{text:`by ${i.holderAlias || DASH}`}), "Export: admitSuccess; Fields: admit refers to this grant", res(i.ipex.admitSuccess === true && (!i.ipex.admitGrantSaid || i.ipex.admitGrantSaid === i.ipex.grantSaid) ? true : (i.ipex.admitSuccess === null || i.ipex.admitSuccess === undefined ? null : false), "admitted", "not admitted"));
+  } else add("Invoice credential", DASH, "Listed", el("span",{class:"pill bad",text:"no invoice"}));
+  if (isObj(src.run)) add("Run config", el("span",null, el("span",{class:"mono",text: src.run.config || DASH}), " · sha256 ", idSpan(src.run.sha256, "config sha256")), "Listed", res(null));
+  // NEAR rows (UI-2): every value read from the contract by view call
+  if (!S.chain.config) add("NEAR contract", S.cfg.contractId ? accLink(S.cfg.contractId) : DASH, "RPC get_config", el("span",{class:"pill warn",text: contractReason() || "not read"}));
+  else {
+    const cf = S.chain.config;
+    const accOk = S.acc ? cf.registrar === S.acc.registrar && cf.owner === S.acc.owner : null;
+    add("NEAR contract", el("span",{class:stale().trim()}, accLink(S.cfg.contractId), ` · token ${S.chain.token ? S.chain.token.symbol + " (" + S.chain.token.decimals + " decimals)" : DASH} · ${cf.events_count} events`),
+      "RPC get_config: owner and registrar = accounts.json", res(accOk, "match", "differ"));
+    for (const acct of mandateAccounts()){
+      const m = S.chain.mandates[acct];
+      add(`Mandate · ${aliasOf(acct)}`, accLink(acct), "RPC get_mandate",
+        m ? el("span",{class:(m.revoked ? "pill bad" : "pill ok") + stale(),text:`limit ${tokenText(m.limit_units)} · approver ${aliasOf(m.approver)}${m.revoked ? " · revoked" : ""}`})
+          : el("span",{class:"pill warn",text: m === null ? "no mandate" : "not read"}));
+    }
+    for (const x of invoices()){
+      const v = onChain(x), u = invUnits(x), xa = attrsOf(x);
+      const same = v ? u !== null && BigInt(v.amount_units) === u && !!xa && v.payee === xa.paymentWalletAddress : null;
+      add(`On NEAR · ${invNo(x)}`, statusPill(x), "RPC get_invoice: amount and payee = signed credential",
+        v === null ? el("span",{class:"pill",text:"not registered"}) : res(same, "match", "differ"));
+    }
+    for (const e of S.chain.events){
+      const hash = S.chain.tx[e.index];
+      add(`NEAR event #${e.index} · ${e.event}`, el("span",{class:stale().trim()}, hash ? txLink(hash) : el("span",{class:"skel",text:"tx not matched"}), ` · block ${e.block_height} · ${fmt.ns(e.timestamp_ns) || DASH}`),
+        "RPC get_events; tx = the indexed tx whose receipt on the contract logged this exact EVENT_JSON",
+        el("details",{class:"raw"}, el("summary",{text: hash ? "tx matched · event JSON" : "event JSON"}), el("pre",{text:e.json})));
+    }
+    if (S.chain.txNote) card.append(el("div",{class:"note",text:"NEAR tx links: " + S.chain.txNote}));
+  }
+  t.append(tb);
+  card.append(el("div",{class:"tbl"}, t));
+  const notes = Array.isArray(e.checks.notes) ? e.checks.notes : [];
+  if (notes.length) card.append(el("div",{class:"note"}, el("b",{text:"Export notes: "}), ...notes.map(n => el("div",{text:String(n)}))));
+  if (S.near.st !== "up") card.append(el("div",{class:"note",text:"NEAR rows: " + (contractReason() || "")}));
+  sec.append(card);
+}
+
+/* ---------- tabs ---------- */
+function renderTabs(){
+  if (S.buyer) $("#tab-buyer").textContent = S.buyer.name;
+  if (S.seller) $("#tab-seller").textContent = S.seller.name;
+  const set = (id, n) => { const b = $(id); b.hidden = !n; b.textContent = n ? String(n) : ""; b.setAttribute("aria-label", `${n} failed check${n === 1 ? "" : "s"}`); };
+  set("#badge-buyer", failuresFor(S.buyer).length);
+  set("#badge-seller", failuresFor(S.seller).length);
+  set("#badge-live", S.ev ? S.ev.checks.failures.length : 0);
+}
+function showTab(){
+  const key = (location.hash || "#live").slice(1);
+  const k = ["live","buyer","seller","proof"].includes(key) ? key : "live";
+  document.querySelectorAll("section.view").forEach(s => s.classList.toggle("active", s.id === "view-" + k));
+  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.tab === k) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+}
+window.addEventListener("hashchange", showTab);
+
+function renderAll(){
+  renderStrip(); renderBanners(); renderTabs();
+  renderLadder("#ladder-buyer", S.buyer, "buyer", S.cfg.buyerAgent);
+  renderLadder("#ladder-seller", S.seller, "seller", S.cfg.sellerAgent);
+  renderInvoice(); renderRail(); renderTimeline(); renderConversation();
+  renderCompany("#view-buyer", S.buyer, "buyer", S.cfg.buyerAgent);
+  renderCompany("#view-seller", S.seller, "seller", S.cfg.sellerAgent);
+  renderProof();
+}
+
+function fullPage(title, ...body){
+  document.querySelector(".tabsrow").hidden = true;
+  $("#strip").replaceChildren();
+  $("#main").replaceChildren(el("div",{class:"full",role:"alert"}, el("h2",{text:title}), ...body));
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  if (location.protocol === "file:"){   // C0
+    fullPage("Open this page through the local server",
+      el("p",null, "This page reads its config and the vLEI evidence over HTTP, which browsers block for files opened from disk."),
+      el("p",null, "From the ", el("code",{text:"UI"}), " folder run ", el("code",{text:"node serve.mjs --port 8765"}), " and open ", el("code",{text:"http://127.0.0.1:8765/Agent%20Escalation%20Console.html"}), "."));
+    return;
+  }
+  try { S.cfg = validateConfig(await getJson("./signatory-config.json")); }   // C1
+  catch (e) { fullPage("signatory-config.json not loaded", el("p",{text:e.message})); return; }
+
+  try { S.ev = validateEvidence(await getJson(S.cfg.evidenceUrl)); }   // E1
+  catch (e) { S.ev = null; S.evErr = e.message; }
+  if (S.ev){ S.buyer = companyOfAgent(S.cfg.buyerAgent); S.seller = companyOfAgent(S.cfg.sellerAgent); }
+  try {   // UI-2: alias → NEAR account (no keys in this file)
+    const acc = await getJson(S.cfg.accountsUrl);
+    if (!isObj(acc) || !isObj(acc.aliases)) throw new Error("aliases{} missing");
+    S.acc = acc;
+  } catch (e) { S.acc = null; S.accErr = e.message; }
+  wireConversation();
+  renderAll(); showTab();
+
+  await Promise.all([...SERVICES.map(([k,,u]) => probe(k, u)), probeNear()]);
+  renderAll();
+  await refreshChain(); await fetchRunnerInvoices();
+  renderAll();
+  // Re-read chain + services every pollMs × 5 (N2 / S2 update without a reload); skipped while an action runs.
+  let ticking = false, lastSig = "";
+  setInterval(async () => {
+    if (ticking || S.busy || document.hidden) return;
+    ticking = true;
+    try {
+      await Promise.all([...SERVICES.map(([k,,u]) => probe(k, u)), probeNear()]); await refreshChain(); await fetchRunnerInvoices();
+      if (S.busy || runActive()) { renderStrip(); renderRunControls(); return; }
+      // Full re-render only when something changed (keeps opened "full answer" panels open); the strip always.
+      const sig = JSON.stringify([S.probes, S.near, S.chain.st, S.chain.why, S.chain.events.length, S.chain.invoices, S.chain.mandates, Object.keys(S.chain.tx).length, S.chain.txNote, S.runnerInv]);
+      if (sig !== lastSig){ lastSig = sig; renderAll(); } else renderStrip();
+    } finally { ticking = false; }
+  }, S.cfg.pollMs * 5);
+}
+boot();
+})();
+</script>
+</body>
+</html>

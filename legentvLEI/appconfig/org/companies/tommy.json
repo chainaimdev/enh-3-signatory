@@ -1,0 +1,133 @@
+{
+  "@context": "../context.jsonld",
+  "@id": "ca:org/tommy",
+  "@type": "org:FormalOrganization",
+  "companyId": "tommy",
+  "alias": "Tommy_Hilfiger_Europe",
+  "label": "TOMMY HILFIGER EUROPE B.V.",
+  "lei": "54930012QJWZMYHNJW95",
+  "jurisdiction": "NL",
+  "registryName": "Tommy_Hilfiger_Europe-oor-registry",
+  "tradeRoles": ["buyer"],
+  "escalationPolicy": {
+    "reportTo": "ca:person/tommy-ceo",
+    "onTimeout": "escalate"
+  },
+
+  "posts": [
+    {
+      "@id": "ca:post/tommy-ceo",
+      "@type": "org:Post",
+      "label": "Chief Executive Officer",
+      "level": 1,
+      "heldBy": "ca:person/tommy-ceo"
+    },
+    {
+      "@id": "ca:post/tommy-cpo",
+      "@type": "org:Post",
+      "label": "Chief Procurement Officer",
+      "level": 2,
+      "reportsTo": "ca:post/tommy-ceo",
+      "heldBy": "ca:person/tommy-cpo"
+    }
+  ],
+
+  "people": [
+    {
+      "@id": "ca:person/tommy-ceo",
+      "@type": "prov:Person",
+      "alias": "Tommy_Chief_Executive_Officer",
+      "personLegalName": "Chief Executive Officer",
+      "credentialType": "OOR",
+      "officialRole": "Director",
+      "officialRoleLabel": "Chief Executive Officer",
+      "headOf": "ca:org/tommy",
+      "approvalLimit": null
+    },
+    {
+      "@id": "ca:person/tommy-cpo",
+      "@type": "prov:Person",
+      "alias": "Tommy_Chief_Procurement_Officer",
+      "personLegalName": "Chief Procurement Officer",
+      "credentialType": "OOR",
+      "officialRole": "Authorised Representative",
+      "officialRoleLabel": "Chief Procurement Officer",
+      "approvalLimit": { "currency": "USD", "max": 250000 },
+      "escalatesTo": "ca:agent/tommyCeoAgent",
+      "timeout": "PT8H"
+    }
+  ],
+
+  "agents": [
+    {
+      "@id": "ca:agent/tommyCeoAgent",
+      "@type": "prov:SoftwareAgent",
+      "alias": "tommyCeoAgent",
+      "agentType": "AI",
+      "actedOnBehalfOf": "ca:person/tommy-ceo",
+      "mandate": {
+        "authorization_details": [
+          {
+            "type": "executive_approvals",
+            "actions": ["review_escalation"],
+            "transactionLimit": { "currency": "USD", "max": 500000 }
+          }
+        ],
+        "validUntil": "2027-11-12T00:00:00Z",
+        "may_act": []
+      },
+      "escalatesTo": "ca:person/tommy-ceo",
+      "timeout": "PT24H",
+      "card": {
+        "name": "Tommy CEO Agent",
+        "description": "AI agent acting on behalf of the Chief Executive Officer of TOMMY HILFIGER EUROPE B.V. (Level 1 OOR holder).",
+        "skills": []
+      }
+    },
+    {
+      "@id": "ca:agent/tommyBuyerAgent",
+      "@type": "prov:SoftwareAgent",
+      "alias": "tommyBuyerAgent",
+      "agentType": "AI",
+      "tradeRole": "buyer",
+      "actedOnBehalfOf": "ca:person/tommy-cpo",
+      "mandate": {
+        "authorization_details": [
+          {
+            "type": "procurement_operations",
+            "actions": ["negotiate_order", "accept_invoice"],
+            "transactionLimit": { "currency": "USD", "max": 100000 }
+          }
+        ],
+        "validUntil": "2027-11-12T00:00:00Z",
+        "may_act": ["ca:agent/TommyTreasuryAgent"]
+      },
+      "escalatesTo": "ca:person/tommy-cpo",
+      "timeout": "PT4H"
+    },
+    {
+      "@id": "ca:agent/TommyTreasuryAgent",
+      "@type": "prov:SoftwareAgent",
+      "alias": "TommyTreasuryAgent",
+      "agentType": "AI",
+      "actedOnBehalfOf": "ca:agent/tommyBuyerAgent",
+      "description": "Sub-delegated agent for treasury and payment operations",
+      "advisoryOnly": true,
+      "mandate": {
+        "authorization_details": [
+          {
+            "type": "treasury_operations",
+            "actions": ["validate_cash_flow"]
+          }
+        ],
+        "validUntil": "2027-11-12T00:00:00Z",
+        "may_act": []
+      },
+      "card": {
+        "name": "Tommy Treasury Agent",
+        "description": "Sub-delegated treasury AI agent for TOMMY HILFIGER EUROPE B.V., acting under tommyBuyerAgent.",
+        "skills": []
+      }
+    }
+  ]
+}

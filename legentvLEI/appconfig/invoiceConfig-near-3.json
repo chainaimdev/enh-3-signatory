@@ -1,0 +1,41 @@
+{
+  "invoice": {
+    "schemaName": "InvoiceCredential",
+    "schemaPath": "./schemas/invoice-credential-schema.json",
+    "registryName": "JUPITER_SALES_REGISTRY",
+    "oorSchemaSaid": "ENPXp1vQzRF6JwIuS-mp2U8Uf1MoADoP_GqQ62VsDZWY",
+    "issuer": {
+      "alias": "Jupiter_Chief_Sales_Officer",
+      "lei": "3358004DXAMRWRUIYJ05"
+    },
+    "holder": {
+      "alias": "tommyBuyerAgent",
+      "lei": "54930012QJWZMYHNJW95"
+    },
+    "sampleInvoice": {
+      "invoiceNumber": "INV-2026-0005",
+      "invoiceDate": "2026-11-13T00:00:00Z",
+      "dueDate": "2026-12-13T00:00:00Z",
+      "sellerLEI": "3358004DXAMRWRUIYJ05",
+      "buyerLEI": "54930012QJWZMYHNJW95",
+      "currency": "USDC",
+      "totalAmount": 0.12,
+      "lineItems": [
+        {
+          "description": "Cotton t-shirts (demo scale 1:1,000,000; real 120,000.00 USD)",
+          "quantity": 1,
+          "unitPrice": 0.12,
+          "amount": 0.12
+        }
+      ],
+      "paymentTerms": {
+        "terms": "Net 30 days from invoice date",
+        "discountCurve": []
+      },
+      "paymentMethod": "blockchain",
+      "paymentChainID": "near:testnet",
+      "paymentWalletAddress": "chainaim-jupiter-payee.testnet",
+      "ref_uri": "urn:chainaim:order:INV-2026-0005"
+    }
+  }
+}

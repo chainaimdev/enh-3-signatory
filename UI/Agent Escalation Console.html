@@ -201,7 +201,7 @@ table.data td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align
       <div class="composer">
         <div class="row"><input id="req" type="text" autocomplete="off" maxlength="500" placeholder="Request as the buyer, e.g. Need 8,000 t-shirts, about $84,000" aria-label="Request to the buyer agent"><button id="run-text" class="btn primary" type="button" disabled>Send</button></div>
         <div class="preview" id="preview" aria-live="polite"></div>
-        <div class="chips" id="scenarios" role="group" aria-label="Scenarios (click fills the chat box; nothing is sent)"></div>
+        <div class="chips" id="scenarios" style="display:none" role="group" aria-label="Scenarios (click fills the chat box; nothing is sent)"></div>
         <div class="chips" id="orders" role="group" aria-label="Purchase orders N1–N4 (click starts the run)"></div>
         <div id="run-reason"></div>
       </div>
@@ -1101,6 +1101,7 @@ function orderExtra(d){
   }
   return null;
 }
+const HIDDEN_QUOTE_CHIPS = ["S10"];   // quote chips not shown in the console (the runner still has them)
 function renderOrders(){
   const g = $("#orders"); if (!g) return; g.replaceChildren();
   const orders = S.runner && Array.isArray(S.runner.orders) ? S.runner.orders : null;
@@ -1108,7 +1109,7 @@ function renderOrders(){
   if (quotes && quotes.length){   // Q7
     g.append(el("span",{class:"meta",text:`Requests for quotation, Tommy → Jupiter (Private AI: ${S.runner.quoteAi || "?"}) — click runs it:`}));
     for (const q of quotes){
-      if (!isObj(q) || !isStr(q.id)) continue;
+      if (!isObj(q) || !isStr(q.id) || HIDDEN_QUOTE_CHIPS.includes(q.id)) continue;
       g.append(el("button",{class:"chipb",type:"button",disabled: runActive() || S.busy ? "disabled" : null,
         title:`${q.rfq}: ${q.scenario}\n${Number(q.quantity).toLocaleString("en-US")} × ${q.sku} · opening ${cents(q.openingCents)} · delivered by ${q.deadline}`,
         onclick: () => startQuote(q), text:`▶ ${q.id}`}));

@@ -17,7 +17,7 @@
       "lei": "54930012QJWZMYHNJW95",
       "legalEntityName": "TOMMY HILFIGER EUROPE B.V.",
       "registryName": "Tommy_Hilfiger_Europe-oor-registry",
-      "qvi": "EJeCwvJB6gmDveIHt37BuQ_Tq7bieVWvcgsBDqQg9yqP",
+      "qvi": "ELBcvv7uxOcK3hZP0ayY2RfceThkUCeIGpPNf7aR2z5O",
       "officialRole": "ChiefFinancialOfficer",
       "engagementRole": "Treasury Agent"
     },
@@ -28,30 +28,30 @@
       "isSubDelegation": true,
       "scope": "treasury_operations",
       "canDelegate": false,
-      "delegatorAID": "EKOm4y5bqGCTIPPoERvGmM4XJzqlrWZlplnZ48bI889C",
-      "delegateeAID": "EMmVGCE4ZHTdiN7WIGVCwnGF3hcDi7NrMftav1pvNTTj",
-      "delegatorOOBI": "http://keria:3902/oobi/EKOm4y5bqGCTIPPoERvGmM4XJzqlrWZlplnZ48bI889C/agent/EPqsa0Pra-h6L8oOGBfSoLe6f1zCLuXvXjazqw_1rlMs",
-      "delegateeOOBI": "http://keria:3902/oobi/EMmVGCE4ZHTdiN7WIGVCwnGF3hcDi7NrMftav1pvNTTj/agent/EOzh7oUO77Gyx9Sce5RzDoqmx7OfCGCtYTK_DhcpCP0j",
-      "oorHolderAID": "EIOaUvu-uNvhdt1FAEU4AswvLONtQjwi2ML0DEmaLrix",
-      "oorHolderOOBI": "http://keria:3902/oobi/EIOaUvu-uNvhdt1FAEU4AswvLONtQjwi2ML0DEmaLrix/agent/EOWTBnbFO-zRhjsk_lEdVZY3EpCF4aJJPk1yFFlB9E6I",
-      "leAID": "EH81Um3_fafJH8oLJrENYJ6_8KGHvKB7f4o9x4KcaPL3",
-      "leOOBI": "http://keria:3902/oobi/EH81Um3_fafJH8oLJrENYJ6_8KGHvKB7f4o9x4KcaPL3/agent/EEwXHMKw-kRQ0hm_thc8fkbjbh7i_SRggMC7Hhzupb9k",
+      "delegatorAID": "EAEYE_HtbDAqvdWO9fAGFM8SPc99zRTuKkURqlmRC7qw",
+      "delegateeAID": "EGsmhBtEwXq5UpipzCqD68lXIJt821NdILvxBq0pQtmr",
+      "delegatorOOBI": "http://keria:3902/oobi/EAEYE_HtbDAqvdWO9fAGFM8SPc99zRTuKkURqlmRC7qw/agent/EDoG1eh_dt5eiPrsbQF1cNGdpM7eaigCWz64rHZtgCCW",
+      "delegateeOOBI": "http://keria:3902/oobi/EGsmhBtEwXq5UpipzCqD68lXIJt821NdILvxBq0pQtmr/agent/ELHzZ-TWYo3UHeQE43WRZltBQzhjtS4GVpR41K-TDMk9",
+      "oorHolderAID": "EKwxX1LuFI90RP1S1rocJjO7Yp1A8N-5gej-tHAXxv75",
+      "oorHolderOOBI": "http://keria:3902/oobi/EKwxX1LuFI90RP1S1rocJjO7Yp1A8N-5gej-tHAXxv75/agent/EE2qdvBA09eNypqPWNJq9N9Ld5tKWYgHMZjiz3Cz8W7O",
+      "leAID": "EOBju26jAff2vDePMgyYn2l2pGLJAqkJontIRitFjzar",
+      "leOOBI": "http://keria:3902/oobi/EOBju26jAff2vDePMgyYn2l2pGLJAqkJontIRitFjzar/agent/EFkq-4Ptgn7aIK6vXh8OSHFZpagjDtR_YFlqzWEVhrA5",
       "verificationPath": [
         "GLEIF_ROOT → QVI",
         "QVI → TOMMY HILFIGER EUROPE B.V. → Chief Procurement Officer → tommyBuyerAgent → TommyTreasuryAgent"
       ],
-      "timestamp": "2026-11-14T16:32:09.285Z"
+      "timestamp": "2026-11-14T19:35:34.344Z"
     },
     "gleifVerification": {
       "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/54930012QJWZMYHNJW95"
     },
     "keriIdentifiers": {
-      "agentAID": "EMmVGCE4ZHTdiN7WIGVCwnGF3hcDi7NrMftav1pvNTTj",
-      "parentAgentAID": "EKOm4y5bqGCTIPPoERvGmM4XJzqlrWZlplnZ48bI889C",
-      "oorHolderAID": "EIOaUvu-uNvhdt1FAEU4AswvLONtQjwi2ML0DEmaLrix",
-      "legalEntityAID": "EH81Um3_fafJH8oLJrENYJ6_8KGHvKB7f4o9x4KcaPL3",
-      "qviAID": "EJeCwvJB6gmDveIHt37BuQ_Tq7bieVWvcgsBDqQg9yqP",
-      "publicKey": "DE9mK0kuBdzWnIMl861oQ1AcBfd3jRHu4e3WUlRCNL-C"
+      "agentAID": "EGsmhBtEwXq5UpipzCqD68lXIJt821NdILvxBq0pQtmr",
+      "parentAgentAID": "EAEYE_HtbDAqvdWO9fAGFM8SPc99zRTuKkURqlmRC7qw",
+      "oorHolderAID": "EKwxX1LuFI90RP1S1rocJjO7Yp1A8N-5gej-tHAXxv75",
+      "legalEntityAID": "EOBju26jAff2vDePMgyYn2l2pGLJAqkJontIRitFjzar",
+      "qviAID": "ELBcvv7uxOcK3hZP0ayY2RfceThkUCeIGpPNf7aR2z5O",
+      "publicKey": "DHXZhJ4INP22ONETlJAqUxUkvl7_-ZGqlZSTFNeyONmJ"
     }
   }
 }

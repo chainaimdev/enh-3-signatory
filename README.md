@@ -4,6 +4,8 @@
 
 NEAR HACKATHON 2026 · Track: **Agent Economy** · Network: NEAR **testnet** · Demo video: _<link to the X post>_
 
+**Architecture (one page):** https://signatory-architecture.vercel.app/
+
 Same team's other entry: **Outcome AI** — github.com/chainaimdev/chainaim-private-ai
 
 ---
@@ -73,14 +75,14 @@ Keys are never in this repository: NEAR keys stay in `~/.near-credentials`, vLEI
 ## What is real and what is demo
 
 - **Real:** KERI identifiers and delegations, vLEI-style LE/OOR credentials, IPEX invoice credentials, live verification, the NEAR contract, mandates and every transaction above.
-- **Demo:** the GLEIF root and QVI run locally (not production GLEIF); USDC is testnet USDC; amounts are scaled.
+- **Demo:** same KERI/vLEI software and protocol as production, but the GLEIF root and QVI are created locally — production vLEIs are issued only by GLEIF-licensed QVIs, so these credentials are not valid outside this demo. USDC is testnet USDC; amounts are scaled.
 - **Agents:** purchase orders N1–N4 negotiate with a rule-based negotiator. The quote flow (S01–S09) uses AI agents in Outcome AI, each answering from its own company's private data; it needs Outcome AI running.
 
-## Built during the hackathon
+## What we built and what we build on
 
-- **New (from 1 Nov 2026):** the NEAR contract `chainaim-signatory-v2.testnet` (mandates, escalation, refunds), signer, bridge, runner, agent swarm and negotiation, UI, AP2 signing, quote flow.
-- **Earlier work we build on:** the vLEI/KERI scripts in `legentvLEI/`, adapted from GLEIF's vlei-hackathon-2025-workshop.
-- **Libraries:** KERIA / Signify (vLEI), near-api-js, @noble/hashes.
+- **Built for this hackathon:** the NEAR contract `chainaim-signatory-v2.testnet` (mandates, escalation, refunds), signer, bridge, runner, agent swarm and negotiation, UI, AP2 signing, quote flow.
+- **Built on:** GLEIF's open-source vLEI stack (KERIA, Signify, vLEI schemas); our `legentvLEI/` org scripts started from GLEIF's vlei-hackathon-2025-workshop.
+- **Libraries:** near-api-js, @noble/hashes.
 - **AI assistance:** parts of the code and docs were written with AI coding assistants.
 
 ## Repository map

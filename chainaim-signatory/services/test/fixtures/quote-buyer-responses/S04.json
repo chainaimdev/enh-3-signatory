@@ -1,0 +1,95 @@
+{
+  "inquiry": "S04",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "live OutcomeAI quote-agents, tenant tommy-hilfiger-europe (buyer, rules), --as-of 2026-11-16; rig with --ai off",
+  "calls": [
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S04",
+        "sku": "FAB-JERSEY-140-B",
+        "qty": 30000,
+        "priceCents": 280,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 84000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S04",
+        "sku": "FAB-JERSEY-140-B",
+        "phase": "round",
+        "round": 1,
+        "askCents": 300,
+        "lastOfferCents": 280
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 290,
+        "messageToSeller": "RFQ-S04: we can do $2.90 per unit.",
+        "reasoning": "round 1: counter",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S04",
+        "sku": "FAB-JERSEY-140-B",
+        "phase": "round",
+        "round": 2,
+        "askCents": 295,
+        "lastOfferCents": 290
+      },
+      "response": {
+        "decision": "ACCEPT",
+        "priceCents": 295,
+        "messageToSeller": "RFQ-S04: we accept $2.95 per unit.",
+        "reasoning": "round 2: the ask is within our budget",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S04",
+        "sku": "FAB-JERSEY-140-B",
+        "qty": 30000,
+        "priceCents": 295,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 88500,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

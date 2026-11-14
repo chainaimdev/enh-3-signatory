@@ -1,0 +1,158 @@
+{
+  "inquiry": "S09",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "live OutcomeAI quote-agents, tenant tommy-hilfiger-europe (buyer, rules), --as-of 2026-11-16; rig with --ai off",
+  "calls": [
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S09",
+        "sku": "FAB-COT-180-A",
+        "qty": 20000,
+        "priceCents": 360,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 72000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S09",
+        "sku": "FAB-COT-180-A",
+        "phase": "round",
+        "round": 1,
+        "askCents": 415,
+        "lastOfferCents": 360
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 374,
+        "messageToSeller": "RFQ-S09: we can do $3.74 per unit.",
+        "reasoning": "round 1: counter",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S09",
+        "sku": "FAB-COT-180-A",
+        "phase": "round",
+        "round": 2,
+        "askCents": 408,
+        "lastOfferCents": 374
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 382,
+        "messageToSeller": "RFQ-S09: we can do $3.82 per unit.",
+        "reasoning": "round 2: counter",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S09",
+        "sku": "FAB-COT-180-A",
+        "phase": "round",
+        "round": 3,
+        "askCents": 401,
+        "lastOfferCents": 382
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 385,
+        "messageToSeller": "RFQ-S09: we can do $3.85 per unit.",
+        "reasoning": "round 3: counter",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S09",
+        "sku": "FAB-COT-180-A",
+        "phase": "escalation",
+        "round": 4,
+        "askCents": 397,
+        "lastOfferCents": 385
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 385,
+        "messageToSeller": "RFQ-S09: we can do $3.85 per unit.",
+        "reasoning": "best and final offer",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S09",
+        "sku": "FAB-COT-180-A",
+        "phase": "escalation",
+        "round": 5,
+        "askCents": 400,
+        "lastOfferCents": 385
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 385,
+        "messageToSeller": "RFQ-S09: we can do $3.85 per unit.",
+        "reasoning": "best and final offer",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S09",
+        "sku": "FAB-COT-180-A",
+        "qty": 20000,
+        "priceCents": 385,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 77000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

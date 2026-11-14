@@ -2,9 +2,12 @@
 //   1 consult  — inventory → logistics → treasury in OutcomeAI, each call made as its Jupiter vLEI alias (cached)
 //   2 supply   — agent-level plan; a same-or-better grade (re-consult) or a split shipment (re-consult) when short;
 //                otherwise the lowest authority whose reallocation/air rights give an on-time plan
-//   3 floors   — treasury.pricesAtMargin at each level's margin (+ advance lever) + reallocation premium
+//   3 floors   — treasury.pricesAtMargin at each level's margin (+ advance lever) + reallocation premium;
+//                treasury checks (policy.treasuryChecks): credit over the buyer's limit, or a liquidity deficit without
+//                the advance lever, raise the authority the deal needs
 //   4 rounds   — OutcomeAI seller/synthesize proposes (AI) → GUARD → else the concession rule; quote → buyer
-//   5 escalate — reasons recorded; importance band picks the chain (Sales Officer → CEO, prepared by jupiterCeoAgent)
+//   5 escalate — reasons recorded; importance band picks the chain (Sales Officer → CEO, prepared by jupiterCeoAgent),
+//                extended up to the level the deal needs (supply or treasury) so that level is always asked
 //   6 records  — inquiry, consults (with api proof blocks), round quotes, escalations, final quote
 // Everything external is injected (client, buyer, decide, record, onStep) so the same function runs in the CLI,
 // in tests (recorded OutcomeAI answers) and later in the runner. Seller-side only: it receives the RFQ, never the
@@ -19,6 +22,8 @@ export const REASONS = Object.freeze({
   DEADLINE_SLIP_OVER_LIMIT: "DEADLINE_SLIP_OVER_LIMIT",
   BELOW_ABSOLUTE_FLOOR: "BELOW_ABSOLUTE_FLOOR",
   NO_SUPPLY_PLAN: "NO_SUPPLY_PLAN",
+  CREDIT_OVER_LIMIT: "CREDIT_OVER_LIMIT",
+  LIQUIDITY_DEFICIT: "LIQUIDITY_DEFICIT",
 });
 
 const ALIASES = { inventory: "JupiterInventoryAgent", logistics: "JupiterLogisticsAgent", treasury: "JupiterTreasuryAgent" };
@@ -27,6 +32,38 @@ const sum = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
 const fmtQty = (n) => n.toLocaleString("en-US");
 const usd = (c) => `$${(c / 100).toFixed(2)}`;
 const daysBetween = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
+
+/**
+ * The seller/synthesize body in the shared §4 contract (privateAI-design-44 §4; OutcomeAI rules.ts parseSynthesizeRequest),
+ * from the flow's own view of the round:
+ *   answers.logistics = {legs, freightCents, meetsDeadline, lateUnits, airOption}, built from answers.plan (one leg per
+ *                       chunk; a leg is late when delivered after inquiry.deadline). answers.plan is kept as is.
+ *   history           = [{round, by: "buyer"|"seller", priceCents}]: entries without an integer price (ESCALATE) are left out.
+ *   authority.allowed = ["reallocate:TIER2", "air", "maxDeadlineSlipDays:7", ...] (the contract wants strings).
+ * Pure; also used to rewrite the recorded fixtures so the tests replay exactly what is sent.
+ */
+export function toSynthesizeContract(body) {
+  const plan = body.answers?.plan ?? [];
+  const deadline = body.inquiry?.deadline;
+  const legs = plan.map((c) => ({
+    lot: c.lot, units: c.units, mode: c.mode, carrier: c.carrier ?? "", etd: c.etd, delivered: c.delivered,
+    freightCents: c.freightCents ?? 0, late: !!(deadline && c.delivered && c.delivered > deadline),
+  }));
+  const lateUnits = sum(legs.filter((g) => g.late), (g) => g.units);
+  const logistics = { legs, freightCents: sum(legs, (g) => g.freightCents), meetsDeadline: lateUnits === 0, lateUnits, airOption: null };
+  const history = (body.history ?? [])
+    .filter((h) => (h.from === "buyer" || h.from === "seller") && Number.isInteger(h.priceCents) && h.priceCents > 0)
+    .map((h) => ({ round: h.round, by: h.from, priceCents: h.priceCents }));
+  const a = body.authority?.allowed;
+  const allowed = Array.isArray(a)
+    ? a
+    : [
+        ...(a?.reallocate ?? []).map((t) => `reallocate:${t}`),
+        ...(a?.air ? ["air"] : []),
+        ...(a?.maxDeadlineSlipDays != null ? [`maxDeadlineSlipDays:${a.maxDeadlineSlipDays}`] : []),
+      ];
+  return { ...body, history, answers: { ...body.answers, logistics }, authority: { ...body.authority, allowed } };
+}
 
 // ---------------------------------------------------------------- policy (config/quote-authority.json)
 
@@ -57,7 +94,37 @@ export function validatePolicy(p) {
   const bands = p.importance?.bands ?? [];
   for (let i = 1; i < bands.length; i++) if (!(bands[i - 1].min > bands[i].min)) e.push("importance bands must be ordered by falling min");
   for (const b of bands) for (const c of b.chain) if (!lv[c] || c === "AGENT") e.push(`band ${b.band}: bad chain level ${c}`);
+  for (const [k, v] of Object.entries(p.treasuryChecks ?? {})) {
+    if (k === "comment") continue;
+    if (!["creditOverLimit", "liquidityDeficit"].includes(k)) e.push(`treasuryChecks.${k}: unknown check`);
+    else if (v?.minLevel != null && (!lv[v.minLevel] || v.minLevel === "AGENT")) e.push(`treasuryChecks.${k}.minLevel must be null, SALES_OFFICER or CEO`);
+  }
   return e;
+}
+
+/**
+ * Treasury checks (policy.treasuryChecks), on the treasury answer:
+ *   creditOverLimit  — credit.ok === false (the financed invoice is over the buyer's credit headroom)
+ *   liquidityDeficit — liquidity.status DEFICIT and the advance lever does not apply
+ * Each failing check gives {check, reason, minLevel, detail}; minLevel null records the reason without raising authority.
+ */
+export function treasuryGate(policy, tre, ladder) {
+  const cfg = policy.treasuryChecks ?? {};
+  const out = [];
+  if (cfg.creditOverLimit && tre?.credit?.ok === false)
+    out.push({ check: "creditOverLimit", reason: REASONS.CREDIT_OVER_LIMIT, minLevel: cfg.creditOverLimit.minLevel ?? null, detail: { headroomUsd: tre.credit.headroomUsd ?? null } });
+  if (cfg.liquidityDeficit && tre?.liquidity?.status === "DEFICIT" && !ladder.advance)
+    out.push({ check: "liquidityDeficit", reason: REASONS.LIQUIDITY_DEFICIT, minLevel: cfg.liquidityDeficit.minLevel ?? null, detail: { net30Usd: tre.liquidity.net30Usd ?? null } });
+  return out;
+}
+
+/** The importance chain, extended with every officer level up to `requiredLevel`, so the level the deal needs is asked. */
+export function escalationChain(policy, chain, requiredLevel) {
+  const order = policy.levels.map((l) => l.level);
+  const rank = (n) => order.indexOf(n);
+  const out = [...chain];
+  for (const n of order) if (n !== "AGENT" && rank(n) <= rank(requiredLevel) && !out.includes(n)) out.push(n);
+  return out.sort((a, b) => rank(a) - rank(b));
 }
 
 /** Deal importance (policy §5): customer tier + deal size at the target price + spare capacity. */
@@ -94,7 +161,7 @@ export function priceLadder(policy, treasury, advancePct) {
 
 /**
  * p: synthesize proposal {decision, counter:{sku, qty, priceCents, deadline, shipments}}.
- * ctx: {lastBuyerCents, floorCents, prevAskCents, plan:{sku, shipments}, rfq, level, hasCounters, secrets}
+ * ctx: {lastBuyerCents, floorCents, prevAskCents, plan:{sku, shipments, legs:[{units, delivered}]}, rfq, level, hasCounters, secrets}
  * Returns {ok:true, decision, priceCents, message?} or {ok:false, why}.
  */
 export function guardRound(p, ctx, messageToBuyer) {
@@ -110,12 +177,26 @@ export function guardRound(p, ctx, messageToBuyer) {
   if (ctx.prevAskCents != null && c.priceCents > ctx.prevAskCents) return { ok: false, why: "counter above the previous counter" };
   if (c.sku != null && c.sku !== ctx.plan.sku) return { ok: false, why: `sku ${c.sku} is not the agents' same-or-better plan (${ctx.plan.sku})` };
   if (c.qty != null && c.qty !== ctx.rfq.qty) return { ok: false, why: "quantity differs from the RFQ" };
-  if (c.shipments != null) {
+  // Two shipment shapes: OutcomeAI's legs {units, mode, etd, delivered} (privateAI-design-44 §4; deadline = last leg's
+  // delivery) must equal the planned legs exactly; the promise shape {units, deliveredBy} must equal the promised shipments.
+  const legForm = Array.isArray(c.shipments) && c.shipments.length > 0 && c.shipments.every((s) => s?.delivered != null && s?.deliveredBy == null && s?.delivered_by == null);
+  if (legForm) {
+    if (!Array.isArray(ctx.plan.legs) || !ctx.plan.legs.length) return { ok: false, why: "shipments as legs, but no planned legs to check them against" };
+    const key = (xs) => xs.map((s) => `${s.units}@${s.delivered}`).sort().join(",");
+    if (key(c.shipments) !== key(ctx.plan.legs)) return { ok: false, why: "shipment legs differ from the agents' planned legs (units and delivery dates)" };
+    const lastLeg = ctx.plan.legs.map((s) => s.delivered).sort().at(-1);
+    if (c.deadline != null && c.deadline !== lastLeg) return { ok: false, why: "deadline is not the last planned leg's delivery date" };
+    const lastPromised = ctx.plan.shipments.map((s) => s.deliveredBy).sort().at(-1);
+    if (c.deadline != null && c.deadline > lastPromised) {
+      const slip = daysBetween(ctx.rfq.deadline, c.deadline);
+      if (ctx.level.maxDeadlineSlipDays != null && slip > ctx.level.maxDeadlineSlipDays) return { ok: false, why: `deadline slip ${slip}d over the ${ctx.level.level} limit`, reason: REASONS.DEADLINE_SLIP_OVER_LIMIT };
+    }
+  } else if (c.shipments != null) {
     const want = ctx.plan.shipments.map((s) => `${s.units}@${s.deliveredBy}`).join(",");
     const got = (Array.isArray(c.shipments) ? c.shipments : []).map((s) => `${s.units}@${s.deliveredBy ?? s.delivered_by}`).join(",");
     if (got !== want) return { ok: false, why: "shipments differ from the agents' on-time plan (split ≥ 70% with every lot on time)" };
   }
-  if (c.deadline != null) {
+  if (c.deadline != null && !legForm) {
     const slip = daysBetween(ctx.rfq.deadline, c.deadline);
     if (ctx.level.maxDeadlineSlipDays != null && slip > ctx.level.maxDeadlineSlipDays) return { ok: false, why: `deadline slip ${slip}d over the ${ctx.level.level} limit`, reason: REASONS.DEADLINE_SLIP_OVER_LIMIT };
     if (c.deadline < ctx.plan.shipments[0].deliveredBy) return { ok: false, why: "deadline earlier than the plan can deliver" };
@@ -279,6 +360,24 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
   const buyerCounters = counters.filter((c) => c.toBuyer);
   await onStep({ type: "plan", level, sku: plan.sku, ok: plan.ok, chunks: plan.chunks, counters });
 
+  // Declared before the first finish(): the no-supply decline below uses them (finish → checkedMessage).
+  const history = [{ round: 0, from: "buyer", action: "OFFER", priceCents: rq.offerCents }];
+  let secrets = []; // Jupiter-internal cents (floors, target, landed cost); filled once treasury answers
+  let lastAttest = null;
+  // A split plan names each shipment's date in its counter text, so the line itself carries no single delivery date.
+  const deliveryText = () => (split ? "" : `, delivered by ${rq.deadline}`);
+  const message = (decision, priceCents) => {
+    const what = `${fmtQty(rq.qty)} × ${plan.sku} at ${usd(priceCents)} per unit, DAP Los Angeles${deliveryText()}`;
+    const extra = buyerCounters.map((c) => ` ${c.toBuyer}`).join("");
+    if (decision === "ACCEPT") return `${rq.id}: agreed — ${what}.${extra}`;
+    return `${rq.id}: we can offer ${what}.${extra}`;
+  };
+  const checkedMessage = (msg, priceCents) => {
+    const scan = leakScan(msg, { cents: secrets, allowCents: [priceCents, rq.offerCents, ...history.map((h) => h.priceCents).filter(Number.isInteger)] });
+    if (!scan.ok) throw new Error(`rule message for ${rq.id} failed the leak scan (${scan.hits.join(", ")})`);
+    return msg;
+  };
+
   if (!plan.ok) {
     reasons.push(REASONS.NO_SUPPLY_PLAN);
     return finish({ decision: "DECLINE", priceCents: null, rounds: 0, decidedBy: "AGENT", source: "rules", message: `${rq.id}: we cannot deliver ${fmtQty(rq.qty)} × ${rq.sku} by ${rq.deadline}, so we must decline this request.`, ladder: null, imp: null, escalations: [] });
@@ -294,38 +393,31 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
   }, "initial");
   const ladder = priceLadder(policy, tre, rq.advancePct);
   const imp = importanceOf(policy, rq.buyerLei, rq.qty, ladder.target);
-  const secrets = [...Object.values(ladder.floors), ladder.target, ladder.absolute, Math.floor(tre.landedCents ?? NaN), Math.ceil(tre.landedCents ?? NaN), Math.round(tre.landedCents ?? NaN)];
+  secrets = [...Object.values(ladder.floors), ladder.target, ladder.absolute, Math.floor(tre.landedCents ?? NaN), Math.ceil(tre.landedCents ?? NaN), Math.round(tre.landedCents ?? NaN)];
   await onStep({ type: "floors", internal: true, floors: ladder.floors, asks: ladder.asks, premium: ladder.premium, advance: ladder.advance, importance: imp });
+  const treasuryChecks = treasuryGate(policy, tre, ladder);
+  for (const t of treasuryChecks) {
+    reasons.push(t.reason);
+    if (t.minLevel && RANK[t.minLevel] > RANK[level]) level = t.minLevel;
+  }
+  if (treasuryChecks.length) await onStep({ type: "treasury-check", internal: true, checks: treasuryChecks, level });
 
   const answers = { inventory: inv, plan: plan.chunks.map(({ lot, kind, tier, units, mode, carrier, etd, delivered, freightCents }) => ({ lot, kind, tier, units, mode, carrier, etd, delivered, freightCents })), treasury: tre };
-  const history = [{ round: 0, from: "buyer", action: "OFFER", priceCents: rq.offerCents }];
   const inquiryView = { id: rq.id, sku: rq.sku, grade: rq.grade, qty: rq.qty, priceCents: rq.offerCents, deadline: rq.deadline, termsDays: rq.termsDays, advancePct: rq.advancePct };
   let lastSource = "rules";
-  let lastAttest = null;
 
   async function synthesize(mode, round, lv, floorCents, alias) {
     if (!ai) return { used: false, why: "AI off (--ai off)" };
     try {
-      const s = await consult(alias, "seller/synthesize", {
+      const s = await consult(alias, "seller/synthesize", toSynthesizeContract({
         mode, inquiry: inquiryView, round, history: structuredClone(history),
         answers, authority: { level: lv.level, floorCents, maxRounds: L.AGENT.maxRounds, allowed: { reallocate: lv.reallocate, air: lv.air, maxDeadlineSlipDays: lv.maxDeadlineSlipDays } },
-      }, "synthesize");
+      }), "synthesize");
       return { used: s?.source === "ai", s };
     } catch (e) {
       return { used: false, why: `synthesize failed: ${e.message}`, error: { code: e.code ?? null, httpStatus: e.httpStatus ?? null } };
     }
   }
-  const message = (decision, priceCents) => {
-    const what = `${fmtQty(rq.qty)} × ${plan.sku} at ${usd(priceCents)} per unit, DAP Los Angeles`;
-    const extra = buyerCounters.map((c) => ` ${c.toBuyer}`).join("");
-    if (decision === "ACCEPT") return `${rq.id}: agreed — ${what}, delivered by ${rq.deadline}.${extra}`;
-    return `${rq.id}: we can offer ${what}, delivered by ${rq.deadline}.${extra}`;
-  };
-  const checkedMessage = (msg, priceCents) => {
-    const scan = leakScan(msg, { cents: secrets, allowCents: [priceCents, rq.offerCents, ...history.map((h) => h.priceCents).filter(Number.isInteger)] });
-    if (!scan.ok) throw new Error(`rule message for ${rq.id} failed the leak scan (${scan.hits.join(", ")})`);
-    return msg;
-  };
   async function sendQuote({ round, decision, priceCents, decidedBy, msg, final = false, lostReason = null }) {
     const q = buildQuotation({ rfq: rq, seller, round, decision, sku: plan.sku, priceCents, shipments, counters: buyerCounters.map((c) => c.toBuyer), message: msg, decidedBy, final, lostReason });
     if (!final) await record(`round-${round}.quote.json`, q);
@@ -340,8 +432,24 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
   let result = null;
   const aiLog = [];
   if (level === "AGENT" && buyerCounters.length === 0 && b >= ladder.asks[0]) {
+    // The offer already meets the round-1 ask: accept at once. Seller synthesis still reviews the agents' answers (hub
+    // sequence); its proposal is kept only if it is a guarded ACCEPT at the buyer's price, so the outcome never changes.
+    let source = "rules";
+    const syn = await synthesize("round", 1, L.AGENT, ladder.floors.AGENT, L.AGENT.alias);
+    if (syn.used) {
+      const g = guardRound(syn.s.proposal, {
+        lastBuyerCents: b, floorCents: ladder.floors.AGENT, prevAskCents: null, plan: { sku: plan.sku, shipments, legs: plan.chunks.map((ch) => ({ units: ch.units, delivered: ch.delivered })) }, rfq: rq, level: L.AGENT, hasCounters: false, secrets,
+      }, syn.s.messageToBuyer ?? null);
+      const kept = g.ok && g.decision === "ACCEPT" && g.priceCents === b;
+      aiLog.push({ round: 0, proposal: syn.s.proposal, model: syn.s.model ?? null, guard: kept ? "kept" : g.ok ? "not an ACCEPT at the offer: rules accept" : g.why, reasoning: syn.s.reasoning ?? null });
+      if (kept) {
+        source = "ai";
+        lastAttest = syn.s.attest ?? null;
+      }
+    } else if (ai) aiLog.push({ round: 0, used: false, why: syn.why ?? `synthesize answered source "${syn.s?.source}"`, ...(syn.error ? { error: syn.error } : {}) });
+    lastSource = source;
     result = { decision: "ACCEPT", priceCents: b, decidedBy: "AGENT" };
-    history.push({ round: 0, from: "seller", action: "ACCEPT", priceCents: b, source: "rules" });
+    history.push({ round: 0, from: "seller", action: "ACCEPT", priceCents: b, source });
     await sendQuote({ round: 0, decision: "ACCEPT", priceCents: b, decidedBy: L.AGENT.alias, msg: checkedMessage(message("ACCEPT", b), b) });
   } else if (level === "AGENT") {
     for (let r = 0; r < L.AGENT.maxRounds && !result; r++) {
@@ -353,7 +461,7 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
       const syn = await synthesize("round", rounds, L.AGENT, ladder.floors.AGENT, L.AGENT.alias);
       if (syn.used) {
         const g = guardRound(syn.s.proposal, {
-          lastBuyerCents: b, floorCents: ladder.floors.AGENT, prevAskCents: lastAsk, plan: { sku: plan.sku, shipments }, rfq: rq, level: L.AGENT, hasCounters: buyerCounters.length > 0, secrets,
+          lastBuyerCents: b, floorCents: ladder.floors.AGENT, prevAskCents: lastAsk, plan: { sku: plan.sku, shipments, legs: plan.chunks.map((ch) => ({ units: ch.units, delivered: ch.delivered })) }, rfq: rq, level: L.AGENT, hasCounters: buyerCounters.length > 0, secrets,
         }, syn.s.messageToBuyer ?? null);
         aiLog.push({ round: rounds, proposal: syn.s.proposal, model: syn.s.model ?? null, guard: g.ok ? "kept" : g.why, reasoning: syn.s.reasoning ?? null });
         if (g.ok) {
@@ -373,7 +481,7 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
       lastAsk = move.priceCents;
       history.push({ round: rounds, from: "seller", action: "COUNTER", priceCents: lastAsk, source });
       await sendQuote({ round: rounds, decision: "COUNTER", priceCents: lastAsk, msg: aiMsg ?? checkedMessage(message("COUNTER", lastAsk), lastAsk) });
-      const br = buyer.respond({ phase: "round", round: rounds, askCents: lastAsk });
+      const br = await buyer.respond({ phase: "round", round: rounds, askCents: lastAsk });
       history.push({ round: rounds, from: "buyer", action: br.action, priceCents: br.priceCents });
       await onStep({ type: "buyer", round: rounds, action: br.action, priceCents: br.priceCents });
       if (br.action === "ACCEPT") result = { decision: "ACCEPT", priceCents: lastAsk, decidedBy: "AGENT", buyerAccepted: true };
@@ -392,12 +500,13 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
   // ---- 5: escalation (importance band → chain)
   const escalations = [];
   let lastLevel = "AGENT";
+  const chain = escalationChain(policy, imp.chain, level);
   if (!result) {
-    await onStep({ type: "escalate", reasons, band: imp.band, chain: imp.chain });
-    for (const lvName of imp.chain) {
+    await onStep({ type: "escalate", reasons, band: imp.band, chain, requiredLevel: level });
+    for (const lvName of chain) {
       const lv = L[lvName];
       if (RANK[lvName] < RANK[level]) {
-        escalations.push({ level: lvName, alias: lv.alias, decision: "FORWARDED", why: `the supply plan needs ${level} authority`, when: now() });
+        escalations.push({ level: lvName, alias: lv.alias, decision: "FORWARDED", why: `the deal needs ${level} authority (${reasons.join(", ")})`, when: now() });
         continue;
       }
       lastLevel = lvName;
@@ -420,7 +529,7 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
       }
       history.push({ round: rounds, from: "seller", action: "COUNTER", level: lvName, priceCents: ask, source: "rules" });
       await sendQuote({ round: rounds, decision: "COUNTER", priceCents: ask, decidedBy: lv.alias, msg: checkedMessage(message("COUNTER", ask), ask) });
-      const br = buyer.respond({ phase: "escalation", round: rounds, askCents: ask });
+      const br = await buyer.respond({ phase: "escalation", round: rounds, askCents: ask });
       history.push({ round: rounds, from: "buyer", action: br.action, priceCents: br.priceCents });
       await onStep({ type: "buyer", round: rounds, action: br.action, priceCents: br.priceCents });
       if (br.action === "ACCEPT") {
@@ -440,14 +549,14 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
   let declineMsg = null;
   let bestAndFinal = null;
   if (!result || result.decision === "DECLINE") {
-    const by = result?.decidedBy ?? (imp.chain.length ? lastLevel : "AGENT");
+    const by = result?.decidedBy ?? (chain.length ? lastLevel : "AGENT");
     bestAndFinal = ladder.floors[by];
     if (by === "CEO" && !result?.rejected && b < ladder.floors.CEO) reasons.push(REASONS.BELOW_ABSOLUTE_FLOOR);
-    declineMsg = `${rq.id}: we cannot meet ${usd(b)} per unit. Our best and final price is ${usd(bestAndFinal)} per unit for ${fmtQty(rq.qty)} × ${plan.sku}, delivered by ${rq.deadline}.`;
+    declineMsg = `${rq.id}: we cannot meet ${usd(b)} per unit. Our best and final price is ${usd(bestAndFinal)} per unit for ${fmtQty(rq.qty)} × ${plan.sku}${deliveryText()}.${buyerCounters.map((c) => ` ${c.toBuyer}`).join("")}`;
     result = { decision: "DECLINE", priceCents: bestAndFinal, decidedBy: by, rejected: result?.rejected ?? false };
   }
   if (result.decidedBy !== "AGENT") lastSource = "rules";
-  return finish({ ...result, rounds, source: lastSource, message: declineMsg, ladder, imp, escalations, aiLog, history, tre });
+  return finish({ ...result, rounds, source: lastSource, message: declineMsg, ladder, imp, escalations, aiLog, history, tre, treasuryChecks });
 
   // ---- 6: records
   async function finish(r) {
@@ -468,7 +577,7 @@ export async function runQuote({ rfq, policy, client, buyer, decide, record = as
     await record("escalations.json", r.escalations ?? []);
     await record("final.quote.json", final);
     const internal = {
-      level, plan: plan.chunks, counters, floors: r.ladder?.floors ?? null, asks: r.ladder?.asks ?? null, premium: r.ladder?.premium ?? null, advance: r.ladder?.advance ?? null,
+      level, treasuryChecks: r.treasuryChecks ?? [], plan: plan.chunks, counters, floors: r.ladder?.floors ?? null, asks: r.ladder?.asks ?? null, premium: r.ladder?.premium ?? null, advance: r.ladder?.advance ?? null,
       importance: r.imp, ai: r.aiLog ?? [], history: r.history ?? history, landedCents: r.tre?.landedCents ?? null,
     };
     await record("jupiter-internal.json", internal);

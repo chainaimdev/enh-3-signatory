@@ -9,6 +9,11 @@
 #                                   [--vlei-verifier required|off (live check via vlei_verification :9724; default required)]
 #                                   [--sally required|off (officer presents its OOR to Sally; signed result must be "iss")]
 #                                   [--negotiator rules|llm --llm-url <url> [--llm-model <name>]]   (change #4;
+#                                   [--quote-inquiries data/quote/rig-scenarios.json] [--outcome-url http://127.0.0.1:8785]
+#                                   [--quote-buyer rules|outcome]  (outcome: Tommy answers via his OutcomeAI tenant; export
+#                                    QUOTE_TOKEN_TOMMY too)
+#                                   (quote mode: which RFQs the console lists, and OutcomeAI quote-agents; export
+#                                    QUOTE_TOKEN_JUPITER in this shell first — never on the command line)
 #                                   llm reads the key from env SIGNATORY_LLM_API_KEY — never put the key on the command line)
 #   bash scripts/signatory.sh stop  [--vlei] [--dry-run]
 #
@@ -47,7 +52,7 @@ CONFIG="$ROOT/config/signatory.json"
 
 MODE="${1:-}"; shift || true
 DRY=0; AP2="on"; WITH_VLEI=0; NO_UI=0; FRESH_VLEI=0; YES=0; SKIP_NPM=0
-NEGOTIATOR="rules"; LLM_URL=""; LLM_MODEL=""; BACKGROUND=0; PACE_MS=1500; VLEI_VERIFIER="required"; SALLY="required"
+NEGOTIATOR="rules"; LLM_URL=""; LLM_MODEL=""; QUOTE_INQUIRIES=""; OUTCOME_URL=""; QUOTE_BUYER=""; BACKGROUND=0; PACE_MS=1500; VLEI_VERIFIER="required"; SALLY="required"
 EXPORT_NODE="/mnt/c/Program Files/nodejs/node.exe"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -66,7 +71,10 @@ while [ $# -gt 0 ]; do
     --sally) shift; SALLY="${1:-}" ;;
     --llm-url) shift; LLM_URL="${1:-}" ;;
     --llm-model) shift; LLM_MODEL="${1:-}" ;;
-    -h|--help) sed -n '2,30p' "$0"; exit 0 ;;
+    --quote-inquiries) shift; QUOTE_INQUIRIES="${1:-}" ;;
+    --outcome-url) shift; OUTCOME_URL="${1:-}" ;;
+    --quote-buyer) shift; QUOTE_BUYER="${1:-}" ;;
+    -h|--help) sed -n '2,35p' "$0"; exit 0 ;;
     *) echo "unknown flag: $1 (see --help)" >&2; exit 64 ;;
   esac
   shift
@@ -79,6 +87,15 @@ case "$SALLY" in required|off) ;; *) echo "--sally must be required or off" >&2;
 RUNNER_EXTRA=(--negotiator "$NEGOTIATOR" --pace-ms "$PACE_MS" --vlei-verifier "$VLEI_VERIFIER" --sally "$SALLY")
 [ -n "$LLM_URL" ] && RUNNER_EXTRA+=(--llm-url "$LLM_URL")
 [ -n "$LLM_MODEL" ] && RUNNER_EXTRA+=(--llm-model "$LLM_MODEL")
+# quote mode: a relative --quote-inquiries is taken from chainaim-signatory/ (the runner itself starts in services/)
+if [ -n "$QUOTE_INQUIRIES" ]; then
+  case "$QUOTE_INQUIRIES" in /*) ;; *) QUOTE_INQUIRIES="$ROOT/$QUOTE_INQUIRIES" ;; esac
+  [ -f "$QUOTE_INQUIRIES" ] || { echo "--quote-inquiries: no file $QUOTE_INQUIRIES" >&2; exit 64; }
+  RUNNER_EXTRA+=(--quote-inquiries "$QUOTE_INQUIRIES")
+fi
+[ -n "$OUTCOME_URL" ] && RUNNER_EXTRA+=(--outcome-url "$OUTCOME_URL")
+case "$QUOTE_BUYER" in ""|rules|outcome) ;; *) echo "--quote-buyer must be rules or outcome" >&2; exit 64 ;; esac
+[ -n "$QUOTE_BUYER" ] && RUNNER_EXTRA+=(--quote-buyer "$QUOTE_BUYER")
 
 ok()   { printf '  \033[32mPASS\033[0m %s\n' "$*"; }
 warn() { printf '  \033[33mWARN\033[0m %s\n' "$*"; }

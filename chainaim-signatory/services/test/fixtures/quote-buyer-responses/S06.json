@@ -1,0 +1,74 @@
+{
+  "inquiry": "S06",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "live OutcomeAI quote-agents, tenant tommy-hilfiger-europe (buyer, rules), --as-of 2026-11-16; rig with --ai off",
+  "calls": [
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S06",
+        "sku": "FAB-LIN-150-A",
+        "qty": 5000,
+        "priceCents": 640,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 32000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S06",
+        "sku": "FAB-LIN-150-A",
+        "phase": "escalation",
+        "round": 2,
+        "askCents": 719,
+        "lastOfferCents": 640
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 700,
+        "messageToSeller": "RFQ-S06: we can do $7.00 per unit.",
+        "reasoning": "best and final offer",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S06",
+        "sku": "FAB-LIN-150-A",
+        "qty": 5000,
+        "priceCents": 700,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 35000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

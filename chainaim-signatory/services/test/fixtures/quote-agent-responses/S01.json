@@ -1,0 +1,162 @@
+{
+ "inquiry": "S01",
+ "title": "Everything possible, Tommy accepts in round 1",
+ "recordedAt": "2026-11-14",
+ "recordedFrom": "live OutcomeAI quote-agents (10-SKU jupiter-knitting data, --as-of 2026-11-16, --ai off) via services/chain-10.mjs; agent calls only (the tests run with ai off)",
+ "rfq": {
+  "doctype": "Request for Quotation",
+  "name": "RFQ-S01",
+  "naming_series": "PUR-RFQ-.YYYY.-",
+  "company": "Tommy Hilfiger Europe B.V.",
+  "transaction_date": "2026-11-16",
+  "schedule_date": "2027-01-08",
+  "suppliers": [
+   {
+    "supplier": "Jupiter Knitting Company"
+   }
+  ],
+  "items": [
+   {
+    "item_code": "FAB-JERSEY-140-A",
+    "item_name": "FAB-JERSEY-140-A",
+    "description": "Cotton jersey knit 140 GSM, grade A",
+    "qty": 30000,
+    "uom": "Unit",
+    "stock_uom": "Unit",
+    "conversion_factor": 1,
+    "schedule_date": "2027-01-08",
+    "custom_quality_grade": "A",
+    "custom_target_rate_cents": 300
+   }
+  ],
+  "incoterm": "DAP",
+  "named_place": "Los Angeles",
+  "custom_from_agent": "tommyBuyerAgent",
+  "custom_from_lei": "54930012QJWZMYHNJW95",
+  "custom_to_agent": "jupiterSellerAgent",
+  "custom_to_lei": "3358004DXAMRWRUIYJ05",
+  "custom_payment_terms_days": 30,
+  "custom_advance_pct": 0
+ },
+ "buyerSim": {
+  "budgetCents": 320,
+  "concession": 0.5,
+  "behaviour": "price"
+ },
+ "calls": [
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "FAB-JERSEY-140-A",
+    "qty": 30000,
+    "shipBy": "2027-01-08"
+   },
+   "response": {
+    "requestId": "25ae54fc-95b8-4e1a-b285-f426acc16da9",
+    "sources": [
+     {
+      "lot": "L-140A-01",
+      "kind": "FREE",
+      "units": 30000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "reallocatable": [],
+    "gradeAlternatives": [],
+    "shortfall": 0
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-JERSEY-140-A",
+    "lots": [
+     {
+      "lot": "L-140A-01",
+      "units": 30000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2027-01-08",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "883fd9d7-e2f9-4b6a-8a89-0c196b938824",
+    "legs": [
+     {
+      "lot": "L-140A-01",
+      "units": 30000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterTreasuryAgent",
+   "path": "agents/treasury",
+   "request": {
+    "sku": "FAB-JERSEY-140-A",
+    "qty": 30000,
+    "freightCents": 420000,
+    "reallocUnits": {
+     "TIER1": 0,
+     "TIER2": 0
+    },
+    "termsDays": 30,
+    "advancePct": 0,
+    "margins": [
+     0.15,
+     0.135,
+     0.12,
+     0.11,
+     0.1,
+     0.09,
+     0.08
+    ]
+   },
+   "response": {
+    "requestId": "e898128d-6f98-4d1c-a2a0-f5f04ca40056",
+    "landedCents": 255,
+    "pricesAtMargin": {
+     "0.15": 300,
+     "0.135": 295,
+     "0.12": 290,
+     "0.11": 287,
+     "0.1": 284,
+     "0.09": 281,
+     "0.08": 278
+    },
+    "reallocPremiumCents": 0,
+    "liquidity": {
+     "net30Usd": 138000,
+     "status": "SURPLUS"
+    },
+    "advanceLever": {
+     "minAdvancePct": 30,
+     "marginRelief": 0.01,
+     "applies": false
+    },
+    "credit": {
+     "headroomUsd": 180000,
+     "ok": true
+    }
+   },
+   "httpStatus": 200
+  }
+ ]
+}

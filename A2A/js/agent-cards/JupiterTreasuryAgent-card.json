@@ -54,7 +54,7 @@
       "lei": "3358004DXAMRWRUIYJ05",
       "legalEntityName": "JUPITER KNITTING COMPANY",
       "registryName": "Jupiter_Knitting_Company-oor-registry",
-      "qvi": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2",
+      "qvi": "EJeCwvJB6gmDveIHt37BuQ_Tq7bieVWvcgsBDqQg9yqP",
       "officialRole": "ChiefFinancialOfficer",
       "engagementRole": "Treasury Agent"
     },
@@ -65,30 +65,30 @@
       "isSubDelegation": true,
       "scope": "treasury_operations",
       "canDelegate": false,
-      "delegatorAID": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
-      "delegateeAID": "ENZRtxT0mMnve5eypR5Bk1wfs68QygDz9CXJzX1aUcl8",
-      "delegatorOOBI": "http://keria:3902/oobi/EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk/agent/EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP",
-      "delegateeOOBI": "http://keria:3902/oobi/ENZRtxT0mMnve5eypR5Bk1wfs68QygDz9CXJzX1aUcl8/agent/EDsmeBc_MnuW4lTr-CXBKoCF-Khg93mIegMDlouHE11I",
-      "oorHolderAID": "EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4",
-      "oorHolderOOBI": "http://keria:3902/oobi/EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4/agent/EGmNu5r8CoEGh6kijBdmGq489TQUNmLVemZMP8N2PUu4",
-      "leAID": "EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR",
-      "leOOBI": "http://keria:3902/oobi/EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR/agent/EJQtExZQ1vWs9bI24W_PO7nfPHQemb2p1eLRoGoZ540-",
+      "delegatorAID": "ELw_9H7ZqV40NlnaNaSJBAbtIXYVhZC9jxMJoRO0cwqC",
+      "delegateeAID": "EBWR_ImE_z9oNVEuXnccg5-7iVrJ7u58hcSB05nGoU2Y",
+      "delegatorOOBI": "http://keria:3902/oobi/ELw_9H7ZqV40NlnaNaSJBAbtIXYVhZC9jxMJoRO0cwqC/agent/EMJ_LDguuE0njG75fUaFfEGLNrxnr8NMdhSoag0b_elx",
+      "delegateeOOBI": "http://keria:3902/oobi/EBWR_ImE_z9oNVEuXnccg5-7iVrJ7u58hcSB05nGoU2Y/agent/EI3i1OpXk_YpbPlK-_qCx5-I6BGaS1CuZpR10jTEkhHy",
+      "oorHolderAID": "EGe1GoH0pv_-K8wY8R5_kxtVRMpDouduORK11xY9nNp8",
+      "oorHolderOOBI": "http://keria:3902/oobi/EGe1GoH0pv_-K8wY8R5_kxtVRMpDouduORK11xY9nNp8/agent/EOWTBnbFO-zRhjsk_lEdVZY3EpCF4aJJPk1yFFlB9E6I",
+      "leAID": "EEn8T4_fTVKOolLaDvm3oyKaJgz1wZJxfZxdG-jTi3lV",
+      "leOOBI": "http://keria:3902/oobi/EEn8T4_fTVKOolLaDvm3oyKaJgz1wZJxfZxdG-jTi3lV/agent/EEwXHMKw-kRQ0hm_thc8fkbjbh7i_SRggMC7Hhzupb9k",
       "verificationPath": [
         "GLEIF_ROOT → QVI",
         "QVI → JUPITER KNITTING COMPANY → Chief Sales Officer → jupiterSellerAgent → JupiterTreasuryAgent"
       ],
-      "timestamp": "2026-11-13T15:55:58.563Z"
+      "timestamp": "2026-11-14T16:32:08.622Z"
     },
     "gleifVerification": {
       "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/3358004DXAMRWRUIYJ05"
     },
     "keriIdentifiers": {
-      "agentAID": "ENZRtxT0mMnve5eypR5Bk1wfs68QygDz9CXJzX1aUcl8",
-      "parentAgentAID": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
-      "oorHolderAID": "EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4",
-      "legalEntityAID": "EJHZpHhXkxzGFd-IbSUYrJqQUON41MJnk204cwFfg2AR",
-      "qviAID": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2",
-      "publicKey": "DDeOzeIiXO28vb3QEe10do6iPmhGpYgZpvoSYj5WA5tt"
+      "agentAID": "EBWR_ImE_z9oNVEuXnccg5-7iVrJ7u58hcSB05nGoU2Y",
+      "parentAgentAID": "ELw_9H7ZqV40NlnaNaSJBAbtIXYVhZC9jxMJoRO0cwqC",
+      "oorHolderAID": "EGe1GoH0pv_-K8wY8R5_kxtVRMpDouduORK11xY9nNp8",
+      "legalEntityAID": "EEn8T4_fTVKOolLaDvm3oyKaJgz1wZJxfZxdG-jTi3lV",
+      "qviAID": "EJeCwvJB6gmDveIHt37BuQ_Tq7bieVWvcgsBDqQg9yqP",
+      "publicKey": "DMZUG92_c9gQNRFKbEvCKzRGSZEoblx0YTLAk_JG2DJe"
     }
   }
 }

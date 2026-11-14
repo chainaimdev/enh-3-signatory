@@ -1,0 +1,250 @@
+{
+ "inquiry": "S10",
+ "title": "Too much, too soon: short of stock and late at every authority, decline",
+ "recordedAt": "2026-11-14",
+ "recordedFrom": "live OutcomeAI quote-agents (10-SKU jupiter-knitting data, --as-of 2026-11-16, --ai off) via services/chain-10.mjs; agent calls only (the tests run with ai off)",
+ "rfq": {
+  "doctype": "Request for Quotation",
+  "name": "RFQ-S10",
+  "naming_series": "PUR-RFQ-.YYYY.-",
+  "company": "Tommy Hilfiger Europe B.V.",
+  "transaction_date": "2026-11-16",
+  "schedule_date": "2027-01-08",
+  "suppliers": [
+   {
+    "supplier": "Jupiter Knitting Company"
+   }
+  ],
+  "items": [
+   {
+    "item_code": "FAB-COT-220-A",
+    "item_name": "FAB-COT-220-A",
+    "description": "Cotton interlock 220 GSM, grade A",
+    "qty": 45000,
+    "uom": "Unit",
+    "stock_uom": "Unit",
+    "conversion_factor": 1,
+    "schedule_date": "2027-01-08",
+    "custom_quality_grade": "A",
+    "custom_target_rate_cents": 470
+   }
+  ],
+  "incoterm": "DAP",
+  "named_place": "Los Angeles",
+  "custom_from_agent": "tommyBuyerAgent",
+  "custom_from_lei": "54930012QJWZMYHNJW95",
+  "custom_to_agent": "jupiterSellerAgent",
+  "custom_to_lei": "3358004DXAMRWRUIYJ05",
+  "custom_payment_terms_days": 30,
+  "custom_advance_pct": 0
+ },
+ "buyerSim": {
+  "budgetCents": 520,
+  "concession": 0.5,
+  "behaviour": "price"
+ },
+ "calls": [
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "FAB-COT-220-A",
+    "qty": 45000,
+    "shipBy": "2027-01-08"
+   },
+   "response": {
+    "requestId": "df4549bb-f493-4b72-8d67-a8bdbce3a8ab",
+    "sources": [
+     {
+      "lot": "L-220A-01",
+      "kind": "FREE",
+      "units": 8000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-220A-02",
+      "kind": "WIP",
+      "units": 10000,
+      "readyDate": "2026-12-10",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-FAB-COT-220-A-2026-12-23",
+      "kind": "PRODUCTION",
+      "units": 20000,
+      "readyDate": "2026-12-23",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "reallocatable": [],
+    "gradeAlternatives": [],
+    "shortfall": 7000
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-220-A",
+    "lots": [
+     {
+      "lot": "L-220A-01",
+      "units": 8000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-220A-02",
+      "units": 10000,
+      "readyDate": "2026-12-10",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-FAB-COT-220-A-2026-12-23",
+      "units": 20000,
+      "readyDate": "2026-12-23",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2027-01-08",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "4fdf9866-3945-43d0-971d-7277503b4826",
+    "legs": [
+     {
+      "lot": "L-220A-01",
+      "units": 8000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     },
+     {
+      "lot": "L-220A-02",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-22",
+      "delivered": "2027-01-18",
+      "freightCents": 540000,
+      "late": true
+     },
+     {
+      "lot": "PROD-FAB-COT-220-A-2026-12-23",
+      "units": 20000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2027-01-01",
+      "delivered": "2027-02-02",
+      "freightCents": 420000,
+      "late": true
+     }
+    ],
+    "freightCents": 1380000,
+    "meetsDeadline": false,
+    "lateUnits": 30000,
+    "airOption": {
+     "deliveredBy": "2026-12-29",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-220-A",
+    "lots": [
+     {
+      "lot": "L-220A-01",
+      "units": 8000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2027-01-08",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "f955cc35-669e-4ae1-bcf3-0e88753cfc85",
+    "legs": [
+     {
+      "lot": "L-220A-01",
+      "units": 8000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-220-A",
+    "lots": [
+     {
+      "lot": "L-220A-02",
+      "units": 10000,
+      "readyDate": "2026-12-10",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-FAB-COT-220-A-2026-12-23",
+      "units": 20000,
+      "readyDate": "2026-12-23",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2027-01-08",
+    "allowAir": true
+   },
+   "response": {
+    "requestId": "602a06ad-7251-4593-a327-87b36fd02527",
+    "legs": [
+     {
+      "lot": "L-220A-02",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-22",
+      "delivered": "2027-01-18",
+      "freightCents": 540000,
+      "late": true
+     },
+     {
+      "lot": "PROD-FAB-COT-220-A-2026-12-23",
+      "units": 20000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2027-01-01",
+      "delivered": "2027-02-02",
+      "freightCents": 420000,
+      "late": true
+     }
+    ],
+    "freightCents": 960000,
+    "meetsDeadline": false,
+    "lateUnits": 30000,
+    "airOption": null
+   },
+   "httpStatus": 200
+  }
+ ]
+}

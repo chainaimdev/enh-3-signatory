@@ -1,0 +1,293 @@
+{
+ "inquiry": "S04",
+ "title": "Grade B (stock + new production) cannot reach LA by 28 Dec: Jupiter offers Grade A instead",
+ "recordedAt": "2026-11-14",
+ "recordedFrom": "live OutcomeAI quote-agents (10-SKU jupiter-knitting data, --as-of 2026-11-16, --ai off) via services/chain-10.mjs; agent calls only (the tests run with ai off)",
+ "rfq": {
+  "doctype": "Request for Quotation",
+  "name": "RFQ-S04",
+  "naming_series": "PUR-RFQ-.YYYY.-",
+  "company": "Tommy Hilfiger Europe B.V.",
+  "transaction_date": "2026-11-16",
+  "schedule_date": "2026-12-28",
+  "suppliers": [
+   {
+    "supplier": "Jupiter Knitting Company"
+   }
+  ],
+  "items": [
+   {
+    "item_code": "FAB-JERSEY-140-B",
+    "item_name": "FAB-JERSEY-140-B",
+    "description": "Cotton jersey knit 140 GSM, grade B",
+    "qty": 30000,
+    "uom": "Unit",
+    "stock_uom": "Unit",
+    "conversion_factor": 1,
+    "schedule_date": "2026-12-28",
+    "custom_quality_grade": "B",
+    "custom_target_rate_cents": 280
+   }
+  ],
+  "incoterm": "DAP",
+  "named_place": "Los Angeles",
+  "custom_from_agent": "tommyBuyerAgent",
+  "custom_from_lei": "54930012QJWZMYHNJW95",
+  "custom_to_agent": "jupiterSellerAgent",
+  "custom_to_lei": "3358004DXAMRWRUIYJ05",
+  "custom_payment_terms_days": 30,
+  "custom_advance_pct": 0
+ },
+ "buyerSim": {
+  "budgetCents": 310,
+  "concession": 0.5,
+  "behaviour": "price"
+ },
+ "calls": [
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "FAB-JERSEY-140-B",
+    "qty": 30000,
+    "shipBy": "2026-12-28"
+   },
+   "response": {
+    "requestId": "80d23f47-62e1-49f9-8e9e-2d256d665d27",
+    "sources": [
+     {
+      "lot": "L-140B-01",
+      "kind": "FREE",
+      "units": 14000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     },
+     {
+      "lot": "PROD-FAB-JERSEY-140-B-2026-12-13",
+      "kind": "PRODUCTION",
+      "units": 16000,
+      "readyDate": "2026-12-13",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "reallocatable": [],
+    "gradeAlternatives": [
+     {
+      "sku": "FAB-JERSEY-140-A",
+      "grade": "A"
+     }
+    ],
+    "shortfall": 0
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-JERSEY-140-B",
+    "lots": [
+     {
+      "lot": "L-140B-01",
+      "units": 14000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     },
+     {
+      "lot": "PROD-FAB-JERSEY-140-B-2026-12-13",
+      "units": 16000,
+      "readyDate": "2026-12-13",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2026-12-28",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "3b53ff10-65e0-41ff-9626-e3ca006a59ab",
+    "legs": [
+     {
+      "lot": "L-140B-01",
+      "units": 14000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     },
+     {
+      "lot": "PROD-FAB-JERSEY-140-B-2026-12-13",
+      "units": 16000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-22",
+      "delivered": "2027-01-18",
+      "freightCents": 540000,
+      "late": true
+     }
+    ],
+    "freightCents": 960000,
+    "meetsDeadline": false,
+    "lateUnits": 16000,
+    "airOption": {
+     "deliveredBy": "2026-12-20",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-JERSEY-140-B",
+    "lots": [
+     {
+      "lot": "L-140B-01",
+      "units": 14000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2026-12-28",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "26ab7611-3667-49bd-a094-bdbf214450f3",
+    "legs": [
+     {
+      "lot": "L-140B-01",
+      "units": 14000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "FAB-JERSEY-140-A",
+    "qty": 30000,
+    "shipBy": "2026-12-28"
+   },
+   "response": {
+    "requestId": "166b9bf7-40dc-439c-b3c8-73ec013b795d",
+    "sources": [
+     {
+      "lot": "L-140A-01",
+      "kind": "FREE",
+      "units": 30000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "reallocatable": [],
+    "gradeAlternatives": [],
+    "shortfall": 0
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-JERSEY-140-A",
+    "lots": [
+     {
+      "lot": "L-140A-01",
+      "units": 30000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2026-12-28",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "354f9bb7-5e6f-47f0-9f87-e0c2a701607c",
+    "legs": [
+     {
+      "lot": "L-140A-01",
+      "units": 30000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterTreasuryAgent",
+   "path": "agents/treasury",
+   "request": {
+    "sku": "FAB-JERSEY-140-A",
+    "qty": 30000,
+    "freightCents": 420000,
+    "reallocUnits": {
+     "TIER1": 0,
+     "TIER2": 0
+    },
+    "termsDays": 30,
+    "advancePct": 0,
+    "margins": [
+     0.15,
+     0.135,
+     0.12,
+     0.11,
+     0.1,
+     0.09,
+     0.08
+    ]
+   },
+   "response": {
+    "requestId": "68ced1bd-2fe8-47f8-917b-11f612ea874e",
+    "landedCents": 255,
+    "pricesAtMargin": {
+     "0.15": 300,
+     "0.135": 295,
+     "0.12": 290,
+     "0.11": 287,
+     "0.1": 284,
+     "0.09": 281,
+     "0.08": 278
+    },
+    "reallocPremiumCents": 0,
+    "liquidity": {
+     "net30Usd": 138000,
+     "status": "SURPLUS"
+    },
+    "advanceLever": {
+     "minAdvancePct": 30,
+     "marginRelief": 0.01,
+     "applies": false
+    },
+    "credit": {
+     "headroomUsd": 180000,
+     "ok": true
+    }
+   },
+   "httpStatus": 200
+  }
+ ]
+}

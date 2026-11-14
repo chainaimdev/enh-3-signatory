@@ -1,0 +1,271 @@
+{
+ "inquiry": "S06",
+ "title": "Only stock is another customer's (Tier 2): Sales Officer must approve",
+ "recordedAt": "2026-11-14",
+ "recordedFrom": "live OutcomeAI quote-agents (10-SKU jupiter-knitting data, --as-of 2026-11-16, --ai off) via services/chain-10.mjs; agent calls only (the tests run with ai off)",
+ "rfq": {
+  "doctype": "Request for Quotation",
+  "name": "RFQ-S06",
+  "naming_series": "PUR-RFQ-.YYYY.-",
+  "company": "Tommy Hilfiger Europe B.V.",
+  "transaction_date": "2026-11-16",
+  "schedule_date": "2027-01-08",
+  "suppliers": [
+   {
+    "supplier": "Jupiter Knitting Company"
+   }
+  ],
+  "items": [
+   {
+    "item_code": "FAB-LIN-150-A",
+    "item_name": "FAB-LIN-150-A",
+    "description": "Linen-cotton 55/45 blend 150 GSM, grade A",
+    "qty": 5000,
+    "uom": "Unit",
+    "stock_uom": "Unit",
+    "conversion_factor": 1,
+    "schedule_date": "2027-01-08",
+    "custom_quality_grade": "A",
+    "custom_target_rate_cents": 640
+   }
+  ],
+  "incoterm": "DAP",
+  "named_place": "Los Angeles",
+  "custom_from_agent": "tommyBuyerAgent",
+  "custom_from_lei": "54930012QJWZMYHNJW95",
+  "custom_to_agent": "jupiterSellerAgent",
+  "custom_to_lei": "3358004DXAMRWRUIYJ05",
+  "custom_payment_terms_days": 30,
+  "custom_advance_pct": 0
+ },
+ "buyerSim": {
+  "budgetCents": 700,
+  "concession": 0.5,
+  "behaviour": "price"
+ },
+ "calls": [
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "FAB-LIN-150-A",
+    "qty": 5000,
+    "shipBy": "2027-01-08"
+   },
+   "response": {
+    "requestId": "95916b1a-6bd7-4a4c-a8ca-a1811b470c69",
+    "sources": [
+     {
+      "lot": "PROD-FAB-LIN-150-A-2026-12-28",
+      "kind": "PRODUCTION",
+      "units": 5000,
+      "readyDate": "2026-12-28",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "reallocatable": [
+     {
+      "lot": "L-LIN150-01",
+      "units": 6000,
+      "tier": "TIER2",
+      "requiredAuthority": "SALES_OFFICER",
+      "premiumPct": 4,
+      "replacementOk": true,
+      "readyDate": "2026-11-20",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "gradeAlternatives": [],
+    "shortfall": 0
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-LIN-150-A",
+    "lots": [
+     {
+      "lot": "PROD-FAB-LIN-150-A-2026-12-28",
+      "units": 5000,
+      "readyDate": "2026-12-28",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2027-01-08",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "1896acf5-9c20-40d6-9c87-b30f2895beb3",
+    "legs": [
+     {
+      "lot": "PROD-FAB-LIN-150-A-2026-12-28",
+      "units": 5000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2027-01-01",
+      "delivered": "2027-02-02",
+      "freightCents": 420000,
+      "late": true
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": false,
+    "lateUnits": 5000,
+    "airOption": {
+     "deliveredBy": "2027-01-04",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-LIN-150-A",
+    "lots": [
+     {
+      "lot": "PROD-FAB-LIN-150-A-2026-12-28",
+      "units": 5000,
+      "readyDate": "2026-12-28",
+      "warehouse": "TIRUPUR-WH-2"
+     },
+     {
+      "lot": "L-LIN150-01",
+      "units": 6000,
+      "readyDate": "2026-11-20",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2027-01-08",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "45d645a4-9203-4bb2-8cda-183a315d6d00",
+    "legs": [
+     {
+      "lot": "PROD-FAB-LIN-150-A-2026-12-28",
+      "units": 5000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2027-01-01",
+      "delivered": "2027-02-02",
+      "freightCents": 420000,
+      "late": true
+     },
+     {
+      "lot": "L-LIN150-01",
+      "units": 6000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-12-04",
+      "delivered": "2027-01-05",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 840000,
+    "meetsDeadline": false,
+    "lateUnits": 5000,
+    "airOption": {
+     "deliveredBy": "2027-01-04",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-LIN-150-A",
+    "lots": [
+     {
+      "lot": "L-LIN150-01",
+      "units": 5000,
+      "readyDate": "2026-11-20",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2027-01-08",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "885f6d3d-d283-44cb-885e-81de7f02e92c",
+    "legs": [
+     {
+      "lot": "L-LIN150-01",
+      "units": 5000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-12-04",
+      "delivered": "2027-01-05",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterTreasuryAgent",
+   "path": "agents/treasury",
+   "request": {
+    "sku": "FAB-LIN-150-A",
+    "qty": 5000,
+    "freightCents": 420000,
+    "reallocUnits": {
+     "TIER1": 0,
+     "TIER2": 5000
+    },
+    "termsDays": 30,
+    "advancePct": 0,
+    "margins": [
+     0.15,
+     0.135,
+     0.12,
+     0.11,
+     0.1,
+     0.09,
+     0.08
+    ]
+   },
+   "response": {
+    "requestId": "a76d34cf-08b7-41c3-b156-cf98644ca367",
+    "landedCents": 610,
+    "pricesAtMargin": {
+     "0.15": 718,
+     "0.135": 706,
+     "0.12": 694,
+     "0.11": 686,
+     "0.1": 678,
+     "0.09": 671,
+     "0.08": 664
+    },
+    "reallocPremiumCents": 21,
+    "liquidity": {
+     "net30Usd": 138000,
+     "status": "SURPLUS"
+    },
+    "advanceLever": {
+     "minAdvancePct": 30,
+     "marginRelief": 0.01,
+     "applies": false
+    },
+    "credit": {
+     "headroomUsd": 180000,
+     "ok": true
+    }
+   },
+   "httpStatus": 200
+  }
+ ]
+}

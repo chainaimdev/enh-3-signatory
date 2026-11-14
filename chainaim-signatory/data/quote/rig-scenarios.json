@@ -1,0 +1,614 @@
+{
+ "version": 1,
+ "comment": "Quote test rig (scripts/quote-rig.mjs): 10 Tommy → Jupiter RFQs over OutcomeAI's 10-SKU jupiter-knitting data (sample-data/quote/jupiter-knitting, quote-agents --as-of 2026-11-16). Same shape as inquiries.json (id, scenario, rfq, buyerSim) plus path (which agent says yes/no) and expect (the outcome with --ai off, recorded live 2026-11-14 and replayed by services/test/quote-rig.test.mjs). buyerSim is Tommy's private side: the seller never reads it. The console can load this file with --quote-inquiries data/quote/rig-scenarios.json.",
+ "inquiries": [
+  {
+   "id": "S01",
+   "scenario": "Everything possible: Tommy's price meets Jupiter's ask, accepted at once",
+   "path": "Inventory ✓ (free stock) · Logistics ✓ (sea) · Treasury ✓ · Tommy's price already at Jupiter's ask → accepted in round 0",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S01",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2027-01-08",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "FAB-JERSEY-140-A",
+      "item_name": "FAB-JERSEY-140-A",
+      "description": "Cotton jersey knit 140 GSM, grade A",
+      "qty": 30000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2027-01-08",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 300
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 320,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "FAB-JERSEY-140-A",
+    "priceCents": 300,
+    "decidedByAlias": "jupiterSellerAgent",
+    "rounds": 0,
+    "reasons": [],
+    "shipments": [
+     {
+      "units": 30000,
+      "deliveredBy": "2027-01-08"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S02",
+   "scenario": "Counter, then Tommy accepts in round 2",
+   "path": "Inventory ✓ (free + WIP) · Logistics ✓ (standard + express sea) · Treasury ✓ · counter, Tommy accepts in round 2",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S02",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2027-01-08",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "GAR-TSHIRT-CREW-A",
+      "item_name": "GAR-TSHIRT-CREW-A",
+      "description": "Crew-neck T-shirt, 100% cotton jersey 140 GSM, assorted sizes S-XL, grade A",
+      "qty": 20000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2027-01-08",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 270
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 302,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "GAR-TSHIRT-CREW-A",
+    "priceCents": 300,
+    "decidedByAlias": "jupiterSellerAgent",
+    "rounds": 2,
+    "reasons": [],
+    "shipments": [
+     {
+      "units": 20000,
+      "deliveredBy": "2027-01-08"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S03",
+   "scenario": "Big order on 60-day credit: stock short, new production fills it; treasury flags DEFICIT and credit over limit",
+   "path": "Inventory ✓ only with a new production cycle · Logistics ✓ · Treasury ✗ (credit over Tommy's limit, cash DEFICIT) → CEO",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S03",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2027-01-20",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "FAB-PC-160-A",
+      "item_name": "FAB-PC-160-A",
+      "description": "Poly-cotton 65/35 blend 160 GSM, grade A",
+      "qty": 60000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2027-01-20",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 300
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 60,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 330,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "FAB-PC-160-A",
+    "priceCents": 319,
+    "decidedByAlias": "Jupiter_Chief_Executive_Officer",
+    "rounds": 2,
+    "reasons": [
+     "CREDIT_OVER_LIMIT"
+    ],
+    "shipments": [
+     {
+      "units": 60000,
+      "deliveredBy": "2027-01-20"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S04",
+   "scenario": "Grade B (stock + new production) cannot reach LA by 28 Dec: Jupiter offers Grade A instead",
+   "path": "Grade B (stock + production) late → Logistics ✗ · hub re-asks Inventory for Grade A → on time · counter, accepted",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S04",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2026-12-28",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "FAB-JERSEY-140-B",
+      "item_name": "FAB-JERSEY-140-B",
+      "description": "Cotton jersey knit 140 GSM, grade B",
+      "qty": 30000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2026-12-28",
+      "custom_quality_grade": "B",
+      "custom_target_rate_cents": 280
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 310,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "FAB-JERSEY-140-A",
+    "priceCents": 295,
+    "decidedByAlias": "jupiterSellerAgent",
+    "rounds": 2,
+    "reasons": [],
+    "shipments": [
+     {
+      "units": 30000,
+      "deliveredBy": "2026-12-28"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S05",
+   "scenario": "Second batch late: split shipment (>= 70% on time)",
+   "path": "2,000 sarees from production are late → Logistics ✗ for them · split shipment (75% on time) · accepted",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S05",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2026-12-28",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "GAR-SAREE-COT-A",
+      "item_name": "GAR-SAREE-COT-A",
+      "description": "Cotton saree, printed, 5.5 m with 0.8 m blouse piece, grade A",
+      "qty": 8000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2026-12-28",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 780
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 30
+   },
+   "buyerSim": {
+    "budgetCents": 905,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "GAR-SAREE-COT-A",
+    "priceCents": 878,
+    "decidedByAlias": "jupiterSellerAgent",
+    "rounds": 2,
+    "reasons": [],
+    "shipments": [
+     {
+      "units": 6000,
+      "deliveredBy": "2026-12-28"
+     },
+     {
+      "units": 2000,
+      "deliveredBy": "2027-02-02"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S06",
+   "scenario": "Only stock is another customer's (Tier 2): Sales Officer must approve",
+   "path": "Own stock only from late production → Logistics ✗ · Orion's Tier-2 lot on time → Sales Officer approves",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S06",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2027-01-08",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "FAB-LIN-150-A",
+      "item_name": "FAB-LIN-150-A",
+      "description": "Linen-cotton 55/45 blend 150 GSM, grade A",
+      "qty": 5000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2027-01-08",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 640
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 700,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "FAB-LIN-150-A",
+    "priceCents": 700,
+    "decidedByAlias": "Jupiter_Chief_Sales_Officer",
+    "rounds": 2,
+    "reasons": [
+     "SUPPLY_NEEDS_AUTHORITY"
+    ],
+    "shipments": [
+     {
+      "units": 5000,
+      "deliveredBy": "2027-01-08"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S07",
+   "scenario": "Large urgent order: needs Tier 1 reallocation, CEO decides",
+   "path": "Free stock covers 51% → Logistics ✗ for WIP/production · Tier-2 + Tier-1 lots on time → CEO; Treasury ✗ credit too",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S07",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2026-12-24",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "FAB-COT-180-A",
+      "item_name": "FAB-COT-180-A",
+      "description": "Cotton fabric 180 GSM, grade A",
+      "qty": 45000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2026-12-24",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 420
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 460,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "FAB-COT-180-A",
+    "priceCents": 423,
+    "decidedByAlias": "Jupiter_Chief_Executive_Officer",
+    "rounds": 2,
+    "reasons": [
+     "SUPPLY_NEEDS_AUTHORITY",
+     "CREDIT_OVER_LIMIT"
+    ],
+    "shipments": [
+     {
+      "units": 45000,
+      "deliveredBy": "2026-12-24"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S08",
+   "scenario": "Sea too slow: rush order by air, CEO decides",
+   "path": "Sea too slow for 12 Dec → Logistics ✗ by sea · air (100%) needs the CEO on a MEDIUM deal → CEO approves",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S08",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2026-12-12",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "FAB-RIB-200-A",
+      "item_name": "FAB-RIB-200-A",
+      "description": "Cotton 1x1 rib 200 GSM (collars and cuffs), grade A",
+      "qty": 4000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2026-12-12",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 480
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 700,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "FAB-RIB-200-A",
+    "priceCents": 535,
+    "decidedByAlias": "Jupiter_Chief_Executive_Officer",
+    "rounds": 2,
+    "reasons": [
+     "SUPPLY_NEEDS_AUTHORITY"
+    ],
+    "shipments": [
+     {
+      "units": 4000,
+      "deliveredBy": "2026-12-12"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S09",
+   "scenario": "Price too low: Tommy will not move, rounds run out, escalation",
+   "path": "All agents ✓ · Tommy stays below the agent floor for 3 rounds → ROUNDS_EXPIRED → Sales Officer → CEO",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S09",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2027-01-08",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "FAB-COT-180-A",
+      "item_name": "FAB-COT-180-A",
+      "description": "Cotton fabric 180 GSM, grade A",
+      "qty": 20000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2027-01-08",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 360
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 385,
+    "concession": 0.25,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "ACCEPT",
+    "sku": "FAB-COT-180-A",
+    "priceCents": 385,
+    "decidedByAlias": "Jupiter_Chief_Executive_Officer",
+    "rounds": 5,
+    "reasons": [
+     "ROUNDS_EXPIRED",
+     "PRICE_BELOW_AGENT_FLOOR"
+    ],
+    "shipments": [
+     {
+      "units": 20000,
+      "deliveredBy": "2027-01-08"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S10",
+   "scenario": "Too much, too soon: short of stock and late at every authority, decline",
+   "path": "Inventory ✗ (short 7,000) · Logistics ✗ (WIP/production late) · no split, no reallocation → decline, no Treasury call",
+   "rfq": {
+    "doctype": "Request for Quotation",
+    "name": "RFQ-S10",
+    "naming_series": "PUR-RFQ-.YYYY.-",
+    "company": "Tommy Hilfiger Europe B.V.",
+    "transaction_date": "2026-11-16",
+    "schedule_date": "2027-01-08",
+    "suppliers": [
+     {
+      "supplier": "Jupiter Knitting Company"
+     }
+    ],
+    "items": [
+     {
+      "item_code": "FAB-COT-220-A",
+      "item_name": "FAB-COT-220-A",
+      "description": "Cotton interlock 220 GSM, grade A",
+      "qty": 45000,
+      "uom": "Unit",
+      "stock_uom": "Unit",
+      "conversion_factor": 1,
+      "schedule_date": "2027-01-08",
+      "custom_quality_grade": "A",
+      "custom_target_rate_cents": 470
+     }
+    ],
+    "incoterm": "DAP",
+    "named_place": "Los Angeles",
+    "custom_from_agent": "tommyBuyerAgent",
+    "custom_from_lei": "54930012QJWZMYHNJW95",
+    "custom_to_agent": "jupiterSellerAgent",
+    "custom_to_lei": "3358004DXAMRWRUIYJ05",
+    "custom_payment_terms_days": 30,
+    "custom_advance_pct": 0
+   },
+   "buyerSim": {
+    "budgetCents": 520,
+    "concession": 0.5,
+    "behaviour": "price"
+   },
+   "expect": {
+    "decision": "DECLINE",
+    "sku": "FAB-COT-220-A",
+    "priceCents": null,
+    "decidedByAlias": "jupiterSellerAgent",
+    "rounds": 0,
+    "reasons": [
+     "NO_SUPPLY_PLAN"
+    ],
+    "shipments": [
+     {
+      "units": 45000,
+      "deliveredBy": "2027-01-08"
+     }
+    ]
+   }
+  }
+ ]
+}

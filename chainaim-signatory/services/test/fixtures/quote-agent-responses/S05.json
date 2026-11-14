@@ -1,0 +1,274 @@
+{
+ "inquiry": "S05",
+ "title": "Second batch late: split shipment (>= 70% on time)",
+ "recordedAt": "2026-11-14",
+ "recordedFrom": "live OutcomeAI quote-agents (10-SKU jupiter-knitting data, --as-of 2026-11-16, --ai off) via services/chain-10.mjs; agent calls only (the tests run with ai off)",
+ "rfq": {
+  "doctype": "Request for Quotation",
+  "name": "RFQ-S05",
+  "naming_series": "PUR-RFQ-.YYYY.-",
+  "company": "Tommy Hilfiger Europe B.V.",
+  "transaction_date": "2026-11-16",
+  "schedule_date": "2026-12-28",
+  "suppliers": [
+   {
+    "supplier": "Jupiter Knitting Company"
+   }
+  ],
+  "items": [
+   {
+    "item_code": "GAR-SAREE-COT-A",
+    "item_name": "GAR-SAREE-COT-A",
+    "description": "Cotton saree, printed, 5.5 m with 0.8 m blouse piece, grade A",
+    "qty": 8000,
+    "uom": "Unit",
+    "stock_uom": "Unit",
+    "conversion_factor": 1,
+    "schedule_date": "2026-12-28",
+    "custom_quality_grade": "A",
+    "custom_target_rate_cents": 780
+   }
+  ],
+  "incoterm": "DAP",
+  "named_place": "Los Angeles",
+  "custom_from_agent": "tommyBuyerAgent",
+  "custom_from_lei": "54930012QJWZMYHNJW95",
+  "custom_to_agent": "jupiterSellerAgent",
+  "custom_to_lei": "3358004DXAMRWRUIYJ05",
+  "custom_payment_terms_days": 30,
+  "custom_advance_pct": 30
+ },
+ "buyerSim": {
+  "budgetCents": 905,
+  "concession": 0.5,
+  "behaviour": "price"
+ },
+ "calls": [
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "GAR-SAREE-COT-A",
+    "qty": 8000,
+    "shipBy": "2026-12-28"
+   },
+   "response": {
+    "requestId": "5173182f-d7c1-4695-89d0-41c4424d0b2c",
+    "sources": [
+     {
+      "lot": "L-SAR-01",
+      "kind": "FREE",
+      "units": 6000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-GAR-SAREE-COT-A-2026-12-18",
+      "kind": "PRODUCTION",
+      "units": 2000,
+      "readyDate": "2026-12-18",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "reallocatable": [
+     {
+      "lot": "L-SAR-02",
+      "units": 4000,
+      "tier": "TIER1",
+      "requiredAuthority": "CEO",
+      "premiumPct": 8,
+      "replacementOk": true,
+      "readyDate": "2026-11-20",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "gradeAlternatives": [],
+    "shortfall": 0
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "GAR-SAREE-COT-A",
+    "lots": [
+     {
+      "lot": "L-SAR-01",
+      "units": 6000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-GAR-SAREE-COT-A-2026-12-18",
+      "units": 2000,
+      "readyDate": "2026-12-18",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2026-12-28",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "a3b5b990-0168-4565-9961-4f621fe6a985",
+    "legs": [
+     {
+      "lot": "L-SAR-01",
+      "units": 6000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     },
+     {
+      "lot": "PROD-GAR-SAREE-COT-A-2026-12-18",
+      "units": 2000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-22",
+      "delivered": "2027-01-18",
+      "freightCents": 540000,
+      "late": true
+     }
+    ],
+    "freightCents": 960000,
+    "meetsDeadline": false,
+    "lateUnits": 2000,
+    "airOption": {
+     "deliveredBy": "2026-12-24",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "GAR-SAREE-COT-A",
+    "lots": [
+     {
+      "lot": "L-SAR-01",
+      "units": 6000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2026-12-28",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "a5f96f18-34ed-4336-9ca7-24aa1f07bf7a",
+    "legs": [
+     {
+      "lot": "L-SAR-01",
+      "units": 6000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "GAR-SAREE-COT-A",
+    "lots": [
+     {
+      "lot": "PROD-GAR-SAREE-COT-A-2026-12-18",
+      "units": 2000,
+      "readyDate": "2026-12-18",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2027-03-31",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "e888c802-13fa-47fb-a6bd-d057cc951197",
+    "legs": [
+     {
+      "lot": "PROD-GAR-SAREE-COT-A-2026-12-18",
+      "units": 2000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2027-01-01",
+      "delivered": "2027-02-02",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterTreasuryAgent",
+   "path": "agents/treasury",
+   "request": {
+    "sku": "GAR-SAREE-COT-A",
+    "qty": 8000,
+    "freightCents": 840000,
+    "reallocUnits": {
+     "TIER1": 0,
+     "TIER2": 0
+    },
+    "termsDays": 30,
+    "advancePct": 30,
+    "margins": [
+     0.15,
+     0.135,
+     0.12,
+     0.11,
+     0.1,
+     0.09,
+     0.08
+    ]
+   },
+   "response": {
+    "requestId": "8754b4e4-a9c9-4812-a007-48bce462779f",
+    "landedCents": 759,
+    "pricesAtMargin": {
+     "0.15": 893,
+     "0.135": 878,
+     "0.12": 863,
+     "0.11": 853,
+     "0.1": 844,
+     "0.09": 834,
+     "0.08": 825
+    },
+    "reallocPremiumCents": 0,
+    "liquidity": {
+     "net30Usd": 138000,
+     "status": "SURPLUS"
+    },
+    "advanceLever": {
+     "minAdvancePct": 30,
+     "marginRelief": 0.01,
+     "applies": false
+    },
+    "credit": {
+     "headroomUsd": 180000,
+     "ok": true
+    }
+   },
+   "httpStatus": 200
+  }
+ ]
+}

@@ -1,0 +1,53 @@
+{
+  "inquiry": "S01",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "live OutcomeAI quote-agents, tenant tommy-hilfiger-europe (buyer, rules), --as-of 2026-11-16; rig with --ai off",
+  "calls": [
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S01",
+        "sku": "FAB-JERSEY-140-A",
+        "qty": 30000,
+        "priceCents": 300,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 90000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S01",
+        "sku": "FAB-JERSEY-140-A",
+        "qty": 30000,
+        "priceCents": 300,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 90000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

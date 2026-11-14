@@ -11,7 +11,7 @@ import { FIXTURE_EVIDENCE } from "./fixture.mjs";
 import { createOutcomeClient, OutcomeError } from "../shared/outcome-client.mjs";
 import { buildQuotation, leakScan, parseRfq, validateQuotation, validateRfq } from "../runner/quote-objects.mjs";
 import { createRuleBuyer, roundHalfEven } from "../runner/quote-buyer.mjs";
-import { guardRound, importanceOf, loadQuotePolicy, REASONS, runQuote, validatePolicy } from "../runner/quote-flow.mjs";
+import { guardRound, importanceOf, loadQuotePolicy, REASONS, runQuote, toSynthesizeContract, validatePolicy } from "../runner/quote-flow.mjs";
 
 const policy = loadQuotePolicy(resolve(ROOT, "config", "quote-authority.json"));
 const book = JSON.parse(readFileSync(resolve(ROOT, "data", "quote", "inquiries.json"), "utf8"));
@@ -280,4 +280,93 @@ test("importance: Tommy TIER1 + deal size + spare capacity → HIGH above $75k, 
   assert.equal(importanceOf(policy, "54930012QJWZMYHNJW95", 20000, 415).band, "HIGH");
   assert.deepEqual([importanceOf(policy, "54930012QJWZMYHNJW95", 12000, 433).score, importanceOf(policy, "54930012QJWZMYHNJW95", 12000, 433).band], [65, "MEDIUM"]);
   assert.equal(importanceOf(policy, "UNKNOWNLEI0000000000", 1000, 400).band, "LOW");
+});
+
+// ------------------------------------------------------------------ 8. OutcomeAI contract (privateAI-design-44 §4)
+
+/** The checks OutcomeAI's parseSynthesizeRequest (services/quote-agents/src/rules.ts) applies; a miss there is a 400 and a silent fallback to rules here. */
+function assertSynthesizeContract(b, where) {
+  assert.ok(["round", "ceo-brief"].includes(b.mode), `${where}: mode`);
+  for (const k of ["sku", "deadline"]) assert.equal(typeof b.inquiry?.[k], "string", `${where}: inquiry.${k}`);
+  for (const k of ["qty", "priceCents"]) assert.ok(Number.isInteger(b.inquiry?.[k]) && b.inquiry[k] >= 1, `${where}: inquiry.${k}`);
+  assert.ok(Number.isInteger(b.round) && b.round >= 1 && b.round <= 50, `${where}: round`);
+  assert.ok(Array.isArray(b.history) && b.history.length <= 50, `${where}: history`);
+  for (const [i, h] of b.history.entries()) {
+    assert.ok(h.by === "buyer" || h.by === "seller", `${where}: history[${i}].by`);
+    assert.ok(Number.isInteger(h.round) && Number.isInteger(h.priceCents) && h.priceCents >= 1, `${where}: history[${i}] round/priceCents`);
+  }
+  const l = b.answers?.logistics;
+  assert.ok(l && typeof l === "object" && Array.isArray(l.legs), `${where}: answers.logistics.legs`);
+  for (const g of l.legs) for (const k of ["lot", "mode", "etd", "delivered"]) assert.equal(typeof g[k], "string", `${where}: leg.${k}`);
+  assert.equal(typeof l.meetsDeadline, "boolean", `${where}: answers.logistics.meetsDeadline`);
+  assert.ok(Number.isInteger(l.lateUnits), `${where}: answers.logistics.lateUnits`);
+  assert.ok(b.answers.treasury && typeof b.answers.treasury.pricesAtMargin === "object", `${where}: answers.treasury.pricesAtMargin`);
+  assert.equal(typeof b.authority?.level, "string", `${where}: authority.level`);
+  assert.ok(Number.isInteger(b.authority.floorCents) && Number.isInteger(b.authority.maxRounds), `${where}: authority floor/maxRounds`);
+  assert.ok(Array.isArray(b.authority.allowed) && b.authority.allowed.every((a) => typeof a === "string"), `${where}: authority.allowed`);
+}
+
+test("seller/synthesize bodies follow the OutcomeAI contract: answers.logistics, history {round, by, priceCents}, allowed as strings", async () => {
+  let n = 0;
+  for (const id of ["T02", "T03", "T04", "T05", "T06", "T07", "T08"]) {
+    const { calls } = await run(id);
+    for (const c of calls.filter((x) => x.path === "seller/synthesize")) assertSynthesizeContract(c.body, `${id} ${c.body.mode} round ${c.body.round}`), n++;
+  }
+  assert.ok(n >= 7, `checked ${n} synthesize bodies`);
+});
+
+test("toSynthesizeContract: plan → logistics legs (late after the deadline), ESCALATE left out of history, allowed as strings", () => {
+  const b = toSynthesizeContract({
+    mode: "ceo-brief", round: 2, inquiry: { sku: "FAB-COT-180-A", qty: 40000, priceCents: 415, deadline: "2027-01-05" },
+    history: [{ round: 0, from: "buyer", action: "OFFER", priceCents: 415 }, { round: 1, from: "seller", action: "ESCALATE", level: "CEO", priceCents: null, source: "rules" }],
+    answers: { inventory: null, treasury: { pricesAtMargin: {} }, plan: [
+      { lot: "L1", kind: "FREE", tier: null, units: 35000, mode: "SEA_STD", carrier: "MSC", etd: "2026-11-20", delivered: "2026-12-22", freightCents: 420000 },
+      { lot: "P1", kind: "PRODUCTION", tier: null, units: 5000, mode: "SEA_STD", carrier: "MSC", etd: "2027-01-01", delivered: "2027-02-02", freightCents: 84000 },
+    ] },
+    authority: { level: "CEO", floorCents: 398, maxRounds: 3, allowed: { reallocate: ["TIER2", "TIER1"], air: true, maxDeadlineSlipDays: null } },
+  });
+  assert.deepEqual(b.history, [{ round: 0, by: "buyer", priceCents: 415 }]);
+  assert.deepEqual([b.answers.logistics.legs.map((g) => g.late), b.answers.logistics.lateUnits, b.answers.logistics.meetsDeadline, b.answers.logistics.freightCents], [[false, true], 5000, false, 504000]);
+  assert.deepEqual(b.authority.allowed, ["reallocate:TIER2", "reallocate:TIER1", "air"]);
+  assert.equal(b.answers.plan.length, 2);
+  assertSynthesizeContract(b, "unit");
+});
+
+// ------------------------------------------------------------------ 9. guard on OutcomeAI's real answer shape (legs)
+
+/** Answers like OutcomeAI does: shipments = the request's logistics legs {units, mode, etd, delivered}; deadline = the last leg. */
+const outcomeShaped = async (alias, body) => {
+  const legs = body.answers.logistics.legs.map((g) => ({ units: g.units, mode: g.mode, etd: g.etd, delivered: g.delivered }));
+  const lastSeller = [...body.history].reverse().find((h) => h.by === "seller")?.priceCents;
+  const priceCents = Math.max(body.authority.floorCents, lastSeller != null ? lastSeller - 3 : body.authority.floorCents + 12);
+  return { body: { proposal: { decision: "COUNTER", counter: { sku: body.inquiry.sku, qty: body.inquiry.qty, priceCents, deadline: legs.map((g) => g.delivered).sort().at(-1), shipments: legs } }, messageToBuyer: `We can offer $${(priceCents / 100).toFixed(2)} per unit.`, reasoning: "test", source: "ai", model: "test-model", attest: { verdict: "verified" }, ms: 1 }, api: { httpStatus: 200, ms: 1 } };
+};
+
+test("guard keeps OutcomeAI-shaped proposals (legs, deadline = last leg) for one leg (T02), two legs (T03) and a planned split (T04)", async () => {
+  for (const id of ["T02", "T03", "T04"]) {
+    const { summary, records } = await run(id, { synthesize: outcomeShaped });
+    const log = records["jupiter-internal.json"].ai;
+    assert.ok(log.length >= 1, `${id}: AI was asked`);
+    for (const a of log) assert.equal(a.guard, "kept", `${id} round ${a.round}: ${a.guard ?? a.why}`);
+    if (summary.decidedBy === "AGENT") assert.equal(summary.source, "ai", `${id}: an agent-level close uses the AI move`);
+    assert.ok(summary.priceCents >= summary.floors[summary.decidedBy], `${id}: never below the deciding level's floor`);
+  }
+});
+
+test("guard on legs: invented, moved or extra legs and a wrong deadline are refused; the planned legs pass", () => {
+  const rq = parseRfq(inquiry("T04").rfq);
+  const AGENT = policy.levels[0];
+  const legs = [{ units: 23000, delivered: "2026-12-22" }, { units: 12000, delivered: "2027-01-04" }, { units: 5000, delivered: "2027-02-02" }];
+  const plan = { sku: "FAB-COT-180-A", shipments: [{ units: 35000, deliveredBy: "2027-01-05" }, { units: 5000, deliveredBy: "2027-02-02" }], legs };
+  const ctx = { lastBuyerCents: 415, floorCents: 416, prevAskCents: 430, plan, rfq: rq, level: AGENT, hasCounters: true, secrets: [416, 406, 398] };
+  const L = (xs) => xs.map((g) => ({ units: g.units, mode: "SEA_STD", etd: "2026-11-20", delivered: g.delivered }));
+  const C = (shipments, deadline = "2027-02-02") => ({ decision: "COUNTER", counter: { sku: "FAB-COT-180-A", qty: 40000, priceCents: 425, deadline, shipments } });
+  assert.deepEqual(guardRound(C(L(legs)), ctx), { ok: true, decision: "COUNTER", priceCents: 425, message: null });
+  assert.equal(guardRound(C(L([...legs].reverse())), ctx).ok, true, "order of legs does not matter");
+  assert.equal(guardRound(C(L([legs[0], legs[1], { units: 5000, delivered: "2027-01-05" }])), ctx).ok, false, "a moved date");
+  assert.equal(guardRound(C(L([legs[0], { units: 17000, delivered: "2027-01-04" }])), ctx).ok, false, "merged/changed units");
+  assert.equal(guardRound(C(L([...legs, { units: 1000, delivered: "2027-01-04" }])), ctx).ok, false, "an extra leg");
+  assert.equal(guardRound(C(L(legs), "2027-01-05"), ctx).ok, false, "deadline is not the last leg");
+  assert.equal(guardRound(C(L(legs)), { ...ctx, plan: { ...plan, legs: undefined } }).ok, false, "no planned legs to check against");
+  assert.equal(guardRound(C(L(legs)), { ...ctx, floorCents: 430 }).ok, false, "price checks still apply");
 });

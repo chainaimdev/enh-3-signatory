@@ -652,17 +652,8 @@
         "history": [
           {
             "round": 0,
-            "from": "buyer",
-            "action": "OFFER",
+            "by": "buyer",
             "priceCents": 380
-          },
-          {
-            "round": 1,
-            "from": "seller",
-            "action": "ESCALATE",
-            "level": "CEO",
-            "priceCents": null,
-            "source": "rules"
           }
         ],
         "answers": {
@@ -775,20 +766,55 @@
               "headroomUsd": 240000,
               "ok": true
             }
+          },
+          "logistics": {
+            "legs": [
+              {
+                "lot": "LOT-A1",
+                "units": 22000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-11-26",
+                "delivered": "2026-12-28",
+                "freightCents": 420000,
+                "late": false
+              },
+              {
+                "lot": "LOT-A3",
+                "units": 15000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-11-26",
+                "delivered": "2026-12-28",
+                "freightCents": 420000,
+                "late": false
+              },
+              {
+                "lot": "LOT-A4",
+                "units": 8000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-11-26",
+                "delivered": "2026-12-28",
+                "freightCents": 420000,
+                "late": false
+              }
+            ],
+            "freightCents": 1260000,
+            "meetsDeadline": true,
+            "lateUnits": 0,
+            "airOption": null
           }
         },
         "authority": {
           "level": "CEO",
           "floorCents": 402,
           "maxRounds": 3,
-          "allowed": {
-            "reallocate": [
-              "TIER2",
-              "TIER1"
-            ],
-            "air": true,
-            "maxDeadlineSlipDays": null
-          }
+          "allowed": [
+            "reallocate:TIER2",
+            "reallocate:TIER1",
+            "air"
+          ]
         }
       },
       "response": {

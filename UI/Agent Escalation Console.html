@@ -445,6 +445,10 @@ async function fetchRunnerInfo(){
         const ro = await fetch(runnerBase() + "/orders", {cache:"no-store", signal:t}); const o = await jsonOrError(ro);
         if (ro.ok && o.ok === true && Array.isArray(o.orders)){ S.runner.orders = o.orders; S.runner.negotiator = o.negotiator || null; }
       }
+      if (Array.isArray(h.modes) && h.modes.includes("quote")){   // Q7: Tommy's RFQs (quote flow through OutcomeAI)
+        const rq = await fetch(runnerBase() + "/quotes", {cache:"no-store", signal:t}); const qj = await jsonOrError(rq);
+        if (rq.ok && qj.ok === true && Array.isArray(qj.quotes)){ S.runner.quotes = qj.quotes; S.runner.quoteAi = qj.ai || null; }
+      }
       return;
     }
     const ri = await fetch(runnerBase() + "/invoices", {cache:"no-store", signal:t});
@@ -507,6 +511,19 @@ async function startOrder(o){
   S.live.posting = false;
   if (!res.ok || j.ok !== true || !isStr(j.runId)){ S.live.err = {http: res.status, error: j.error || `HTTP ${res.status}`, activeRunId: isStr(j.activeRunId) ? j.activeRunId : null}; renderChat(); return; }
   attachRun(j.runId, {...body, text:`Purchase order ${o.id}: ${o.quantity.toLocaleString("en-US")} units, budget $${(o.buyerBudgetCents/100).toFixed(2)}/unit — ${o.title}`}, null);
+}
+// Q7: Tommy's RFQ → POST /run {mode:"quote", inquiry}
+async function startQuote(q){
+  if (runActive() || S.busy) return;
+  S.live.posting = true; S.live.err = null; renderChat();
+  const body = {mode:"quote", inquiry:q.id};
+  let res;
+  try { res = await fetch(runnerBase() + "/run", {method:"POST", headers:{"Content-Type":"application/json"}, cache:"no-store", body: JSON.stringify(body), signal: AbortSignal.timeout(30000)}); }
+  catch (e) { S.live.posting = false; S.live.err = {error:`runner not reachable at ${runnerBase()} (${e.message})`}; renderChat(); return; }
+  const j = await jsonOrError(res);
+  S.live.posting = false;
+  if (!res.ok || j.ok !== true || !isStr(j.runId)){ S.live.err = {http: res.status, error: j.error || `HTTP ${res.status}`, activeRunId: isStr(j.activeRunId) ? j.activeRunId : null}; renderChat(); return; }
+  attachRun(j.runId, {...body, text:`Request for Quotation ${q.rfq}: ${Number(q.quantity).toLocaleString("en-US")} × ${q.sku} at ${cents(q.openingCents)}, delivered by ${q.deadline} — ${q.scenario}`}, null);
 }
 function attachRun(runId, req, pv){
   if (S.live.run && S.live.run.runId === runId) return;
@@ -1087,6 +1104,16 @@ function orderExtra(d){
 function renderOrders(){
   const g = $("#orders"); if (!g) return; g.replaceChildren();
   const orders = S.runner && Array.isArray(S.runner.orders) ? S.runner.orders : null;
+  const quotes = S.runner && Array.isArray(S.runner.quotes) ? S.runner.quotes : null;
+  if (quotes && quotes.length){   // Q7
+    g.append(el("span",{class:"meta",text:`Requests for quotation, Tommy → Jupiter (Private AI: ${S.runner.quoteAi || "?"}) — click runs it:`}));
+    for (const q of quotes){
+      if (!isObj(q) || !isStr(q.id)) continue;
+      g.append(el("button",{class:"chipb",type:"button",disabled: runActive() || S.busy ? "disabled" : null,
+        title:`${q.rfq}: ${q.scenario}\n${Number(q.quantity).toLocaleString("en-US")} × ${q.sku} · opening ${cents(q.openingCents)} · delivered by ${q.deadline}`,
+        onclick: () => startQuote(q), text:`▶ ${q.id}`}));
+    }
+  }
   if (!orders) return;
   g.append(el("span",{class:"meta",text:`Purchase orders (negotiator: ${S.runner.negotiator || "?"}) — click runs it:`}));
   for (const o of orders){
@@ -1111,6 +1138,10 @@ function escalationBubble(run){
     run.decide.err ? el("div",{class:"result bad"}, el("span",{class:"mono",text:scrub(run.decide.err)})) : null);
   if (escStep){   // change #4: no deal between the agents — the officer decides (off-chain, recorded by the runner)
     const dd = isObj(escStep.data) ? escStep.data : {};
+    if (dd.kind === "quote"){   // Q7: Jupiter's own escalation (Sales Officer → CEO), decided on behalf of the alias shown
+      return bubble({actor: out.target, target: out.actor, step:"escalation", status:"waiting",
+        text:`${dd.alias || "Officer"} (${dd.level || "?"})${dd.preparedBy ? `, brief by ${dd.preparedBy}` : ""}: ${Array.isArray(dd.reasons) ? dd.reasons.join(", ") : "beyond the agent's authority"}. Approve Jupiter's counter $${Number.isFinite(dd.proposedCents) ? (dd.proposedCents/100).toFixed(2) : "?"}/unit (floor $${Number.isFinite(dd.floorCents) ? (dd.floorCents/100).toFixed(2) : "?"}, Tommy's last $${Number.isFinite(dd.lastBuyerCents) ? (dd.lastBuyerCents/100).toFixed(2) : "?"}), or reject. Recorded by the runner (not KERI-signed).`}, extra);
+    }
     return bubble({actor: out.target, target: out.actor, step:"escalation", status:"waiting",
       text:`The agents found no price (${dd.reason || "no agreement"}). Approve buying at the seller's last price $${Number.isFinite(dd.proposedCents) ? (dd.proposedCents/100).toFixed(2) : "?"}/unit, or reject the order. Your decision is recorded by the runner (not KERI-signed).`}, extra);
   }

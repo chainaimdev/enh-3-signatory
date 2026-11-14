@@ -24,7 +24,8 @@
 //                 (verify_seller_agent on the seller's first answer, #4c-2), escalation, treasury, issue … decision.
 //                 A failed negotiation waits for the officer (decide approve/reject).
 import { formatUnits } from "../../scripts/lib/common.mjs";
-import { negotiate, usd } from "../shared/negotiate.mjs";
+import { negotiate, totalCents, unitsFromCents, usd } from "../shared/negotiate.mjs";
+import { runQuote } from "./quote-flow.mjs";
 import { preDealChecks, treasuryChecks } from "./swarm.mjs";
 import { evidenceInvoices } from "../bridge/rules.mjs";
 import { listInvoices, matchInvoice, parseRequest } from "./logic.mjs";
@@ -39,6 +40,10 @@ export const STEPS_B = ["preflight", "request", "verify_buyer", "issue", "offer"
 // negotiate, before replying);
 // verify_seller after issue still proves that this seller agent issued this invoice.
 export const STEPS_C = ["preflight", "request", "verify_buyer", "swarm", "negotiate", "verify_seller_agent", "escalation", "treasury", "issue", "offer", "verify_seller", "accept", "register", "pay", "outcome", "decision"];
+
+// Q7 (SIGNATORY-quote-flow-design-01 S-6): mode "quote" — Tommy's RFQ → Jupiter's quote through OutcomeAI quote-agents
+// (privateAI-design-44), escalation to Jupiter's Sales Officer → CEO on the same /decide route, then the existing tail.
+export const STEPS_Q = ["preflight", "request", "verify_buyer", "consult", "negotiate", "escalation", "treasury", "issue", "offer", "verify_seller", "accept", "register", "pay", "outcome", "decision"];
 
 export class RunnerError extends Error {
   constructor(status, message, extra = {}) {
@@ -98,7 +103,7 @@ export function createRunner({
 
   function newRun(mode) {
     const id = `run-${Date.now().toString(36)}-${(++counter).toString(36)}`;
-    const run = { id, mode, plan: mode === "order" ? STEPS_C : mode === "issue" ? STEPS_B : STEPS, state: "running", events: [], listeners: new Set(), seq: 0, said: null, waiter: null, createdAt: new Date().toISOString() };
+    const run = { id, mode, plan: mode === "order" ? STEPS_C : mode === "quote" ? STEPS_Q : mode === "issue" ? STEPS_B : STEPS, state: "running", events: [], listeners: new Set(), seq: 0, said: null, waiter: null, createdAt: new Date().toISOString() };
     runs.set(id, run);
     if (runs.size > keepRuns) {
       for (const [k, r] of runs) {
@@ -134,10 +139,11 @@ export function createRunner({
 
   // ---------------------------------------------------------------- start
 
-  async function start({ said, text, mode, order } = {}) {
+  async function start({ said, text, mode, order, inquiry } = {}) {
     if (active) throw new RunnerError(409, "a run is already active", { activeRunId: active.id });
-    if (mode !== undefined && !["invoice", "issue", "order"].includes(mode)) throw new RunnerError(400, 'mode must be "invoice", "issue" or "order"');
+    if (mode !== undefined && !["invoice", "issue", "order", "quote"].includes(mode)) throw new RunnerError(400, 'mode must be "invoice", "issue", "order" or "quote"');
     if (mode === "order") return startOrder(order); // change #4
+    if (mode === "quote") return startQuote(inquiry); // Q7
     if (said === undefined && (typeof text !== "string" || !text.trim())) throw new RunnerError(400, "give said or text");
     if (said !== undefined && typeof said !== "string") throw new RunnerError(400, "said must be a string");
     if (text !== undefined && (typeof text !== "string" || text.length > 500)) throw new RunnerError(400, "text must be a string of at most 500 characters");
@@ -257,6 +263,160 @@ export function createRunner({
       if (run.state !== "finished") finish(run, "error", `runner error: ${e.message}`, { failedStep: run.currentStep });
     });
     return run;
+  }
+
+  // ---------------------------------------------------------------- mode "quote" (Q7)
+  // deps.quote = {inquiries, policy, client, buyerFor(q), recorder(rfqName, runId), ai, tail, outcomeUrl} (runner/index.mjs).
+  // The negotiation itself is quote-flow.mjs runQuote (the same function the CLI demo runs); this only maps its events
+  // to runner steps and its escalations to the existing waiter + POST /runs/:id/decide.
+  function startQuote(inquiryId) {
+    const qb = deps.quote;
+    if (!qb) throw new RunnerError(501, "quote mode not configured");
+    if (typeof inquiryId !== "string" || !inquiryId) throw new RunnerError(400, 'mode "quote" needs {inquiry: "T01"}');
+    const q = qb.inquiries.find((x) => x.id === inquiryId || x.rfq?.name === inquiryId);
+    if (!q) throw new RunnerError(404, `no inquiry ${inquiryId} (have ${qb.inquiries.map((x) => x.id).join(", ")})`);
+    const run = newRun("quote");
+    active = run;
+    const it = q.rfq.items[0];
+    emit(run, "run", {
+      state: "started", mode: run.mode, steps: run.plan, said: null,
+      quote: { id: q.id, rfq: q.rfq.name, scenario: q.scenario, sku: it.item_code, quantity: it.qty, openingCents: it.custom_target_rate_cents, deadline: it.schedule_date ?? q.rfq.schedule_date, outcomeUrl: qb.outcomeUrl, ai: qb.ai ? "on" : "off" },
+    });
+    executeQuote(run, q).catch((e) => {
+      if (run.state !== "finished") finish(run, "error", `runner error: ${e.message}`, { failedStep: run.currentStep });
+    });
+    return run;
+  }
+
+  async function executeQuote(run, q) {
+    const qb = deps.quote;
+    const it = q.rfq.items[0];
+    const OUTCOME = { id: "OutcomeAI", account: null };
+    const who = (alias) => ({ id: alias, account: null });
+    const pace = () => (paceMs > 0 ? deps.sleep(paceMs) : Promise.resolve());
+    const fail = (name, actor, target, text, extra, result = "error", finishText = text) => {
+      step(run, name, "failed", actor, target, text, extra);
+      finish(run, result, finishText, { failedStep: name });
+    };
+    const CANCELLED = new Error("cancelled");
+
+    // 0. preflight (same checks as the other modes)
+    run.currentStep = "preflight";
+    const t0 = Date.now();
+    const pf = await deps.preflight();
+    const pfMs = Date.now() - t0;
+    const pfApi = { service: "runner", method: "GET", path: "/preflight", httpStatus: null, ms: pfMs };
+    if (!pf.ok) {
+      const bad = pf.checks.filter((c) => !c.ok);
+      return fail("preflight", ACTORS.runner, ACTORS.runner, `Preflight failed: ${bad.map((c) => `${c.name} (${c.detail})`).join("; ")} — no quote`, { api: pfApi, data: { checks: pf.checks } });
+    }
+
+    // 1. request: Tommy's Request for Quotation (ERPNext shape, unsigned request). With --quote-buyer outcome, Tommy first
+    //    asks his own private-AI treasury (OutcomeAI tommy-hilfiger-europe agents/treasury) about the opening price.
+    run.currentStep = "request";
+    const buyer = qb.buyerFor(q);
+    let tommyTreasury = null;
+    if (buyer.prepare) {
+      try {
+        tommyTreasury = await buyer.prepare();
+      } catch (e) {
+        return fail("request", ACTORS.agent, OUTCOME, `Tommy's treasury (OutcomeAI) did not answer: ${e.message} — no RFQ sent`, { api: { service: "outcome", path: "agents/treasury" } });
+      }
+    }
+    step(run, "request", "done", ACTORS.agent, ACTORS.seller,
+      `Request for Quotation ${q.rfq.name}: ${Number(it.qty).toLocaleString("en-US")} × ${it.item_code} at $${usd(it.custom_target_rate_cents)}/unit, delivered ${q.rfq.named_place ?? ""} by ${it.schedule_date ?? q.rfq.schedule_date} (unsigned request)${tommyTreasury ? ` · Tommy's private-AI treasury: opening price ${tommyTreasury.withinBudget ? "within" : "over"} budget, payment by ${tommyTreasury.approver ?? "over authority"}` : ""}`,
+      { api: pfApi, data: { signed: false, label: "unsigned request", rfq: q.rfq, scenario: q.scenario, preflight: { ok: true, ms: pfMs, checks: pf.checks }, mandate: mandateView(pf.mandate), buyer: buyer.source ?? "rules", tommyTreasury } });
+
+    // 2. verify_buyer — the seller verifies the buyer agent BEFORE consulting its own agents
+    const vbr = await verifyBuyer(run, fail, "No quote, nothing issued.");
+    if (!vbr.ok) return;
+
+    // 3–5. consult (OutcomeAI) → negotiate (≤ 3 rounds) → escalation (Sales Officer → CEO) — quote-flow.mjs runQuote
+    const onQuoteEvent = (ev) => {
+      switch (ev.type) {
+        case "consult":
+          if (ev.path === "seller/synthesize") {
+            // seller synthesis belongs to the negotiation (or the escalation brief), not to the sub-agent consult step
+            const st = run.currentStep === "escalation" ? "escalation" : "negotiate";
+            run.currentStep = st;
+            return step(run, st, "running", who(ev.alias), OUTCOME, `${ev.alias} → OutcomeAI seller/synthesize (seller synthesis)`, { api: ev.api, data: { alias: ev.alias, path: ev.path, reason: ev.reason ?? null } });
+          }
+          run.currentStep = "consult";
+          return step(run, "consult", "running", who(ev.alias), OUTCOME, `${ev.alias} → OutcomeAI ${ev.path}${ev.reason ? ` (${ev.reason})` : ""}`, { api: ev.api, data: { alias: ev.alias, path: ev.path, reason: ev.reason ?? null } });
+        case "plan":
+          return step(run, "consult", "running", ACTORS.seller, ACTORS.seller, `Supply plan for ${ev.sku}: ${ev.ok ? "on time" : "not on time at this authority level"}${Array.isArray(ev.counters) && ev.counters.length ? ` · ${ev.counters.length} counter(s) on quality/quantity/deadline` : ""}`, { data: { internal: true, sku: ev.sku, chunks: ev.chunks, counters: ev.counters } });
+        case "floors":
+          return step(run, "consult", "done", ACTORS.seller, ACTORS.seller, `Jupiter-internal floors: ${Object.entries(ev.floors ?? {}).map(([k, v]) => `${k} $${usd(v)}`).join(" · ")} · importance ${ev.importance?.band ?? "?"} ${ev.importance?.score ?? ""}`, { data: { internal: true, floors: ev.floors, asks: ev.asks, premium: ev.premium, advance: ev.advance, importance: ev.importance } });
+        case "quote":
+          run.currentStep = "negotiate";
+          return step(run, "negotiate", "running", ACTORS.seller, ACTORS.agent, `R${ev.round} ${ACTORS.seller.id} ${ev.decision} $${usd(ev.priceCents)}/unit${ev.decidedBy ? ` (${ev.decidedBy})` : ""} — "${ev.message}"`, { data: { round: ev.round, decision: ev.decision, priceCents: ev.priceCents, decidedBy: ev.decidedBy ?? null } });
+        case "buyer":
+          return step(run, "negotiate", "running", ACTORS.agent, ACTORS.seller, `R${ev.round} ${ACTORS.agent.id} ${ev.action}${ev.priceCents != null ? ` $${usd(ev.priceCents)}/unit` : ""}`, { data: { round: ev.round, action: ev.action, priceCents: ev.priceCents ?? null } });
+        case "escalate":
+          run.currentStep = "escalation";
+          return step(run, "escalation", "running", ACTORS.seller, ACTORS.seller, `Beyond ${ACTORS.seller.id}'s authority: ${(ev.reasons ?? []).join(", ")} · importance ${ev.band} → ${(ev.chain ?? []).join(" → ") || "no escalation (decline)"}`, { data: { reasons: ev.reasons, band: ev.band, chain: ev.chain } });
+        default:
+          return undefined; // "decision" is shown by decide(); "final" by the steps below
+      }
+    };
+    let summary;
+    try {
+      summary = await runQuote({
+        rfq: q.rfq,
+        policy: qb.policy,
+        client: qb.client,
+        buyer,
+        ai: qb.ai,
+        record: qb.recorder(q.rfq.name, run.id),
+        onStep: async (ev) => {
+          onQuoteEvent(ev);
+          await pace();
+        },
+        decide: async (req) => {
+          run.currentStep = "escalation";
+          const escApi = { service: "runner", method: "POST", path: `/runs/${run.id}/decide` };
+          step(run, "escalation", "waiting", ACTORS.seller, who(req.alias),
+            `Escalated to ${req.alias}${req.preparedBy ? ` (brief by ${req.preparedBy})` : ""} — ${(req.reasons ?? []).join(", ")}: approve Jupiter's counter $${usd(req.counterCents)}/unit (floor $${usd(req.floorCents)}, Tommy's last $${usd(req.lastBuyerCents)}), or reject`,
+            { api: escApi, data: { kind: "quote", level: req.level, alias: req.alias, preparedBy: req.preparedBy ?? null, reasons: req.reasons, proposedCents: req.counterCents, floorCents: req.floorCents, lastBuyerCents: req.lastBuyerCents, importance: req.importance, brief: req.brief ?? null, signed: false, label: "officer decision recorded by the runner (not KERI-signed)" } });
+          run.state = "waiting";
+          const r = await waitForDeal(run);
+          run.state = "running";
+          if (r.kind === "cancelled") throw CANCELLED;
+          if (r.kind === "timeout") {
+            step(run, "escalation", "done", who(req.alias), ACTORS.seller, `No decision from ${req.alias} within ${Math.round(waitTimeoutMs / 60000)} min — treated as reject`, { api: escApi, data: { decision: "reject", timeout: true, level: req.level } });
+            return { decision: "reject", who: `${req.alias} (timeout)` };
+          }
+          step(run, "escalation", "done", who(req.alias), ACTORS.seller, `${r.decision === "approve" ? "Approved" : "Rejected"} by ${req.alias} (${req.level})`, { api: escApi, data: { decision: r.decision, level: req.level } });
+          return { decision: r.decision, who: `${req.alias} (console)` };
+        },
+      });
+    } catch (e) {
+      if (e === CANCELLED) return finish(run, "cancelled", "Run cancelled; no quote sent");
+      return fail(run.currentStep ?? "consult", ACTORS.seller, OUTCOME, `Quote flow stopped: ${e.message}`, { api: { service: "outcome", path: qb.outcomeUrl } });
+    }
+
+    if (summary.decision !== "ACCEPT") {
+      step(run, "negotiate", "no_deal", ACTORS.seller, ACTORS.agent, `No deal: best and final $${usd(summary.priceCents ?? 0)}/unit by ${summary.decidedByAlias} (${summary.reasons.join(", ") || "—"})`, { data: { quote: summary } });
+      return finish(run, "no_deal", `${q.rfq.name}: no deal — nothing issued`, { quote: summary });
+    }
+    step(run, "negotiate", "done", ACTORS.seller, ACTORS.agent,
+      `Quote agreed: ${Number(summary.qty).toLocaleString("en-US")} × ${summary.sku} at $${usd(summary.priceCents)}/unit in ${summary.rounds} round(s), decided by ${summary.decidedByAlias} (${summary.source})`,
+      { data: { quote: summary } });
+    if (!summary.escalations.length) step(run, "escalation", "skipped", ACTORS.seller, ACTORS.agent, `Not needed — within ${ACTORS.seller.id}'s authority`, {});
+
+    // 6. treasury: Tommy's on-chain mandate route for the agreed total
+    run.currentStep = "treasury";
+    const units = unitsFromCents(totalCents(summary.qty, summary.priceCents), decimals, demoScale);
+    const limit = pf.mandate ? BigInt(pf.mandate.limit_units) : null;
+    if (units === null || units < minUnits) return fail("treasury", ACTORS.seller, ACTORS.agent, "Agreed total is not representable on NEAR at the demo scale — not sent", { data: { quote: summary } }, "no_deal");
+    if (units > maxUnits) return fail("treasury", ACTORS.seller, ACTORS.agent, `${fmt(units)} USDC is above the maximum ${fmt(maxUnits)} USDC — not sent`, { data: { quote: summary } }, "no_deal");
+    const route = limit === null ? "agent mandate not readable" : units <= limit ? `within the agent mandate (${fmt(limit)}) — the agent can pay` : `above the agent mandate (${fmt(limit)}) — ${ACTORS.cpo.id} approves on NEAR`;
+    step(run, "treasury", "done", ACTORS.seller, ACTORS.agent, `${fmt(units)} USDC for ${Number(summary.qty).toLocaleString("en-US")} units at $${usd(summary.priceCents)} — ${route}`,
+      { data: { units: units.toString(), priceCents: summary.priceCents, quantity: summary.qty, route } });
+    if (!qb.tail) return finish(run, "agreed", `${q.rfq.name}: quote agreed at $${usd(summary.priceCents)}/unit — invoice and payment not run (--quote-tail off)`, { quote: summary });
+
+    // 7–14. the existing tail: issue the vLEI invoice → … → pay on NEAR (buyer already verified above)
+    return executeTail(run, units, { item: it.description ?? summary.sku, quantity: summary.qty }, { buyer: vbr.bd });
   }
 
   async function executeOrder(run, order) {

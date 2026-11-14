@@ -1,0 +1,74 @@
+{
+  "inquiry": "S08",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "live OutcomeAI quote-agents, tenant tommy-hilfiger-europe (buyer, rules), --as-of 2026-11-16; rig with --ai off",
+  "calls": [
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S08",
+        "sku": "FAB-RIB-200-A",
+        "qty": 4000,
+        "priceCents": 480,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 19200,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S08",
+        "sku": "FAB-RIB-200-A",
+        "phase": "escalation",
+        "round": 2,
+        "askCents": 535,
+        "lastOfferCents": 480
+      },
+      "response": {
+        "decision": "ACCEPT",
+        "priceCents": 535,
+        "messageToSeller": "RFQ-S08: we accept $5.35 per unit.",
+        "reasoning": "officer's price is within our budget",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S08",
+        "sku": "FAB-RIB-200-A",
+        "qty": 4000,
+        "priceCents": 535,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 21400,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

@@ -297,8 +297,7 @@
         "history": [
           {
             "round": 0,
-            "from": "buyer",
-            "action": "OFFER",
+            "by": "buyer",
             "priceCents": 415
           }
         ],
@@ -412,17 +411,53 @@
               "headroomUsd": 240000,
               "ok": true
             }
+          },
+          "logistics": {
+            "legs": [
+              {
+                "lot": "LOT-A1",
+                "units": 22000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-11-26",
+                "delivered": "2026-12-28",
+                "freightCents": 420000,
+                "late": false
+              },
+              {
+                "lot": "WIP-A2",
+                "units": 12000,
+                "mode": "SEA_EXP",
+                "carrier": "Maersk",
+                "etd": "2026-12-08",
+                "delivered": "2027-01-04",
+                "freightCents": 540000,
+                "late": false
+              },
+              {
+                "lot": "NEW-PROD",
+                "units": 6000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-12-17",
+                "delivered": "2027-01-18",
+                "freightCents": 420000,
+                "late": true
+              }
+            ],
+            "freightCents": 1380000,
+            "meetsDeadline": false,
+            "lateUnits": 6000,
+            "airOption": null
           }
         },
         "authority": {
           "level": "AGENT",
           "floorCents": 416,
           "maxRounds": 3,
-          "allowed": {
-            "reallocate": [],
-            "air": false,
-            "maxDeadlineSlipDays": 3
-          }
+          "allowed": [
+            "maxDeadlineSlipDays:3"
+          ]
         }
       },
       "response": {
@@ -455,21 +490,17 @@
         "history": [
           {
             "round": 0,
-            "from": "buyer",
-            "action": "OFFER",
+            "by": "buyer",
             "priceCents": 415
           },
           {
             "round": 1,
-            "from": "seller",
-            "action": "COUNTER",
-            "priceCents": 430,
-            "source": "rules"
+            "by": "seller",
+            "priceCents": 430
           },
           {
             "round": 1,
-            "from": "buyer",
-            "action": "COUNTER",
+            "by": "buyer",
             "priceCents": 422
           }
         ],
@@ -583,17 +614,53 @@
               "headroomUsd": 240000,
               "ok": true
             }
+          },
+          "logistics": {
+            "legs": [
+              {
+                "lot": "LOT-A1",
+                "units": 22000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-11-26",
+                "delivered": "2026-12-28",
+                "freightCents": 420000,
+                "late": false
+              },
+              {
+                "lot": "WIP-A2",
+                "units": 12000,
+                "mode": "SEA_EXP",
+                "carrier": "Maersk",
+                "etd": "2026-12-08",
+                "delivered": "2027-01-04",
+                "freightCents": 540000,
+                "late": false
+              },
+              {
+                "lot": "NEW-PROD",
+                "units": 6000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-12-17",
+                "delivered": "2027-01-18",
+                "freightCents": 420000,
+                "late": true
+              }
+            ],
+            "freightCents": 1380000,
+            "meetsDeadline": false,
+            "lateUnits": 6000,
+            "airOption": null
           }
         },
         "authority": {
           "level": "AGENT",
           "floorCents": 416,
           "maxRounds": 3,
-          "allowed": {
-            "reallocate": [],
-            "air": false,
-            "maxDeadlineSlipDays": 3
-          }
+          "allowed": [
+            "maxDeadlineSlipDays:3"
+          ]
         }
       },
       "response": {

@@ -1,0 +1,78 @@
+{
+  "name": "Jupiter Logistics Agent",
+  "description": "Advisory AI agent for JUPITER KNITTING COMPANY, sub-delegated by jupiterSellerAgent. Answers freight-quote and transit-time questions for a proposed order. It has no payment or signing authority.",
+  "url": null,
+  "provider": {
+    "organization": "JUPITER KNITTING COMPANY",
+    "url": "https://jupiterknitting.com"
+  },
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "stateTransitionHistory": true
+  },
+  "skills": [
+    {
+      "id": "freight_quote",
+      "name": "Freight Quote",
+      "description": "Reports carrier quotes (rate, transit days) for shipping a proposed order.",
+      "tags": [
+        "logistics",
+        "freight",
+        "advisory"
+      ]
+    },
+    {
+      "id": "transit_time",
+      "name": "Transit Time",
+      "description": "Reports whether the requested delivery date can be met given ocean transit time.",
+      "tags": [
+        "logistics",
+        "delivery",
+        "advisory"
+      ]
+    }
+  ],
+  "extensions": {
+    "gleifIdentity": {
+      "lei": "3358004DXAMRWRUIYJ05",
+      "legalEntityName": "JUPITER KNITTING COMPANY",
+      "registryName": "Jupiter_Knitting_Company-oor-registry",
+      "qvi": "EJeCwvJB6gmDveIHt37BuQ_Tq7bieVWvcgsBDqQg9yqP",
+      "officialRole": "Partner",
+      "engagementRole": "Logistics Agent"
+    },
+    "vLEImetadata": {
+      "agentName": "JupiterLogisticsAgent",
+      "oorHolderName": "Jupiter_Chief_Sales_Officer",
+      "parentAgentName": "jupiterSellerAgent",
+      "isSubDelegation": true,
+      "scope": "logistics_operations",
+      "canDelegate": false,
+      "delegatorAID": "ELw_9H7ZqV40NlnaNaSJBAbtIXYVhZC9jxMJoRO0cwqC",
+      "delegateeAID": "EMu0GTBoIaIbErtZI8dSJ7-8miK3Jm1q4FeLcV0wNx8y",
+      "delegatorOOBI": "http://keria:3902/oobi/ELw_9H7ZqV40NlnaNaSJBAbtIXYVhZC9jxMJoRO0cwqC/agent/EMJ_LDguuE0njG75fUaFfEGLNrxnr8NMdhSoag0b_elx",
+      "delegateeOOBI": "http://keria:3902/oobi/EMu0GTBoIaIbErtZI8dSJ7-8miK3Jm1q4FeLcV0wNx8y/agent/ENqacJNzTnMOjvAXidjZlhawj-JkBDR07gfvOvi6SrZI",
+      "oorHolderAID": "EGe1GoH0pv_-K8wY8R5_kxtVRMpDouduORK11xY9nNp8",
+      "oorHolderOOBI": "http://keria:3902/oobi/EGe1GoH0pv_-K8wY8R5_kxtVRMpDouduORK11xY9nNp8/agent/EOWTBnbFO-zRhjsk_lEdVZY3EpCF4aJJPk1yFFlB9E6I",
+      "leAID": "EEn8T4_fTVKOolLaDvm3oyKaJgz1wZJxfZxdG-jTi3lV",
+      "leOOBI": "http://keria:3902/oobi/EEn8T4_fTVKOolLaDvm3oyKaJgz1wZJxfZxdG-jTi3lV/agent/EEwXHMKw-kRQ0hm_thc8fkbjbh7i_SRggMC7Hhzupb9k",
+      "verificationPath": [
+        "GLEIF_ROOT → QVI",
+        "QVI → JUPITER KNITTING COMPANY → Chief Sales Officer → jupiterSellerAgent → JupiterLogisticsAgent"
+      ],
+      "timestamp": "2026-11-14T16:32:08.891Z"
+    },
+    "gleifVerification": {
+      "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/3358004DXAMRWRUIYJ05"
+    },
+    "keriIdentifiers": {
+      "agentAID": "EMu0GTBoIaIbErtZI8dSJ7-8miK3Jm1q4FeLcV0wNx8y",
+      "parentAgentAID": "ELw_9H7ZqV40NlnaNaSJBAbtIXYVhZC9jxMJoRO0cwqC",
+      "oorHolderAID": "EGe1GoH0pv_-K8wY8R5_kxtVRMpDouduORK11xY9nNp8",
+      "legalEntityAID": "EEn8T4_fTVKOolLaDvm3oyKaJgz1wZJxfZxdG-jTi3lV",
+      "qviAID": "EJeCwvJB6gmDveIHt37BuQ_Tq7bieVWvcgsBDqQg9yqP",
+      "publicKey": "DOrePUuZjlICkxudYbQ3arUJSJysu7WOpBFVxs-_3IsT"
+    }
+  }
+}

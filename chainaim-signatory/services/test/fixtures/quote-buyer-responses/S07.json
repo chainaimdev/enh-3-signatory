@@ -1,0 +1,74 @@
+{
+  "inquiry": "S07",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "live OutcomeAI quote-agents, tenant tommy-hilfiger-europe (buyer, rules), --as-of 2026-11-16; rig with --ai off",
+  "calls": [
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S07",
+        "sku": "FAB-COT-180-A",
+        "qty": 45000,
+        "priceCents": 420,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 189000,
+        "approval": "CPO",
+        "approver": "Tommy_Chief_Procurement_Officer",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S07",
+        "sku": "FAB-COT-180-A",
+        "phase": "escalation",
+        "round": 2,
+        "askCents": 423,
+        "lastOfferCents": 420
+      },
+      "response": {
+        "decision": "ACCEPT",
+        "priceCents": 423,
+        "messageToSeller": "RFQ-S07: we accept $4.23 per unit.",
+        "reasoning": "officer's price is within our budget",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S07",
+        "sku": "FAB-COT-180-A",
+        "qty": 45000,
+        "priceCents": 423,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 190350,
+        "approval": "CPO",
+        "approver": "Tommy_Chief_Procurement_Officer",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

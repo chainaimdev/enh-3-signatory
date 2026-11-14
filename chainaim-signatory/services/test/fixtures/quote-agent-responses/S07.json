@@ -1,0 +1,639 @@
+{
+ "inquiry": "S07",
+ "title": "Large urgent order: needs Tier 1 reallocation, CEO decides",
+ "recordedAt": "2026-11-14",
+ "recordedFrom": "live OutcomeAI quote-agents (10-SKU jupiter-knitting data, --as-of 2026-11-16, --ai off) via services/chain-10.mjs; agent calls only (the tests run with ai off)",
+ "rfq": {
+  "doctype": "Request for Quotation",
+  "name": "RFQ-S07",
+  "naming_series": "PUR-RFQ-.YYYY.-",
+  "company": "Tommy Hilfiger Europe B.V.",
+  "transaction_date": "2026-11-16",
+  "schedule_date": "2026-12-24",
+  "suppliers": [
+   {
+    "supplier": "Jupiter Knitting Company"
+   }
+  ],
+  "items": [
+   {
+    "item_code": "FAB-COT-180-A",
+    "item_name": "FAB-COT-180-A",
+    "description": "Cotton fabric 180 GSM, grade A",
+    "qty": 45000,
+    "uom": "Unit",
+    "stock_uom": "Unit",
+    "conversion_factor": 1,
+    "schedule_date": "2026-12-24",
+    "custom_quality_grade": "A",
+    "custom_target_rate_cents": 420
+   }
+  ],
+  "incoterm": "DAP",
+  "named_place": "Los Angeles",
+  "custom_from_agent": "tommyBuyerAgent",
+  "custom_from_lei": "54930012QJWZMYHNJW95",
+  "custom_to_agent": "jupiterSellerAgent",
+  "custom_to_lei": "3358004DXAMRWRUIYJ05",
+  "custom_payment_terms_days": 30,
+  "custom_advance_pct": 0
+ },
+ "buyerSim": {
+  "budgetCents": 460,
+  "concession": 0.5,
+  "behaviour": "price"
+ },
+ "calls": [
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "qty": 45000,
+    "shipBy": "2026-12-24"
+   },
+   "response": {
+    "requestId": "523fed56-a2a9-4be1-b377-2b926876127b",
+    "sources": [
+     {
+      "lot": "L-180A-01",
+      "kind": "FREE",
+      "units": 23000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-02",
+      "kind": "WIP",
+      "units": 12000,
+      "readyDate": "2026-12-03",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "kind": "PRODUCTION",
+      "units": 10000,
+      "readyDate": "2026-12-18",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "reallocatable": [
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "tier": "TIER2",
+      "requiredAuthority": "SALES_OFFICER",
+      "premiumPct": 4,
+      "replacementOk": true,
+      "readyDate": "2026-11-20",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-04",
+      "units": 12000,
+      "tier": "TIER1",
+      "requiredAuthority": "CEO",
+      "premiumPct": 8,
+      "replacementOk": true,
+      "readyDate": "2026-11-20",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "gradeAlternatives": [],
+    "shortfall": 0
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "lots": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-02",
+      "units": 12000,
+      "readyDate": "2026-12-03",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "units": 10000,
+      "readyDate": "2026-12-18",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2026-12-24",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "0eb90960-879d-4708-be64-4c2ab7299555",
+    "legs": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     },
+     {
+      "lot": "L-180A-02",
+      "units": 12000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-08",
+      "delivered": "2027-01-04",
+      "freightCents": 540000,
+      "late": true
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-22",
+      "delivered": "2027-01-18",
+      "freightCents": 540000,
+      "late": true
+     }
+    ],
+    "freightCents": 1500000,
+    "meetsDeadline": false,
+    "lateUnits": 22000,
+    "airOption": {
+     "deliveredBy": "2026-12-24",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "lots": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2026-12-24",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "889bfe1c-761b-4539-a0df-2164fe347c49",
+    "legs": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "lots": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-02",
+      "units": 12000,
+      "readyDate": "2026-12-03",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "units": 10000,
+      "readyDate": "2026-12-18",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "readyDate": "2026-11-20",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2026-12-24",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "4620b40b-cb9b-4e41-82d2-a41d021ede57",
+    "legs": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     },
+     {
+      "lot": "L-180A-02",
+      "units": 12000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-08",
+      "delivered": "2027-01-04",
+      "freightCents": 540000,
+      "late": true
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-22",
+      "delivered": "2027-01-18",
+      "freightCents": 540000,
+      "late": true
+     },
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-11-24",
+      "delivered": "2026-12-21",
+      "freightCents": 540000,
+      "late": false
+     }
+    ],
+    "freightCents": 2040000,
+    "meetsDeadline": false,
+    "lateUnits": 22000,
+    "airOption": {
+     "deliveredBy": "2026-12-24",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "lots": [
+     {
+      "lot": "L-180A-02",
+      "units": 12000,
+      "readyDate": "2026-12-03",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "units": 10000,
+      "readyDate": "2026-12-18",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2026-12-24",
+    "allowAir": true
+   },
+   "response": {
+    "requestId": "9877f278-138a-48f0-b0ee-5e4c872abddc",
+    "legs": [
+     {
+      "lot": "L-180A-02",
+      "units": 12000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-08",
+      "delivered": "2027-01-04",
+      "freightCents": 540000,
+      "late": true
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-22",
+      "delivered": "2027-01-18",
+      "freightCents": 540000,
+      "late": true
+     }
+    ],
+    "freightCents": 1080000,
+    "meetsDeadline": false,
+    "lateUnits": 22000,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "lots": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "readyDate": "2026-11-20",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2026-12-24",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "3de2b3a4-7014-4ee8-b985-19916a0336d6",
+    "legs": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     },
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-11-24",
+      "delivered": "2026-12-21",
+      "freightCents": 540000,
+      "late": false
+     }
+    ],
+    "freightCents": 960000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "lots": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-02",
+      "units": 12000,
+      "readyDate": "2026-12-03",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "units": 10000,
+      "readyDate": "2026-12-18",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "readyDate": "2026-11-20",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-04",
+      "units": 12000,
+      "readyDate": "2026-11-20",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2026-12-24",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "9b885437-5fba-4ecf-9f65-9a128ba51941",
+    "legs": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     },
+     {
+      "lot": "L-180A-02",
+      "units": 12000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-08",
+      "delivered": "2027-01-04",
+      "freightCents": 540000,
+      "late": true
+     },
+     {
+      "lot": "PROD-FAB-COT-180-A-2026-12-18",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-12-22",
+      "delivered": "2027-01-18",
+      "freightCents": 540000,
+      "late": true
+     },
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-11-24",
+      "delivered": "2026-12-21",
+      "freightCents": 540000,
+      "late": false
+     },
+     {
+      "lot": "L-180A-04",
+      "units": 12000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-11-24",
+      "delivered": "2026-12-21",
+      "freightCents": 540000,
+      "late": false
+     }
+    ],
+    "freightCents": 2580000,
+    "meetsDeadline": false,
+    "lateUnits": 22000,
+    "airOption": {
+     "deliveredBy": "2026-12-24",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "lots": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "readyDate": "2026-11-20",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-04",
+      "units": 12000,
+      "readyDate": "2026-11-20",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2026-12-24",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "9e8975f9-1f38-454e-b98d-10e161f391d2",
+    "legs": [
+     {
+      "lot": "L-180A-01",
+      "units": 23000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     },
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-11-24",
+      "delivered": "2026-12-21",
+      "freightCents": 540000,
+      "late": false
+     },
+     {
+      "lot": "L-180A-04",
+      "units": 12000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-11-24",
+      "delivered": "2026-12-21",
+      "freightCents": 540000,
+      "late": false
+     }
+    ],
+    "freightCents": 1500000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterTreasuryAgent",
+   "path": "agents/treasury",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "qty": 45000,
+    "freightCents": 1500000,
+    "reallocUnits": {
+     "TIER1": 12000,
+     "TIER2": 10000
+    },
+    "termsDays": 30,
+    "advancePct": 0,
+    "margins": [
+     0.15,
+     0.135,
+     0.12,
+     0.11,
+     0.1,
+     0.09,
+     0.08
+    ]
+   },
+   "response": {
+    "requestId": "e7197c25-acae-44bc-a8aa-80fcbdaa1b7a",
+    "landedCents": 364,
+    "pricesAtMargin": {
+     "0.15": 429,
+     "0.135": 421,
+     "0.12": 414,
+     "0.11": 409,
+     "0.1": 405,
+     "0.09": 400,
+     "0.08": 396
+    },
+    "reallocPremiumCents": 10,
+    "liquidity": {
+     "net30Usd": 138000,
+     "status": "DEFICIT"
+    },
+    "advanceLever": {
+     "minAdvancePct": 30,
+     "marginRelief": 0.01,
+     "applies": false
+    },
+    "credit": {
+     "headroomUsd": 180000,
+     "ok": false
+    }
+   },
+   "httpStatus": 200
+  }
+ ]
+}

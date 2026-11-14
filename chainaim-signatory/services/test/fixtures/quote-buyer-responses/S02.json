@@ -1,0 +1,95 @@
+{
+  "inquiry": "S02",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "live OutcomeAI quote-agents, tenant tommy-hilfiger-europe (buyer, rules), --as-of 2026-11-16; rig with --ai off",
+  "calls": [
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S02",
+        "sku": "GAR-TSHIRT-CREW-A",
+        "qty": 20000,
+        "priceCents": 270,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 54000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S02",
+        "sku": "GAR-TSHIRT-CREW-A",
+        "phase": "round",
+        "round": 1,
+        "askCents": 306,
+        "lastOfferCents": 270
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 288,
+        "messageToSeller": "RFQ-S02: we can do $2.88 per unit.",
+        "reasoning": "round 1: counter",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S02",
+        "sku": "GAR-TSHIRT-CREW-A",
+        "phase": "round",
+        "round": 2,
+        "askCents": 300,
+        "lastOfferCents": 288
+      },
+      "response": {
+        "decision": "ACCEPT",
+        "priceCents": 300,
+        "messageToSeller": "RFQ-S02: we accept $3.00 per unit.",
+        "reasoning": "round 2: the ask is within our budget",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S02",
+        "sku": "GAR-TSHIRT-CREW-A",
+        "qty": 20000,
+        "priceCents": 300,
+        "advancePct": 0
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 60000,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 0,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

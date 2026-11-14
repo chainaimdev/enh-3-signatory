@@ -1,0 +1,203 @@
+{
+ "inquiry": "S08",
+ "title": "Sea too slow: rush order by air, CEO decides",
+ "recordedAt": "2026-11-14",
+ "recordedFrom": "live OutcomeAI quote-agents (10-SKU jupiter-knitting data, --as-of 2026-11-16, --ai off) via services/chain-10.mjs; agent calls only (the tests run with ai off)",
+ "rfq": {
+  "doctype": "Request for Quotation",
+  "name": "RFQ-S08",
+  "naming_series": "PUR-RFQ-.YYYY.-",
+  "company": "Tommy Hilfiger Europe B.V.",
+  "transaction_date": "2026-11-16",
+  "schedule_date": "2026-12-12",
+  "suppliers": [
+   {
+    "supplier": "Jupiter Knitting Company"
+   }
+  ],
+  "items": [
+   {
+    "item_code": "FAB-RIB-200-A",
+    "item_name": "FAB-RIB-200-A",
+    "description": "Cotton 1x1 rib 200 GSM (collars and cuffs), grade A",
+    "qty": 4000,
+    "uom": "Unit",
+    "stock_uom": "Unit",
+    "conversion_factor": 1,
+    "schedule_date": "2026-12-12",
+    "custom_quality_grade": "A",
+    "custom_target_rate_cents": 480
+   }
+  ],
+  "incoterm": "DAP",
+  "named_place": "Los Angeles",
+  "custom_from_agent": "tommyBuyerAgent",
+  "custom_from_lei": "54930012QJWZMYHNJW95",
+  "custom_to_agent": "jupiterSellerAgent",
+  "custom_to_lei": "3358004DXAMRWRUIYJ05",
+  "custom_payment_terms_days": 30,
+  "custom_advance_pct": 0
+ },
+ "buyerSim": {
+  "budgetCents": 700,
+  "concession": 0.5,
+  "behaviour": "price"
+ },
+ "calls": [
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "FAB-RIB-200-A",
+    "qty": 4000,
+    "shipBy": "2026-12-12"
+   },
+   "response": {
+    "requestId": "63d4ca14-57c5-4e64-8063-04a6dcb9221a",
+    "sources": [
+     {
+      "lot": "L-RIB200-01",
+      "kind": "FREE",
+      "units": 4000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "reallocatable": [],
+    "gradeAlternatives": [],
+    "shortfall": 0
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-RIB-200-A",
+    "lots": [
+     {
+      "lot": "L-RIB200-01",
+      "units": 4000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2026-12-12",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "aec66671-ea2c-4377-ae8d-6359ecc065ca",
+    "legs": [
+     {
+      "lot": "L-RIB200-01",
+      "units": 4000,
+      "mode": "SEA_EXP",
+      "carrier": "Maersk",
+      "etd": "2026-11-24",
+      "delivered": "2026-12-21",
+      "freightCents": 540000,
+      "late": true
+     }
+    ],
+    "freightCents": 540000,
+    "meetsDeadline": false,
+    "lateUnits": 4000,
+    "airOption": {
+     "deliveredBy": "2026-11-23",
+     "centsPerUnit": 95,
+     "maxUnits": 5000
+    }
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-RIB-200-A",
+    "lots": [
+     {
+      "lot": "L-RIB200-01",
+      "units": 4000,
+      "readyDate": "2026-11-16",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "deadline": "2026-12-12",
+    "allowAir": true
+   },
+   "response": {
+    "requestId": "9e7a9024-3acb-4b42-b70f-e6f3bfa2b93a",
+    "legs": [
+     {
+      "lot": "L-RIB200-01",
+      "units": 4000,
+      "mode": "AIR",
+      "carrier": "Emirates SkyCargo",
+      "etd": "2026-11-18",
+      "delivered": "2026-11-23",
+      "freightCents": 380000,
+      "late": false
+     }
+    ],
+    "freightCents": 380000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterTreasuryAgent",
+   "path": "agents/treasury",
+   "request": {
+    "sku": "FAB-RIB-200-A",
+    "qty": 4000,
+    "freightCents": 380000,
+    "reallocUnits": {
+     "TIER1": 0,
+     "TIER2": 0
+    },
+    "termsDays": 30,
+    "advancePct": 0,
+    "margins": [
+     0.15,
+     0.135,
+     0.12,
+     0.11,
+     0.1,
+     0.09,
+     0.08
+    ]
+   },
+   "response": {
+    "requestId": "288cc2eb-c43b-460b-8c82-1dbf9323d801",
+    "landedCents": 473,
+    "pricesAtMargin": {
+     "0.15": 556,
+     "0.135": 547,
+     "0.12": 537,
+     "0.11": 531,
+     "0.1": 525,
+     "0.09": 520,
+     "0.08": 514
+    },
+    "reallocPremiumCents": 0,
+    "liquidity": {
+     "net30Usd": 138000,
+     "status": "SURPLUS"
+    },
+    "advanceLever": {
+     "minAdvancePct": 30,
+     "marginRelief": 0.01,
+     "applies": false
+    },
+    "credit": {
+     "headroomUsd": 180000,
+     "ok": true
+    }
+   },
+   "httpStatus": 200
+  }
+ ]
+}

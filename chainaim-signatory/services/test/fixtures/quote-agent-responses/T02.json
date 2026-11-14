@@ -242,8 +242,7 @@
         "history": [
           {
             "round": 0,
-            "from": "buyer",
-            "action": "OFFER",
+            "by": "buyer",
             "priceCents": 390
           }
         ],
@@ -335,17 +334,33 @@
               "headroomUsd": 240000,
               "ok": true
             }
+          },
+          "logistics": {
+            "legs": [
+              {
+                "lot": "LOT-A1",
+                "units": 18000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-11-26",
+                "delivered": "2026-12-28",
+                "freightCents": 420000,
+                "late": false
+              }
+            ],
+            "freightCents": 420000,
+            "meetsDeadline": true,
+            "lateUnits": 0,
+            "airOption": null
           }
         },
         "authority": {
           "level": "AGENT",
           "floorCents": 404,
           "maxRounds": 3,
-          "allowed": {
-            "reallocate": [],
-            "air": false,
-            "maxDeadlineSlipDays": 3
-          }
+          "allowed": [
+            "maxDeadlineSlipDays:3"
+          ]
         }
       },
       "response": {
@@ -378,21 +393,17 @@
         "history": [
           {
             "round": 0,
-            "from": "buyer",
-            "action": "OFFER",
+            "by": "buyer",
             "priceCents": 390
           },
           {
             "round": 1,
-            "from": "seller",
-            "action": "COUNTER",
-            "priceCents": 418,
-            "source": "rules"
+            "by": "seller",
+            "priceCents": 418
           },
           {
             "round": 1,
-            "from": "buyer",
-            "action": "COUNTER",
+            "by": "buyer",
             "priceCents": 404
           }
         ],
@@ -484,17 +495,33 @@
               "headroomUsd": 240000,
               "ok": true
             }
+          },
+          "logistics": {
+            "legs": [
+              {
+                "lot": "LOT-A1",
+                "units": 18000,
+                "mode": "SEA_STD",
+                "carrier": "MSC",
+                "etd": "2026-11-26",
+                "delivered": "2026-12-28",
+                "freightCents": 420000,
+                "late": false
+              }
+            ],
+            "freightCents": 420000,
+            "meetsDeadline": true,
+            "lateUnits": 0,
+            "airOption": null
           }
         },
         "authority": {
           "level": "AGENT",
           "floorCents": 404,
           "maxRounds": 3,
-          "allowed": {
-            "reallocate": [],
-            "air": false,
-            "maxDeadlineSlipDays": 3
-          }
+          "allowed": [
+            "maxDeadlineSlipDays:3"
+          ]
         }
       },
       "response": {

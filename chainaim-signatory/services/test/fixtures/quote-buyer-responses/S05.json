@@ -1,0 +1,95 @@
+{
+  "inquiry": "S05",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "live OutcomeAI quote-agents, tenant tommy-hilfiger-europe (buyer, rules), --as-of 2026-11-16; rig with --ai off",
+  "calls": [
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S05",
+        "sku": "GAR-SAREE-COT-A",
+        "qty": 8000,
+        "priceCents": 780,
+        "advancePct": 30
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 62400,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 18720,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S05",
+        "sku": "GAR-SAREE-COT-A",
+        "phase": "round",
+        "round": 1,
+        "askCents": 893,
+        "lastOfferCents": 780
+      },
+      "response": {
+        "decision": "COUNTER",
+        "priceCents": 836,
+        "messageToSeller": "RFQ-S05: we can do $8.36 per unit.",
+        "reasoning": "round 1: counter",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "tommyBuyerAgent",
+      "path": "buyer/synthesize",
+      "request": {
+        "rfqId": "RFQ-S05",
+        "sku": "GAR-SAREE-COT-A",
+        "phase": "round",
+        "round": 2,
+        "askCents": 878,
+        "lastOfferCents": 836
+      },
+      "response": {
+        "decision": "ACCEPT",
+        "priceCents": 878,
+        "messageToSeller": "RFQ-S05: we accept $8.78 per unit.",
+        "reasoning": "round 2: the ask is within our budget",
+        "source": "rules",
+        "model": null
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "TommyTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "rfqId": "RFQ-S05",
+        "sku": "GAR-SAREE-COT-A",
+        "qty": 8000,
+        "priceCents": 878,
+        "advancePct": 30
+      },
+      "response": {
+        "withinBudget": true,
+        "totalUsd": 70240,
+        "approval": "AGENT",
+        "approver": "tommyBuyerAgent",
+        "cash": {
+          "availableUsd": 550000,
+          "advanceDueUsd": 21072,
+          "status": "OK"
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

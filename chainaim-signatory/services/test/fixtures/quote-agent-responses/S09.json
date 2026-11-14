@@ -1,0 +1,183 @@
+{
+ "inquiry": "S09",
+ "title": "Price too low: Tommy will not move, rounds run out, escalation",
+ "recordedAt": "2026-11-14",
+ "recordedFrom": "live OutcomeAI quote-agents (10-SKU jupiter-knitting data, --as-of 2026-11-16, --ai off) via services/chain-10.mjs; agent calls only (the tests run with ai off)",
+ "rfq": {
+  "doctype": "Request for Quotation",
+  "name": "RFQ-S09",
+  "naming_series": "PUR-RFQ-.YYYY.-",
+  "company": "Tommy Hilfiger Europe B.V.",
+  "transaction_date": "2026-11-16",
+  "schedule_date": "2027-01-08",
+  "suppliers": [
+   {
+    "supplier": "Jupiter Knitting Company"
+   }
+  ],
+  "items": [
+   {
+    "item_code": "FAB-COT-180-A",
+    "item_name": "FAB-COT-180-A",
+    "description": "Cotton fabric 180 GSM, grade A",
+    "qty": 20000,
+    "uom": "Unit",
+    "stock_uom": "Unit",
+    "conversion_factor": 1,
+    "schedule_date": "2027-01-08",
+    "custom_quality_grade": "A",
+    "custom_target_rate_cents": 360
+   }
+  ],
+  "incoterm": "DAP",
+  "named_place": "Los Angeles",
+  "custom_from_agent": "tommyBuyerAgent",
+  "custom_from_lei": "54930012QJWZMYHNJW95",
+  "custom_to_agent": "jupiterSellerAgent",
+  "custom_to_lei": "3358004DXAMRWRUIYJ05",
+  "custom_payment_terms_days": 30,
+  "custom_advance_pct": 0
+ },
+ "buyerSim": {
+  "budgetCents": 385,
+  "concession": 0.25,
+  "behaviour": "price"
+ },
+ "calls": [
+  {
+   "alias": "JupiterInventoryAgent",
+   "path": "agents/inventory",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "qty": 20000,
+    "shipBy": "2027-01-08"
+   },
+   "response": {
+    "requestId": "e1cc103a-969c-41cb-ac52-3521baad68d2",
+    "sources": [
+     {
+      "lot": "L-180A-01",
+      "kind": "FREE",
+      "units": 20000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "reallocatable": [
+     {
+      "lot": "L-180A-03",
+      "units": 10000,
+      "tier": "TIER2",
+      "requiredAuthority": "SALES_OFFICER",
+      "premiumPct": 4,
+      "replacementOk": true,
+      "readyDate": "2026-11-20",
+      "warehouse": "MADRAS-WH-1"
+     },
+     {
+      "lot": "L-180A-04",
+      "units": 12000,
+      "tier": "TIER1",
+      "requiredAuthority": "CEO",
+      "premiumPct": 8,
+      "replacementOk": true,
+      "readyDate": "2026-11-20",
+      "warehouse": "TIRUPUR-WH-2"
+     }
+    ],
+    "gradeAlternatives": [],
+    "shortfall": 0
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterLogisticsAgent",
+   "path": "agents/logistics",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "lots": [
+     {
+      "lot": "L-180A-01",
+      "units": 20000,
+      "readyDate": "2026-11-16",
+      "warehouse": "MADRAS-WH-1"
+     }
+    ],
+    "deadline": "2027-01-08",
+    "allowAir": false
+   },
+   "response": {
+    "requestId": "9450708e-39d2-4be8-86b3-7aba734c6b51",
+    "legs": [
+     {
+      "lot": "L-180A-01",
+      "units": 20000,
+      "mode": "SEA_STD",
+      "carrier": "MSC",
+      "etd": "2026-11-20",
+      "delivered": "2026-12-22",
+      "freightCents": 420000,
+      "late": false
+     }
+    ],
+    "freightCents": 420000,
+    "meetsDeadline": true,
+    "lateUnits": 0,
+    "airOption": null
+   },
+   "httpStatus": 200
+  },
+  {
+   "alias": "JupiterTreasuryAgent",
+   "path": "agents/treasury",
+   "request": {
+    "sku": "FAB-COT-180-A",
+    "qty": 20000,
+    "freightCents": 420000,
+    "reallocUnits": {
+     "TIER1": 0,
+     "TIER2": 0
+    },
+    "termsDays": 30,
+    "advancePct": 0,
+    "margins": [
+     0.15,
+     0.135,
+     0.12,
+     0.11,
+     0.1,
+     0.09,
+     0.08
+    ]
+   },
+   "response": {
+    "requestId": "3aea2aed-4c69-4b70-98e0-4dedbbef0d72",
+    "landedCents": 353,
+    "pricesAtMargin": {
+     "0.15": 415,
+     "0.135": 408,
+     "0.12": 401,
+     "0.11": 397,
+     "0.1": 392,
+     "0.09": 388,
+     "0.08": 384
+    },
+    "reallocPremiumCents": 0,
+    "liquidity": {
+     "net30Usd": 138000,
+     "status": "SURPLUS"
+    },
+    "advanceLever": {
+     "minAdvancePct": 30,
+     "marginRelief": 0.01,
+     "applies": false
+    },
+    "credit": {
+     "headroomUsd": 180000,
+     "ok": true
+    }
+   },
+   "httpStatus": 200
+  }
+ ]
+}

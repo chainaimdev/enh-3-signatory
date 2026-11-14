@@ -19,21 +19,32 @@
 //              officer presents its OOR to Sally (existing tsx_shell task); Sally's signed web-hook result (docker logs of
 //              the hook container) must say "iss" for that credential. Sally AID default: VERIFIER_AID from
 //              legentvLEI/task-scripts/workshop-env-vars.sh.
+//     Q7 (mode "quote"): [--quote on|off] [--outcome-url http://127.0.0.1:8785] [--quote-tenant jupiter-knitting]
+//              [--quote-token-env QUOTE_TOKEN_JUPITER] [--quote-ai on|off] [--quote-tail on|off] [--quote-timeout-s 20]
+//              [--quote-inquiries ../data/quote/inquiries.json] [--quote-authority ../config/quote-authority.json]
+//              [--quote-records ../private/quotes]   (the OutcomeAI tenant token is read from that env var only)
+//              [--quote-buyer rules|outcome] [--quote-buyer-tenant tommy-hilfiger-europe] [--quote-buyer-token-env QUOTE_TOKEN_TOMMY]
+//              (outcome: tommyBuyerAgent answers through Tommy's own OutcomeAI tenant — agents/treasury, buyer/synthesize)
 // Endpoints:
 //   GET  /health · GET /invoices · GET /preflight · GET /next-invoice[?text=…]
 //   POST /run {said} | {text} | {text, mode:"issue"} | {order:"N1", mode:"order"}  → {ok, runId, eventsUrl, mode, state, result?}
 //   GET  /orders (change #4: the purchase orders N1–N4 and the negotiator mode)
+//   GET  /quotes (Q7: Tommy's RFQs T01..; never the buyerSim block) · POST /run {mode:"quote", inquiry:"T01"}
 //   GET  /runs/:id · GET /runs/:id/events (SSE) · POST /runs/:id/decide {decision} · POST /runs/:id/cancel
 // Origin rule (P8): an Origin header other than allowOrigin → 403; no Origin → allowed (127.0.0.1 bind).
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
-import { loadConfig, ROOT, rpc, view } from "../../scripts/lib/common.mjs";
+import { loadConfig, readJson, ROOT, rpc, view } from "../../scripts/lib/common.mjs";
 import { HttpError, log } from "../shared/http.mjs";
 import { isSaid } from "../shared/near.mjs";
 import { createLlmProposer } from "../shared/llm.mjs";
+import { createOutcomeClient } from "../shared/outcome-client.mjs";
+import { createRuleBuyer } from "./quote-buyer.mjs";
+import { createOutcomeBuyer } from "./quote-buyer-outcome.mjs";
+import { loadQuotePolicy } from "./quote-flow.mjs";
 import { createRunner, RunnerError } from "./engine.mjs";
 import { loadOrderBook } from "./swarm.mjs";
 import { parseRequest, toUnits } from "./logic.mjs";
@@ -185,7 +196,7 @@ export function startRunnerServer({ cfg, runner, deps = {}, port, allowOrigin, s
       const m = /^\/runs\/([A-Za-z0-9-]{1,64})(\/events|\/decide|\/cancel)?$/.exec(path);
       if (req.method === "GET" && path === "/health") {
         const [signer, bridge] = await Promise.all([probe(signerUrl), probe(bridgeUrl)]);
-        return send(200, { ok: true, service: SERVICE, contractId: cfg.contractId, modes: deps.preflight ? ["invoice", "issue", ...(deps.orderBook ? ["order"] : [])] : ["invoice"], negotiator: deps.negotiator ?? null, ap2: deps.ap2Checkout ? "on" : "off", vleiVerifier: deps.verifyDelegation ? "on" : "off", sally: deps.sallyCheck ? "on" : "off", activeRun: runner.summary(runner.active) || null, signer, bridge });
+        return send(200, { ok: true, service: SERVICE, contractId: cfg.contractId, modes: deps.preflight ? ["invoice", "issue", ...(deps.orderBook ? ["order"] : []), ...(deps.quote ? ["quote"] : [])] : ["invoice"], quote: deps.quote ? { outcomeUrl: deps.quote.outcomeUrl, ai: deps.quote.ai ? "on" : "off", tail: deps.quote.tail ? "on" : "off" } : null, negotiator: deps.negotiator ?? null, ap2: deps.ap2Checkout ? "on" : "off", vleiVerifier: deps.verifyDelegation ? "on" : "off", sally: deps.sallyCheck ? "on" : "off", activeRun: runner.summary(runner.active) || null, signer, bridge });
       }
       if (req.method === "GET" && path === "/invoices") {
         return send(200, { ok: true, invoices: await runner.invoices() });
@@ -194,6 +205,16 @@ export function startRunnerServer({ cfg, runner, deps = {}, port, allowOrigin, s
         if (!deps.orderBook) throw new HttpError(501, "order mode not configured");
         const b = deps.orderBook;
         return send(200, { ok: true, negotiator: deps.negotiator, product: b.product, source: b.source, orders: b.orders });
+      }
+      if (req.method === "GET" && path === "/quotes") {
+        if (!deps.quote) throw new HttpError(501, "quote mode not configured");
+        const qb = deps.quote;
+        // Tommy's RFQs as the console needs them; the buyerSim block (Tommy's private budget) is never sent
+        const quotes = qb.inquiries.map((q) => {
+          const it = q.rfq.items[0];
+          return { id: q.id, rfq: q.rfq.name, scenario: q.scenario, sku: it.item_code, description: it.description, quantity: it.qty, openingCents: it.custom_target_rate_cents, deadline: it.schedule_date ?? q.rfq.schedule_date };
+        });
+        return send(200, { ok: true, outcomeUrl: qb.outcomeUrl, ai: qb.ai ? "on" : "off", tail: qb.tail ? "on" : "off", buyer: qb.buyer ?? "rules", quotes });
       }
       if (req.method === "GET" && path === "/preflight") {
         if (!deps.preflight) throw new HttpError(501, "issue mode not configured");
@@ -217,7 +238,8 @@ export function startRunnerServer({ cfg, runner, deps = {}, port, allowOrigin, s
         if (body.said !== undefined && !isSaid(body.said)) throw new HttpError(400, "said must be a SAID string");
         if (body.mode === "issue" && !deps.preflight) throw new HttpError(501, "issue mode not configured");
         if (body.mode === "order" && !deps.orderBook) throw new HttpError(501, "order mode not configured");
-        const run = await runner.start({ said: body.said, text: body.text, mode: body.mode, order: body.order });
+        if (body.mode === "quote" && !deps.quote) throw new HttpError(501, "quote mode not configured");
+        const run = await runner.start({ said: body.said, text: body.text, mode: body.mode, order: body.order, inquiry: body.inquiry });
         return send(200, { ok: true, runId: run.id, eventsUrl: `/runs/${run.id}/events`, mode: run.mode, state: run.state, result: run.result });
       }
       if (m && req.method === "GET" && !m[2]) {
@@ -291,6 +313,19 @@ async function main() {
       sally: { type: "string" },
       "sally-hook-container": { type: "string" },
       "sally-aid": { type: "string" },
+      quote: { type: "string" },
+      "outcome-url": { type: "string" },
+      "quote-tenant": { type: "string" },
+      "quote-token-env": { type: "string" },
+      "quote-ai": { type: "string" },
+      "quote-tail": { type: "string" },
+      "quote-timeout-s": { type: "string" },
+      "quote-inquiries": { type: "string" },
+      "quote-buyer": { type: "string" },
+      "quote-buyer-tenant": { type: "string" },
+      "quote-buyer-token-env": { type: "string" },
+      "quote-authority": { type: "string" },
+      "quote-records": { type: "string" },
     },
   });
   const cfg = loadConfig(flags.config);
@@ -348,6 +383,47 @@ async function main() {
     sally = { hookContainer: flags["sally-hook-container"] ?? "legentvlei-resource-1", aid };
   }
   const deps = buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2, order, vleiVerifierUrl, sally });
+  // Q7: mode "quote" — on by default when data/quote/inquiries.json exists; needs the issue-mode deps (preflight, verify_buyer)
+  const quoteMode = flags.quote ?? "on";
+  if (!["on", "off"].includes(quoteMode)) throw new Error("--quote must be on or off");
+  const quoteInquiries = resolve(flags["quote-inquiries"] ?? resolve(ROOT, "data", "quote", "inquiries.json"));
+  if (quoteMode === "on" && deps.preflight && existsSync(quoteInquiries)) {
+    const qAi = flags["quote-ai"] ?? "on";
+    const qTail = flags["quote-tail"] ?? "on";
+    if (!["on", "off"].includes(qAi)) throw new Error("--quote-ai must be on or off");
+    if (!["on", "off"].includes(qTail)) throw new Error("--quote-tail must be on or off");
+    const qTimeoutS = Number(flags["quote-timeout-s"] ?? 20);
+    if (!Number.isFinite(qTimeoutS) || qTimeoutS <= 0 || qTimeoutS > 600) throw new Error("--quote-timeout-s must be 1–600");
+    const policy = loadQuotePolicy(resolve(flags["quote-authority"] ?? resolve(ROOT, "config", "quote-authority.json")));
+    const outcomeUrl = flags["outcome-url"] ?? "http://127.0.0.1:8785";
+    const tokenEnv = flags["quote-token-env"] ?? "QUOTE_TOKEN_JUPITER";
+    if (!process.env[tokenEnv]) log(SERVICE, { event: "warning", quote: `${tokenEnv} is not set: OutcomeAI will refuse quote calls (401) until it is` });
+    const recordsDir = resolve(flags["quote-records"] ?? resolve(ROOT, "private", "quotes"));
+    const book = readJson(quoteInquiries);
+    if (!Array.isArray(book.inquiries) || !book.inquiries.length) throw new Error(`${quoteInquiries}: inquiries[] is empty`);
+    const qBuyer = flags["quote-buyer"] ?? "rules";
+    if (!["rules", "outcome"].includes(qBuyer)) throw new Error("--quote-buyer must be rules or outcome");
+    const buyerTokenEnv = flags["quote-buyer-token-env"] ?? "QUOTE_TOKEN_TOMMY";
+    if (qBuyer === "outcome" && !process.env[buyerTokenEnv]) log(SERVICE, { event: "warning", quote: `${buyerTokenEnv} is not set: Tommy's OutcomeAI tenant will refuse calls (401) until it is` });
+    const buyerClient = qBuyer === "outcome"
+      ? createOutcomeClient({ baseUrl: outcomeUrl, tenant: flags["quote-buyer-tenant"] ?? "tommy-hilfiger-europe", tokenEnv: buyerTokenEnv, lei: book.inquiries[0].rfq.custom_from_lei, timeoutMs: qTimeoutS * 1000 })
+      : null;
+    deps.quote = {
+      inquiries: book.inquiries,
+      policy,
+      outcomeUrl,
+      ai: qAi === "on",
+      tail: qTail === "on",
+      buyer: qBuyer,
+      client: createOutcomeClient({ baseUrl: outcomeUrl, tenant: flags["quote-tenant"] ?? "jupiter-knitting", tokenEnv, lei: policy.seller.lei, timeoutMs: qTimeoutS * 1000 }),
+      buyerFor: (q) => (buyerClient ? createOutcomeBuyer({ client: buyerClient, rfq: q.rfq }) : createRuleBuyer(q.buyerSim, q.rfq.items[0].custom_target_rate_cents)),
+      recorder: (rfqName, runId) => {
+        const dir = resolve(recordsDir, `${rfqName}.${runId}`);
+        mkdirSync(dir, { recursive: true });
+        return async (file, obj) => writeFileSync(resolve(dir, file), JSON.stringify(obj, null, 2) + "\n");
+      },
+    };
+  }
   const md = await view(cfg.rpcUrl, cfg.token, "ft_metadata");
   if (md.decimals !== cfg.tokenDecimals) throw new Error(`token decimals ${md.decimals} ≠ config ${cfg.tokenDecimals} (G-39)`);
   await view(cfg.rpcUrl, cfg.contractId, "get_config");
@@ -360,6 +436,7 @@ async function main() {
     vleiDir: vlei.dir, exportNode: vlei.exportNode, issueTimeoutS: vlei.issueTimeoutMs / 1000, exportTimeoutS: vlei.exportTimeoutMs / 1000,
     maxAmount: flags["max-amount"] ?? "0.25", template: vlei.template, ap2: ap2 ? "on" : "off",
     negotiator, paceMs, vleiVerifier: vleiVerifierUrl ?? "off", sally: sally ? { hookContainer: sally.hookContainer, aid: sally.aid } : "off", ...(negotiator === "llm" ? { llmUrl: flags["llm-url"], llmModel: flags["llm-model"] ?? "default", llmKeyEnv: keyEnv } : {}), ordersDir, orders: order.book.orders.map((o) => o.id).join(","),
+    quote: deps.quote ? { outcomeUrl: deps.quote.outcomeUrl, ai: deps.quote.ai ? "on" : "off", tail: deps.quote.tail ? "on" : "off", inquiries: deps.quote.inquiries.map((q) => q.id).join(",") } : "off",
   });
   startRunnerServer({ cfg, runner, deps, port, allowOrigin, signerUrl, bridgeUrl });
 }

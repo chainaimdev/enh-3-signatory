@@ -61,19 +61,19 @@
       "lei": "54930012QJWZMYHNJW95",
       "legalEntityName": "TOMMY HILFIGER EUROPE B.V.",
       "registryName": "Tommy_Hilfiger_Europe-oor-registry",
-      "qvi": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2"
+      "qvi": "EJeCwvJB6gmDveIHt37BuQ_Tq7bieVWvcgsBDqQg9yqP"
     },
     "vLEImetadata": {
       "agentName": "tommyBuyerAgent",
       "oorHolderName": "Tommy_Chief_Procurement_Officer",
-      "delegatorAID": "EMmf0aDN_F5SVt2-hI2eybSSV1M-cYSf4TO0Pbd2Z9ZO",
-      "delegateeAID": "EEVIKW5UQLFBvXfWmQyfPtE-PnVgLGYiA_YaBYNKHs7z",
-      "delegatorSAID": "EFPeui5k7xY20MqH02XmNggtc7U1EvMBUht_RSH-OI4b",
-      "delegateeSAID": "EEVIKW5UQLFBvXfWmQyfPtE-PnVgLGYiA_YaBYNKHs7z",
-      "delegatorOOBI": "http://keria:3902/oobi/EMmf0aDN_F5SVt2-hI2eybSSV1M-cYSf4TO0Pbd2Z9ZO/agent/EGmNu5r8CoEGh6kijBdmGq489TQUNmLVemZMP8N2PUu4",
-      "delegateeOOBI": "http://keria:3902/oobi/EEVIKW5UQLFBvXfWmQyfPtE-PnVgLGYiA_YaBYNKHs7z/agent/EHAoE0JtQijd-3BckOeyps_xPNE-Mw-8ejCzHo_HWadO",
-      "leAID": "EMcbkIVMOKk0f-6I9POqRtc0CZxvXHGyd4tKddXojvDu",
-      "leOOBI": "http://keria:3902/oobi/EMcbkIVMOKk0f-6I9POqRtc0CZxvXHGyd4tKddXojvDu/agent/EJQtExZQ1vWs9bI24W_PO7nfPHQemb2p1eLRoGoZ540-",
+      "delegatorAID": "EIOaUvu-uNvhdt1FAEU4AswvLONtQjwi2ML0DEmaLrix",
+      "delegateeAID": "EKOm4y5bqGCTIPPoERvGmM4XJzqlrWZlplnZ48bI889C",
+      "delegatorSAID": "EK4BlVyXl6IACofsawOGCy4TH8B4i0NwwPaoG5Jt5zta",
+      "delegateeSAID": "EKOm4y5bqGCTIPPoERvGmM4XJzqlrWZlplnZ48bI889C",
+      "delegatorOOBI": "http://keria:3902/oobi/EIOaUvu-uNvhdt1FAEU4AswvLONtQjwi2ML0DEmaLrix/agent/EOWTBnbFO-zRhjsk_lEdVZY3EpCF4aJJPk1yFFlB9E6I",
+      "delegateeOOBI": "http://keria:3902/oobi/EKOm4y5bqGCTIPPoERvGmM4XJzqlrWZlplnZ48bI889C/agent/EPqsa0Pra-h6L8oOGBfSoLe6f1zCLuXvXjazqw_1rlMs",
+      "leAID": "EH81Um3_fafJH8oLJrENYJ6_8KGHvKB7f4o9x4KcaPL3",
+      "leOOBI": "http://keria:3902/oobi/EH81Um3_fafJH8oLJrENYJ6_8KGHvKB7f4o9x4KcaPL3/agent/EEwXHMKw-kRQ0hm_thc8fkbjbh7i_SRggMC7Hhzupb9k",
       "verificationPath": [
         "GLEIF_ROOT → QVI",
         "QVI → TOMMY HILFIGER EUROPE B.V. → Chief Procurement Officer → tommyBuyerAgent"
@@ -83,10 +83,10 @@
       "gleifVerificationEndpoint": "https://gleif.org/api/v1/lei/54930012QJWZMYHNJW95"
     },
     "keriIdentifiers": {
-      "agentAID": "EEVIKW5UQLFBvXfWmQyfPtE-PnVgLGYiA_YaBYNKHs7z",
-      "oorHolderAID": "EMmf0aDN_F5SVt2-hI2eybSSV1M-cYSf4TO0Pbd2Z9ZO",
-      "legalEntityAID": "EMcbkIVMOKk0f-6I9POqRtc0CZxvXHGyd4tKddXojvDu",
-      "qviAID": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2"
+      "agentAID": "EKOm4y5bqGCTIPPoERvGmM4XJzqlrWZlplnZ48bI889C",
+      "oorHolderAID": "EIOaUvu-uNvhdt1FAEU4AswvLONtQjwi2ML0DEmaLrix",
+      "legalEntityAID": "EH81Um3_fafJH8oLJrENYJ6_8KGHvKB7f4o9x4KcaPL3",
+      "qviAID": "EJeCwvJB6gmDveIHt37BuQ_Tq7bieVWvcgsBDqQg9yqP"
     }
   }
 }

@@ -29,6 +29,11 @@
     "whenLiquidity": "DEFICIT",
     "comment": "With a treasury DEFICIT and >= 30% advance, every level may use its minMarginWithAdvance."
   },
+  "treasuryChecks": {
+    "creditOverLimit": { "minLevel": "CEO" },
+    "liquidityDeficit": null,
+    "comment": "Checks on JupiterTreasuryAgent's answer. creditOverLimit: credit.ok false (the financed invoice is over the buyer's credit headroom) needs at least minLevel; the agent cannot close it. liquidityDeficit: null = off, because the sales policy handles a DEFICIT with the advance lever only; set { \"minLevel\": \"SALES_OFFICER\" } to also escalate a DEFICIT without a >= 30% advance. minLevel null records the reason without raising authority."
+  },
   "splitShipment": {
     "minFirstShare": 0.7,
     "secondShipmentLatestDelivery": "2027-03-31",
@@ -50,6 +55,7 @@
     {
       "level": "SALES_OFFICER",
       "alias": "Jupiter_Chief_Sales_Officer",
+      "preparedBy": "jupiterSellerAgent",
       "kind": "officer",
       "minMargin": 0.1,
       "minMarginWithAdvance": 0.09,

@@ -1,0 +1,227 @@
+{
+  "inquiry": "T01",
+  "recordedAt": "2026-11-14",
+  "recordedFrom": "reference agents (data pack v1) — section 4 contract; seller/synthesize answered source=rules (no model). Replace with live OutcomeAI recordings at S-7.",
+  "calls": [
+    {
+      "alias": "JupiterInventoryAgent",
+      "path": "agents/inventory",
+      "request": {
+        "sku": "FAB-COT-180-A",
+        "qty": 20000,
+        "shipBy": "2027-01-08"
+      },
+      "response": {
+        "sources": [
+          {
+            "lot": "LOT-A1",
+            "kind": "FREE",
+            "units": 22000,
+            "readyDate": "2026-11-19",
+            "warehouse": "MADRAS-WH-1"
+          },
+          {
+            "lot": "WIP-A2",
+            "kind": "WIP",
+            "units": 12000,
+            "readyDate": "2026-12-03",
+            "warehouse": "MADRAS-WH-1"
+          },
+          {
+            "lot": "NEW-PROD",
+            "kind": "PRODUCTION",
+            "units": 24000,
+            "readyDate": "2026-12-09",
+            "warehouse": "MADRAS-WH-1"
+          }
+        ],
+        "reallocatable": [
+          {
+            "lot": "LOT-A3",
+            "units": 15000,
+            "tier": "TIER2",
+            "requiredAuthority": "SALES_OFFICER",
+            "premiumPct": 0.04,
+            "replacementOk": true,
+            "readyDate": "2026-11-19",
+            "warehouse": "MADRAS-WH-1"
+          },
+          {
+            "lot": "LOT-A4",
+            "units": 18000,
+            "tier": "TIER1",
+            "requiredAuthority": "CEO",
+            "premiumPct": 0.08,
+            "replacementOk": false,
+            "readyDate": "2026-11-19",
+            "warehouse": "TIRUPUR-WH-2"
+          }
+        ],
+        "gradeAlternatives": [],
+        "shortfall": 0
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "JupiterLogisticsAgent",
+      "path": "agents/logistics",
+      "request": {
+        "sku": "FAB-COT-180-A",
+        "lots": [
+          {
+            "lot": "LOT-A1",
+            "units": 22000,
+            "readyDate": "2026-11-19",
+            "warehouse": "MADRAS-WH-1"
+          },
+          {
+            "lot": "WIP-A2",
+            "units": 12000,
+            "readyDate": "2026-12-03",
+            "warehouse": "MADRAS-WH-1"
+          },
+          {
+            "lot": "NEW-PROD",
+            "units": 24000,
+            "readyDate": "2026-12-09",
+            "warehouse": "MADRAS-WH-1"
+          }
+        ],
+        "deadline": "2027-01-08",
+        "allowAir": false
+      },
+      "response": {
+        "legs": [
+          {
+            "lot": "LOT-A1",
+            "units": 22000,
+            "mode": "SEA_STD",
+            "carrier": "MSC",
+            "etd": "2026-11-26",
+            "delivered": "2026-12-28",
+            "freightCents": 420000,
+            "onTime": true
+          },
+          {
+            "lot": "WIP-A2",
+            "units": 12000,
+            "mode": "SEA_EXP",
+            "carrier": "Maersk",
+            "etd": "2026-12-08",
+            "delivered": "2027-01-04",
+            "freightCents": 540000,
+            "onTime": true
+          },
+          {
+            "lot": "NEW-PROD",
+            "units": 24000,
+            "mode": "SEA_EXP",
+            "carrier": "Maersk",
+            "etd": "2026-12-15",
+            "delivered": "2027-01-11",
+            "freightCents": 540000,
+            "onTime": false
+          }
+        ],
+        "freightCents": 1500000,
+        "meetsDeadline": false,
+        "lateUnits": 24000,
+        "airOption": {
+          "centsPerUnit": 266,
+          "transitDays": 4
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "JupiterLogisticsAgent",
+      "path": "agents/logistics",
+      "request": {
+        "sku": "FAB-COT-180-A",
+        "lots": [
+          {
+            "lot": "LOT-A1",
+            "units": 20000,
+            "readyDate": "2026-11-19",
+            "warehouse": "MADRAS-WH-1"
+          }
+        ],
+        "deadline": "2027-01-08",
+        "allowAir": false
+      },
+      "response": {
+        "legs": [
+          {
+            "lot": "LOT-A1",
+            "units": 20000,
+            "mode": "SEA_STD",
+            "carrier": "MSC",
+            "etd": "2026-11-26",
+            "delivered": "2026-12-28",
+            "freightCents": 420000,
+            "onTime": true
+          }
+        ],
+        "freightCents": 420000,
+        "meetsDeadline": true,
+        "lateUnits": 0,
+        "airOption": {
+          "centsPerUnit": 266,
+          "transitDays": 4
+        }
+      },
+      "httpStatus": 200
+    },
+    {
+      "alias": "JupiterTreasuryAgent",
+      "path": "agents/treasury",
+      "request": {
+        "sku": "FAB-COT-180-A",
+        "qty": 20000,
+        "freightCents": 420000,
+        "reallocUnits": {
+          "TIER1": 0,
+          "TIER2": 0
+        },
+        "termsDays": 30,
+        "advancePct": 0,
+        "margins": [
+          0.15,
+          0.135,
+          0.12,
+          0.11,
+          0.1,
+          0.09,
+          0.08
+        ]
+      },
+      "response": {
+        "landedCents": 352.5,
+        "pricesAtMargin": {
+          "0.15": 415,
+          "0.135": 408,
+          "0.12": 401,
+          "0.11": 397,
+          "0.1": 392,
+          "0.09": 388,
+          "0.08": 384
+        },
+        "reallocPremiumCents": 0,
+        "liquidity": {
+          "net30Usd": -103000,
+          "status": "DEFICIT"
+        },
+        "advanceLever": {
+          "minAdvancePct": 30,
+          "marginRelief": 0.01,
+          "applies": false
+        },
+        "credit": {
+          "headroomUsd": 240000,
+          "ok": true
+        }
+      },
+      "httpStatus": 200
+    }
+  ]
+}

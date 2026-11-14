@@ -1,0 +1,363 @@
+{
+  "version": 1,
+  "comment": "Quote flow (S-1): Tommy's RFQs T01-T08 to Jupiter, ERPNext 'Request for Quotation' shape (data/quote/schema/rfq.schema.json). Values are the data pack's tommy_inquiries.csv (2026-11-16). The 'buyerSim' block is Tommy's PRIVATE simulation input (tommy_buyer_private.csv): only services/runner/quote-buyer.mjs reads it; seller modules never do (test 7). T09 (deadline-only escalation) is OPEN: not in the data pack yet.",
+  "source": {
+    "inquiries": "tommy_inquiries.csv",
+    "buyerSim": "tommy_buyer_private.csv",
+    "generatedAt": "2026-11-16"
+  },
+  "inquiries": [
+    {
+      "id": "T01",
+      "scenario": "Immediate accept",
+      "rfq": {
+        "doctype": "Request for Quotation",
+        "name": "RFQ-T01",
+        "naming_series": "PUR-RFQ-.YYYY.-",
+        "company": "Tommy Hilfiger Europe B.V.",
+        "transaction_date": "2026-11-16",
+        "schedule_date": "2027-01-08",
+        "suppliers": [
+          {
+            "supplier": "Jupiter Knitting Company"
+          }
+        ],
+        "items": [
+          {
+            "item_code": "FAB-COT-180-A",
+            "item_name": "FAB-COT-180-A",
+            "description": "Combed cotton single jersey 180 GSM, Grade A (<=20 defect pts/100 m2, shade 4-5)",
+            "qty": 20000,
+            "uom": "Unit",
+            "stock_uom": "Unit",
+            "conversion_factor": 1,
+            "schedule_date": "2027-01-08",
+            "custom_quality_grade": "A",
+            "custom_target_rate_cents": 425
+          }
+        ],
+        "incoterm": "DAP",
+        "named_place": "Los Angeles",
+        "custom_from_agent": "tommyBuyerAgent",
+        "custom_from_lei": "54930012QJWZMYHNJW95",
+        "custom_to_agent": "jupiterSellerAgent",
+        "custom_to_lei": "3358004DXAMRWRUIYJ05",
+        "custom_payment_terms_days": 30,
+        "custom_advance_pct": 0
+      },
+      "buyerSim": {
+        "budgetCents": 440,
+        "concession": 0.5,
+        "behaviour": "price"
+      }
+    },
+    {
+      "id": "T02",
+      "scenario": "Accept in round 2 (price)",
+      "rfq": {
+        "doctype": "Request for Quotation",
+        "name": "RFQ-T02",
+        "naming_series": "PUR-RFQ-.YYYY.-",
+        "company": "Tommy Hilfiger Europe B.V.",
+        "transaction_date": "2026-11-16",
+        "schedule_date": "2027-01-12",
+        "suppliers": [
+          {
+            "supplier": "Jupiter Knitting Company"
+          }
+        ],
+        "items": [
+          {
+            "item_code": "FAB-COT-180-A",
+            "item_name": "FAB-COT-180-A",
+            "description": "Combed cotton single jersey 180 GSM, Grade A (<=20 defect pts/100 m2, shade 4-5)",
+            "qty": 18000,
+            "uom": "Unit",
+            "stock_uom": "Unit",
+            "conversion_factor": 1,
+            "schedule_date": "2027-01-12",
+            "custom_quality_grade": "A",
+            "custom_target_rate_cents": 390
+          }
+        ],
+        "incoterm": "DAP",
+        "named_place": "Los Angeles",
+        "custom_from_agent": "tommyBuyerAgent",
+        "custom_from_lei": "54930012QJWZMYHNJW95",
+        "custom_to_agent": "jupiterSellerAgent",
+        "custom_to_lei": "3358004DXAMRWRUIYJ05",
+        "custom_payment_terms_days": 30,
+        "custom_advance_pct": 0
+      },
+      "buyerSim": {
+        "budgetCents": 412,
+        "concession": 0.5,
+        "behaviour": "price"
+      }
+    },
+    {
+      "id": "T03",
+      "scenario": "Accept in round 3 (price; stock by sea std + WIP by sea express to hit deadline)",
+      "rfq": {
+        "doctype": "Request for Quotation",
+        "name": "RFQ-T03",
+        "naming_series": "PUR-RFQ-.YYYY.-",
+        "company": "Tommy Hilfiger Europe B.V.",
+        "transaction_date": "2026-11-16",
+        "schedule_date": "2027-01-05",
+        "suppliers": [
+          {
+            "supplier": "Jupiter Knitting Company"
+          }
+        ],
+        "items": [
+          {
+            "item_code": "FAB-COT-180-A",
+            "item_name": "FAB-COT-180-A",
+            "description": "Combed cotton single jersey 180 GSM, Grade A (<=20 defect pts/100 m2, shade 4-5)",
+            "qty": 30000,
+            "uom": "Unit",
+            "stock_uom": "Unit",
+            "conversion_factor": 1,
+            "schedule_date": "2027-01-05",
+            "custom_quality_grade": "A",
+            "custom_target_rate_cents": 375
+          }
+        ],
+        "incoterm": "DAP",
+        "named_place": "Los Angeles",
+        "custom_from_agent": "tommyBuyerAgent",
+        "custom_from_lei": "54930012QJWZMYHNJW95",
+        "custom_to_agent": "jupiterSellerAgent",
+        "custom_to_lei": "3358004DXAMRWRUIYJ05",
+        "custom_payment_terms_days": 30,
+        "custom_advance_pct": 0
+      },
+      "buyerSim": {
+        "budgetCents": 415,
+        "concession": 0.5,
+        "behaviour": "price"
+      }
+    },
+    {
+      "id": "T04",
+      "scenario": "Counter on quantity (34k by deadline + 6k in a 2nd shipment), accepted round 1",
+      "rfq": {
+        "doctype": "Request for Quotation",
+        "name": "RFQ-T04",
+        "naming_series": "PUR-RFQ-.YYYY.-",
+        "company": "Tommy Hilfiger Europe B.V.",
+        "transaction_date": "2026-11-16",
+        "schedule_date": "2027-01-05",
+        "suppliers": [
+          {
+            "supplier": "Jupiter Knitting Company"
+          }
+        ],
+        "items": [
+          {
+            "item_code": "FAB-COT-180-A",
+            "item_name": "FAB-COT-180-A",
+            "description": "Combed cotton single jersey 180 GSM, Grade A (<=20 defect pts/100 m2, shade 4-5)",
+            "qty": 40000,
+            "uom": "Unit",
+            "stock_uom": "Unit",
+            "conversion_factor": 1,
+            "schedule_date": "2027-01-05",
+            "custom_quality_grade": "A",
+            "custom_target_rate_cents": 415
+          }
+        ],
+        "incoterm": "DAP",
+        "named_place": "Los Angeles",
+        "custom_from_agent": "tommyBuyerAgent",
+        "custom_from_lei": "54930012QJWZMYHNJW95",
+        "custom_to_agent": "jupiterSellerAgent",
+        "custom_to_lei": "3358004DXAMRWRUIYJ05",
+        "custom_payment_terms_days": 30,
+        "custom_advance_pct": 0
+      },
+      "buyerSim": {
+        "budgetCents": 430,
+        "concession": 0.5,
+        "behaviour": "price"
+      }
+    },
+    {
+      "id": "T05",
+      "scenario": "Counter on quality (Grade B late -> upgrade to Grade A), accepted round 2",
+      "rfq": {
+        "doctype": "Request for Quotation",
+        "name": "RFQ-T05",
+        "naming_series": "PUR-RFQ-.YYYY.-",
+        "company": "Tommy Hilfiger Europe B.V.",
+        "transaction_date": "2026-11-16",
+        "schedule_date": "2026-12-30",
+        "suppliers": [
+          {
+            "supplier": "Jupiter Knitting Company"
+          }
+        ],
+        "items": [
+          {
+            "item_code": "FAB-COT-180-B",
+            "item_name": "FAB-COT-180-B",
+            "description": "Carded cotton single jersey 180 GSM, Grade B (<=40 defect pts/100 m2, shade 3-4)",
+            "qty": 12000,
+            "uom": "Unit",
+            "stock_uom": "Unit",
+            "conversion_factor": 1,
+            "schedule_date": "2026-12-30",
+            "custom_quality_grade": "B",
+            "custom_target_rate_cents": 350
+          }
+        ],
+        "incoterm": "DAP",
+        "named_place": "Los Angeles",
+        "custom_from_agent": "tommyBuyerAgent",
+        "custom_from_lei": "54930012QJWZMYHNJW95",
+        "custom_to_agent": "jupiterSellerAgent",
+        "custom_to_lei": "3358004DXAMRWRUIYJ05",
+        "custom_payment_terms_days": 30,
+        "custom_advance_pct": 0
+      },
+      "buyerSim": {
+        "budgetCents": 430,
+        "concession": 0.5,
+        "behaviour": "price"
+      }
+    },
+    {
+      "id": "T06",
+      "scenario": "No deal in 3 rounds -> Sales Officer approves in round 4",
+      "rfq": {
+        "doctype": "Request for Quotation",
+        "name": "RFQ-T06",
+        "naming_series": "PUR-RFQ-.YYYY.-",
+        "company": "Tommy Hilfiger Europe B.V.",
+        "transaction_date": "2026-11-16",
+        "schedule_date": "2027-01-12",
+        "suppliers": [
+          {
+            "supplier": "Jupiter Knitting Company"
+          }
+        ],
+        "items": [
+          {
+            "item_code": "FAB-COT-180-A",
+            "item_name": "FAB-COT-180-A",
+            "description": "Combed cotton single jersey 180 GSM, Grade A (<=20 defect pts/100 m2, shade 4-5)",
+            "qty": 25000,
+            "uom": "Unit",
+            "stock_uom": "Unit",
+            "conversion_factor": 1,
+            "schedule_date": "2027-01-12",
+            "custom_quality_grade": "A",
+            "custom_target_rate_cents": 370
+          }
+        ],
+        "incoterm": "DAP",
+        "named_place": "Los Angeles",
+        "custom_from_agent": "tommyBuyerAgent",
+        "custom_from_lei": "54930012QJWZMYHNJW95",
+        "custom_to_agent": "jupiterSellerAgent",
+        "custom_to_lei": "3358004DXAMRWRUIYJ05",
+        "custom_payment_terms_days": 30,
+        "custom_advance_pct": 0
+      },
+      "buyerSim": {
+        "budgetCents": 410,
+        "concession": 0.5,
+        "behaviour": "price"
+      }
+    },
+    {
+      "id": "T07",
+      "scenario": "Needs Tier-2 + Tier-1 stock reallocation -> Sales Officer -> CEO agent -> CEO approves",
+      "rfq": {
+        "doctype": "Request for Quotation",
+        "name": "RFQ-T07",
+        "naming_series": "PUR-RFQ-.YYYY.-",
+        "company": "Tommy Hilfiger Europe B.V.",
+        "transaction_date": "2026-11-16",
+        "schedule_date": "2026-12-31",
+        "suppliers": [
+          {
+            "supplier": "Jupiter Knitting Company"
+          }
+        ],
+        "items": [
+          {
+            "item_code": "FAB-COT-180-A",
+            "item_name": "FAB-COT-180-A",
+            "description": "Combed cotton single jersey 180 GSM, Grade A (<=20 defect pts/100 m2, shade 4-5)",
+            "qty": 45000,
+            "uom": "Unit",
+            "stock_uom": "Unit",
+            "conversion_factor": 1,
+            "schedule_date": "2026-12-31",
+            "custom_quality_grade": "A",
+            "custom_target_rate_cents": 380
+          }
+        ],
+        "incoterm": "DAP",
+        "named_place": "Los Angeles",
+        "custom_from_agent": "tommyBuyerAgent",
+        "custom_from_lei": "54930012QJWZMYHNJW95",
+        "custom_to_agent": "jupiterSellerAgent",
+        "custom_to_lei": "3358004DXAMRWRUIYJ05",
+        "custom_payment_terms_days": 30,
+        "custom_advance_pct": 30
+      },
+      "buyerSim": {
+        "budgetCents": 420,
+        "concession": 0.5,
+        "behaviour": "price"
+      }
+    },
+    {
+      "id": "T08",
+      "scenario": "Below absolute floor -> declined after CEO review",
+      "rfq": {
+        "doctype": "Request for Quotation",
+        "name": "RFQ-T08",
+        "naming_series": "PUR-RFQ-.YYYY.-",
+        "company": "Tommy Hilfiger Europe B.V.",
+        "transaction_date": "2026-11-16",
+        "schedule_date": "2027-01-12",
+        "suppliers": [
+          {
+            "supplier": "Jupiter Knitting Company"
+          }
+        ],
+        "items": [
+          {
+            "item_code": "FAB-COT-180-A",
+            "item_name": "FAB-COT-180-A",
+            "description": "Combed cotton single jersey 180 GSM, Grade A (<=20 defect pts/100 m2, shade 4-5)",
+            "qty": 20000,
+            "uom": "Unit",
+            "stock_uom": "Unit",
+            "conversion_factor": 1,
+            "schedule_date": "2027-01-12",
+            "custom_quality_grade": "A",
+            "custom_target_rate_cents": 340
+          }
+        ],
+        "incoterm": "DAP",
+        "named_place": "Los Angeles",
+        "custom_from_agent": "tommyBuyerAgent",
+        "custom_from_lei": "54930012QJWZMYHNJW95",
+        "custom_to_agent": "jupiterSellerAgent",
+        "custom_to_lei": "3358004DXAMRWRUIYJ05",
+        "custom_payment_terms_days": 30,
+        "custom_advance_pct": 0
+      },
+      "buyerSim": {
+        "budgetCents": 372,
+        "concession": 0.5,
+        "behaviour": "price"
+      }
+    }
+  ]
+}

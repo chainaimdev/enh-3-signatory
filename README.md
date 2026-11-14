@@ -77,7 +77,7 @@ node scripts/view.mjs events            # contract event log (NEP-297)
 | Path | What it is |
 |---|---|
 | `chainaim-signatory/contract/` | Rust NEAR contract (near-sdk 5.30.1), 48 unit tests (`cargo test`) |
-| `chainaim-signatory/services/` | Node services: `signer/` (8771), `bridge/` (8772), `runner/` (8774), `shared/` (commitment, AP2), `test/` (90 tests, `npm test`, frozen evidence fixture); `data/` (purchase orders N1–N4 + DD5 data, change #4) |
+| `chainaim-signatory/services/` | Node services: `signer/` (8771), `bridge/` (8772), `runner/` (8774), `shared/` (commitment, AP2), `test/` (116 tests, `npm test`, frozen evidence fixture); `data/` (purchase orders N1–N4 + DD5 data, change #4) |
 | `chainaim-signatory/scripts/` | **`signatory.sh` (setup / start / stop — the only command you need)**, plus `deploy.sh`, `set-mandates.sh`, `health.mjs`, `view.mjs`, `ap2-keys.mjs` |
 | `chainaim-signatory/config/` | `signatory.json` (network, contract, ports), `accounts.json` (accounts + mandates) |
 | `UI/` | `Agent Escalation Console.html` (the chat UI), `serve.mjs` (static server), `data/` (evidence + accounts, no secrets) |
@@ -158,7 +158,7 @@ The AI proposes each move; the DD5 guard checks it (seller never below $3.55, bu
 ### 4.5 Tests (no keys, no network)
 
 ```bash
-cd chainaim-signatory/services && npm test     # 90 tests
+cd chainaim-signatory/services && npm test     # 116 tests
 cd ../contract && cargo test                   # 48 tests
 ```
 
@@ -191,6 +191,29 @@ Click a card to fill the chat box (you can edit it), then send.
 | N4 | 20,000 | $3.45 | **no deal** (below the seller's $3.55 minimum) | — | officer Approve (buy at the seller's last $4.10 → 0.082, paid) or Reject (nothing issued) |
 
 Data: `chainaim-signatory/data/orders.json` (orders + rules) and `data/dd5/` (DD5 inventory, logistics and treasury fixtures and 4 scenarios, copied unchanged from dd5-final-NEAR @4312cb1). The Logistics agent has no vLEI identity yet and is shown that way.
+
+**Quote flow (Private AI + vLEI escalation)** — before an order exists, `tommyBuyerAgent` sends a Request for Quotation (ERPNext shape) to `jupiterSellerAgent`. The seller agent asks Jupiter's **Inventory**, **Logistics** and **Treasury** agents in **OutcomeAI** (each call made as that agent's vLEI alias; Jupiter's private data never leaves OutcomeAI), negotiates up to 3 rounds within its authority (`config/quote-authority.json`: agent 12% → Sales Officer 10% → CEO 8% margin floor), and escalates to `Jupiter_Chief_Sales_Officer`, then the CEO (brief prepared by `jupiterCeoAgent`). In each round OutcomeAI's `seller/synthesize` may propose (AI); a guard enforces floors, grade, split, deadline slip and a leak scan on the message to the buyer, and otherwise the rule decides (labelled `rules`).
+
+```bash
+# OutcomeAI quote-agents service running on :8785; token = OutcomeAI's tenant token for jupiter-knitting (env only)
+export QUOTE_TOKEN_JUPITER=...                     # PowerShell: $env:QUOTE_TOKEN_JUPITER = "..."
+bash chainaim-signatory/scripts/demo-quote.sh      # PowerShell: .\chainaim-signatory\scripts\demo-quote.ps1
+#   --inquiry T07 --approve ask --pace-ms 600      one RFQ, officers asked live
+#   --ai off                                       rules only · --outcome-url http://host:port · --help for all flags
+```
+
+| RFQ | Tommy asks | What happens (rules) | Result | On-chain later |
+|---|---|---|---|---|
+| T01 | 20k 180-A @ $4.25, by 01-08 | above target, stock on time | **accept** round 0, agent | 0.085, agent pays |
+| T02 | 18k @ $3.90, by 01-12 | price counter | accept $4.11, round 2 | 0.07398, agent pays |
+| T03 | 30k @ $3.75, by 01-05 | price counter; stock by standard sea + WIP by express | accept $4.13, round 3 | 0.1239, CPO approves |
+| T04 | 40k @ $4.15, by 01-05 | **quantity** counter: 34k on time + 6k second shipment (re-consult) | accept $4.23, round 2 | 0.1692, CPO approves |
+| T05 | 12k Grade B @ $3.50, by 12-30 | **quality** counter: Grade A instead (re-consult) | accept $4.25, round 2 | 0.051, agent pays |
+| T06 | 25k @ $3.70, by 01-12 | 3 rounds, buyer stops below the agent floor | **Sales Officer** approves $4.10, round 4 | 0.1025, CPO approves |
+| T07 | 45k @ $3.80, by 12-31, 30% advance | needs Tier-2 + Tier-1 stock reallocation | **CEO** approves $4.18 (incl. 12c premium) | 0.1881, CPO approves |
+| T08 | 20k @ $3.40, by 01-12 | buyer's best is below the 8% floor | **declined** after officer and CEO; best-and-final $3.84 | nothing issued |
+
+Records per RFQ in `chainaim-signatory/private/quotes/<RFQ-id>/` (git-ignored): `inquiry.json`, `consults.json` (every answer + API proof block), `round-N.quote.json` (ERPNext Quotation), `escalations.json` (reason, level, decision, who, when, brief), `final.quote.json`, `jupiter-internal.json` (plan, floors, AI log — never sent to Tommy). Inputs: `data/quote/inquiries.json` (Tommy's RFQs; the `buyerSim` block is Tommy's private simulation input, read only by `quote-buyer.mjs`), `data/quote/schema/` (field names from the official ERPNext doctypes). Tests replay recorded OutcomeAI answers against the data-pack oracle (`services/test/quote.test.mjs`). Escalation decisions are recorded by Signatory, not yet KERI-signed; the agreed quote is not yet handed to the invoice → NEAR pay tail (runner mode `quote`, planned).
 
 Every chat bubble has a **details** section with the real API call, status, duration, raw response and transaction link. After scenario 8, re-enable the agent with `bash scripts/set-mandates.sh`.
 

@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "comment": "Quote flow (S-1): Jupiter's sales authority matrix, concession schedule and deal-importance score. Source: Jupiter sales policy v1 (jupiter-sales-policy.json in the data pack, 2026-11-16), the same policy that produced the T01-T08 oracle (services/test/fixtures/quote-expected-outcomes.csv). Prices are US cents per unit, DAP Los Angeles. Margin = (price - landed cost) / price; landed cost comes from JupiterTreasuryAgent in OutcomeAI.",
+  "seller": {
+    "alias": "jupiterSellerAgent",
+    "lei": "3358004DXAMRWRUIYJ05",
+    "company": "Jupiter Knitting Company"
+  },
+  "currency": "USD",
+  "priceUnit": "US cents per unit, DAP Los Angeles",
+  "targetMargin": 0.15,
+  "concessionMargins": [
+    0.15,
+    0.135
+  ],
+  "concessionComment": "Seller ask per round: round 1 at 15%, round 2 at 13.5%, round 3 at the agent floor (minMargin of AGENT).",
+  "margins": [
+    0.15,
+    0.135,
+    0.12,
+    0.11,
+    0.1,
+    0.09,
+    0.08
+  ],
+  "absoluteFloor": 0.08,
+  "advanceLever": {
+    "minAdvancePct": 30,
+    "whenLiquidity": "DEFICIT",
+    "comment": "With a treasury DEFICIT and >= 30% advance, every level may use its minMarginWithAdvance."
+  },
+  "splitShipment": {
+    "minFirstShare": 0.7,
+    "secondShipmentLatestDelivery": "2027-03-31",
+    "comment": "A split is offered when at least 70% can be delivered by the deadline; the rest is planned as a second shipment by the latest delivery date (data-pack horizon)."
+  },
+  "levels": [
+    {
+      "level": "AGENT",
+      "alias": "jupiterSellerAgent",
+      "kind": "agent",
+      "minMargin": 0.12,
+      "minMarginWithAdvance": 0.11,
+      "maxRounds": 3,
+      "maxDeadlineSlipDays": 3,
+      "reallocate": [],
+      "air": false,
+      "airMaxShare": 0
+    },
+    {
+      "level": "SALES_OFFICER",
+      "alias": "Jupiter_Chief_Sales_Officer",
+      "kind": "officer",
+      "minMargin": 0.1,
+      "minMarginWithAdvance": 0.09,
+      "maxDeadlineSlipDays": 7,
+      "reallocate": [
+        "TIER2"
+      ],
+      "air": true,
+      "airMaxShare": 0.1,
+      "counterAnchor": "lastAsk"
+    },
+    {
+      "level": "CEO",
+      "alias": "Jupiter_Chief_Executive_Officer",
+      "preparedBy": "jupiterCeoAgent",
+      "kind": "officer",
+      "minMargin": 0.08,
+      "minMarginWithAdvance": 0.08,
+      "maxDeadlineSlipDays": null,
+      "reallocate": [
+        "TIER2",
+        "TIER1"
+      ],
+      "air": true,
+      "airMaxShare": 1,
+      "counterAnchor": "target"
+    }
+  ],
+  "importance": {
+    "weights": {
+      "customerTier": {
+        "TIER1": 40,
+        "TIER2": 25,
+        "TIER3": 10
+      },
+      "dealSizeUsd": [
+        [
+          150000,
+          25
+        ],
+        [
+          75000,
+          15
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "capacityBelowPct": 75,
+      "capacityLowPoints": 20,
+      "capacityOtherwisePoints": 5
+    },
+    "bands": [
+      {
+        "band": "HIGH",
+        "min": 70,
+        "chain": [
+          "SALES_OFFICER",
+          "CEO"
+        ]
+      },
+      {
+        "band": "MEDIUM",
+        "min": 40,
+        "chain": [
+          "SALES_OFFICER"
+        ]
+      },
+      {
+        "band": "LOW",
+        "min": 0,
+        "chain": []
+      }
+    ],
+    "dealSizeComment": "Deal size = quantity x target price (15% margin, without reallocation premium).",
+    "inputs": {
+      "customerTierByLei": {
+        "54930012QJWZMYHNJW95": "TIER1"
+      },
+      "capacityUtilisationPct": 68,
+      "status": "PLACEHOLDER (snapshot of the data pack 2026-11-16: customers.csv TOMMY = TIER1, policy capacityUtilisationPct = 68). Stands in for live values from OutcomeAI, which the section 4 contract does not serve yet."
+    }
+  },
+  "escalationComment": "An officer level counters at max(floor, ceil((floor + anchor) / 2)); anchor = the agent's last ask (lastAsk) or the round-1 target ask (target). The buyer then accepts, or answers with its best price; a best price at or above the level floor closes at that price."
+}

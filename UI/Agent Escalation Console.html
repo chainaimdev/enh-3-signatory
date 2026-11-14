@@ -567,10 +567,14 @@ async function decideRun(run, decision){
 }
 
 /* ---------- verification badges: only a verify step of the current run can set them ---------- */
-function badge(stepName){
+function badge(stepNames){
   const run = S.live.run;
+  const names = Array.isArray(stepNames) ? stepNames : [stepNames];   // #4c: seller = verify_seller (after issue) or verify_seller_agent (before price)
+  let stepName = names[0];
   if (!run) return {cls:"", text:"not verified yet", sub:"set only by a run's live verification step"};
-  const st = run.steps.find(s => s.step === stepName);
+  const st = names.map(n => run.steps.find(s => s.step === n)).find(Boolean);
+  if (st) stepName = st.step;
+  else if (names.includes("verify_seller_agent") && run.started && run.started.mode === "order") stepName = "verify_seller_agent (on the seller's first answer)";   // #4c-2
   if (!st) return {cls:"", text:"not verified yet", sub: run.finished ? `run ${run.runId} had no ${stepName} step` : `waiting for ${stepName} in run ${run.runId}`};
   if (st.status === "running") return {cls:"warn", text:"verifying…", sub:`run ${run.runId}`, spin:true};
   const lbl = checkLabel(st.data);
@@ -695,7 +699,7 @@ function renderSeller(){
   if (!c){ p.append(el("div",{class:"empty",text: S.ev ? `${a} is not in the evidence` : "vLEI evidence not loaded"})); return; }
   p.append(panelHeader(c, "Seller", "verify_seller"));
   p.append(ladder(a));
-  p.append(badgeEl("verify_seller"));
+  p.append(badgeEl(["verify_seller","verify_seller_agent"]));
   // footer only when every invoice in the evidence pays the accounts.json payee
   const payees = new Set((S.ev && Array.isArray(S.ev.invoices) ? S.ev.invoices : []).map(i => i.acdc && i.acdc.a ? i.acdc.a.paymentWalletAddress : null));
   if (S.acc && S.acc.payee && payees.size === 1 && payees.has(S.acc.payee)) p.append(el("div",{class:"pfoot"}, "Payee matches accounts.json · ", accLink(S.acc.payee)));
@@ -859,7 +863,7 @@ function checkedNow(){
   const run = S.live.run, out = new Map();
   if (!run) return out;
   for (const st of run.steps){
-    if (!["verify_seller","verify_buyer"].includes(st.step) || st.status !== "done" || !isObj(st.data)) continue;
+    if (!["verify_seller","verify_buyer","verify_seller_agent"].includes(st.step) || st.status !== "done" || !isObj(st.data)) continue;
     const when = fmt.when(st.ts) || "";
     const link = n => Array.isArray(st.data.links) ? st.data.links.find(l => isObj(l) && l.link === n) || null : null;
     const del = link("agent → OOR officer"), oor = link("officer holds OOR issued by the QVI");
@@ -1036,7 +1040,7 @@ function bubble(d, extra){
       d.ts ? el("time",{text: fmt.when(d.ts) || ""}) : null, took ? el("span",{class:"meta",text:`took ${took}`}) : null));
   if (d.history) body.append(el("div",{class:"meta",style:"font-style:italic",text:"vLEI proof — pre-issued credential, not a live action in this run"}));
   if (d.text) body.append(el("div",{class:"txt",text:scrub(d.text)}));
-  const lbl = ["verify_buyer","verify_seller"].includes(d.step) ? checkLabel(d.data) : null;
+  const lbl = ["verify_buyer","verify_seller","verify_seller_agent"].includes(d.step) ? checkLabel(d.data) : null;
   if (lbl) body.append(el("div",{class:"vlabel"}, el("b",{text:"Checked: "}), lbl));
   const h = hashOf(d);
   if (h) body.append(el("div",{class:"meta"}, "tx ", txLink(h)));
@@ -1053,12 +1057,17 @@ function orderExtra(d){
   if (!isObj(d.data)) return null;
   if (d.step === "negotiate" && Array.isArray(d.data.moves) && d.data.moves.length){
     const tb = el("tbody");
-    for (const m of d.data.moves){
+    const vAt = Number.isInteger(d.data.sellerVerifiedAfter) ? d.data.sellerVerifiedAfter : -1;   // #4c-2
+    for (const [i, m] of d.data.moves.entries()){
       if (!isObj(m)) continue;
+      if (i === vAt + 1 && vAt >= 0) tb.append(el("tr",null, el("td",null), el("td",{text:"Buyer agent"}), el("td",{text:"VERIFY ✓"}),
+        el("td",null, el("div",{text:"Verified the seller agent's vLEI identity on its first message, before replying"}), el("div",{class:"src",text:"verify_seller_agent (live KEL)"}))));
       const ai = isObj(m.ai) ? (m.ai.error ? `AI: ${m.ai.error}` : `AI proposed ${m.ai.action}${Number.isFinite(m.ai.price) ? " " + cents(m.ai.price) : ""}${m.ai.model ? " (" + m.ai.model + ")" : ""}`) : null;
       tb.append(el("tr",null, el("td",{text:String(m.round)}), el("td",{text:m.from === "seller" ? "Seller agent" : "Buyer agent"}), el("td",{text:`${m.action}${Number.isFinite(m.price) ? " " + cents(m.price) : ""}`}),
         el("td",null, el("div",{text:scrub(m.reasoning || "")}), el("div",{class:"src",text:`${m.source === "ai" ? "AI ✓ guard kept" : m.source === "ai+guard" ? "AI → guard changed: " + (m.guard || "") : m.source === "order" ? "fixed order opening" : "DD5 rule" + (m.guard && m.guard !== "kept" ? " (guard: " + m.guard + ")" : "")}${ai ? " · " + ai : ""}`}))));
     }
+    if (vAt >= 0 && vAt === d.data.moves.length - 1) tb.append(el("tr",null, el("td",null), el("td",{text:"Buyer agent"}), el("td",{text:"VERIFY ✓"}),
+      el("td",null, el("div",{text:"Verified the seller agent's vLEI identity on its first message, before replying"}), el("div",{class:"src",text:"verify_seller_agent (live KEL)"}))));
     return el("div",{class:"neg"}, el("table",null, el("thead",null, el("tr",null, ...["Round","Who","Move","Why"].map(h => el("th",{text:h})))), tb));
   }
   if ((d.step === "swarm" || d.step === "treasury") && Array.isArray(d.data.checks)){

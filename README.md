@@ -181,7 +181,7 @@ Click a card to fill the chat box (you can edit it), then send.
 | 9 | Sample order of 1 t-shirt, total $50 | 0.00005 | refused before issuing (below 0.0001) |
 | 10 | Need cotton t-shirts for next month | — | stops: no amount given |
 
-**Purchase orders (change #4)** — the ▶ N1…N4 chips start the run directly: buyer agent order → swarm (inventory, logistics) → negotiation (DD5 rules, US cents/unit; DD5 rupee price points restated 1:1 as cents, e.g. ₹350 floor → $3.50) → treasury (seller profit/NPV, buyer mandate route) → the same verify → issue → pay steps as above.
+**Purchase orders (change #4)** — the ▶ N1…N4 chips start the run directly: buyer agent order → **the seller agent verifies the buyer agent** (live KELs) → swarm (inventory, logistics) → negotiation, where **the buyer agent verifies the seller agent on its first answer**, before replying (DD5 rules, US cents/unit; DD5 rupee price points restated 1:1 as cents, e.g. ₹350 floor → $3.50) → treasury (seller profit/NPV, buyer mandate route) → issue → verify the issued invoice → pay, as above.
 
 | Order | Qty | Budget | Rules result | On-chain | Expected |
 |---|---|---|---|---|---|

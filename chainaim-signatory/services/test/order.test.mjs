@@ -220,9 +220,16 @@ test("order N1: swarm → negotiate (round 1) → treasury → verify/issue/… 
   assert.equal(run.result, "paid", JSON.stringify(run.events).slice(0, 1500));
   assert.deepEqual(run.events[0].data.steps, STEPS_C);
   assert.deepEqual(finals(run), [
-    "1:request:done", "2:swarm:done", "3:negotiate:done", "4:escalation:skipped", "5:treasury:done", "6:verify_buyer:done",
-    "7:issue:done", "8:offer:done", "9:verify_seller:done", "10:accept:done", "11:register:done", "12:pay:done", "13:outcome:done",
+    "1:request:done", "2:verify_buyer:done", "3:swarm:done", "5:verify_seller_agent:done", "4:negotiate:done", "6:escalation:skipped",
+    "7:treasury:done", "8:issue:done", "9:offer:done", "10:verify_seller:done", "11:accept:done", "12:register:done", "13:pay:done", "14:outcome:done",
   ]);
+  // #4c-2: the buyer verifies the seller agent when the seller's first answer arrives (N1: its round-1 ACCEPT)
+  assert.equal(run.events.find((e) => e.data.step === "verify_seller_agent" && e.data.status === "done").data.data.trigger, "jupiterSellerAgent's round 1 accept");
+  // #4c: verified BEFORE any price talk, and the buyer is verified only once
+  assert.deepEqual(calls.map((c) => c[0]).slice(0, 2), ["preflight", "verify_buyer"]);
+  assert.equal(calls.filter((c) => c[0] === "verify_buyer").length, 1);
+  const vsa = run.events.find((e) => e.data.step === "verify_seller_agent" && e.data.status === "done").data;
+  assert.deepEqual([vsa.actor.id, vsa.target.id, vsa.data.officer], ["tommyBuyerAgent", "jupiterSellerAgent", "Jupiter_Chief_Sales_Officer"]);
   assert.deepEqual(calls.find((c) => c[0] === "config"), ["config", "INV-2026-0003", "77000", "cotton fabric", 20000]);
   const neg = run.events.find((e) => e.data.step === "negotiate" && e.data.status === "done").data;
   assert.equal(neg.data.priceCents, 385);
@@ -332,7 +339,7 @@ test("4b: --pace-ms pauses between swarm checks, moves and treasury checks (0 = 
     await until(run, finished);
     assert.equal(run.result, "paid");
     const paced = slept.filter((ms) => ms === 7).length;
-    if (min) assert.equal(paced, 2 + 6 + 2, "2 swarm checks + 6 moves (N3) + 2 treasury checks");
+    if (min) assert.equal(paced, 2 + 6 + 1 + 2, "2 swarm checks + 6 moves (N3) + 1 seller verification + 2 treasury checks");
     else assert.equal(paced, 0);
   }
 });
@@ -346,4 +353,31 @@ test("B: a failed negotiation is shown as no_deal (amber), not failed", async ()
   assert.equal(neg.status, "no_deal");
   await runner.decide(run.id, "reject");
   await until(run, finished);
+});
+
+test("4c: an unverified buyer stops before the swarm; an unverified seller agent stops on its first answer", async () => {
+  {
+    const { deps, calls } = fakeOrder();
+    deps.runVerifyBuyer = async () => ({ exitCode: 1, stdout: "", stderr: "strict check failed", ms: 1, cmd: "x", evidence: null });
+    const runner = createRunner({ cfg, deps, pollMs: 1 });
+    const run = await runner.start({ mode: "order", order: "N1" });
+    await until(run, finished);
+    assert.equal(run.result, "seller_refused");
+    assert.ok(!run.events.some((e) => ["swarm", "negotiate"].includes(e.data.step)), "no swarm, no negotiation");
+    assert.ok(!calls.some((c) => ["config", "issue", "register", "pay"].includes(c[0])));
+  }
+  {
+    const { deps, calls } = fakeOrder();
+    const ev = JSON.parse(JSON.stringify(evidence));
+    ev.companies.flatMap((c) => c.agents).find((a) => a.alias === "jupiterSellerAgent").delegationVerified = false;
+    deps.runVerifyBuyer = async () => ({ exitCode: 0, stdout: "All checks passed.\n", stderr: "", ms: 1, cmd: "x", evidence: ev });
+    const runner = createRunner({ cfg, deps, pollMs: 1 });
+    const run = await runner.start({ mode: "order", order: "N3" });
+    await until(run, finished);
+    assert.equal(run.result, "buyer_refused");
+    assert.equal(run.events.filter((e) => e.data.step === "verify_seller_agent").pop().data.status, "failed");
+    const last = run.events.filter((e) => e.data.step === "negotiate").pop().data.data.moves;
+    assert.deepEqual(last.map((m) => m.from), ["buyer", "seller"], "stopped right after the seller's first answer: the buyer never replied");
+    assert.ok(!calls.some((c) => ["config", "issue", "register", "pay"].includes(c[0])));
+  }
 });

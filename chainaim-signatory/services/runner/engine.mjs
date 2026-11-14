@@ -20,8 +20,9 @@
 //                 → signer POST /mandate. Used inside the Phase B `accept` step, after verify_seller.
 //   Change #4 mode "order" (purchase order → swarm → negotiation → treasury → the Phase B steps from verify_buyer):
 //                 deps.orderBook (swarm.mjs loadOrderBook) · deps.propose (llm.mjs proposer, or null = DD5 rules only)
-//                 · deps.negotiator ("rules" | "llm"). Steps: preflight, request, swarm, negotiate, escalation,
-//                 treasury, verify_buyer … decision. A failed negotiation waits for the officer (decide approve/reject).
+//                 · deps.negotiator ("rules" | "llm"). Steps: preflight, request, verify_buyer, swarm, negotiate
+//                 (verify_seller_agent on the seller's first answer, #4c-2), escalation, treasury, issue … decision.
+//                 A failed negotiation waits for the officer (decide approve/reject).
 import { formatUnits } from "../../scripts/lib/common.mjs";
 import { negotiate, usd } from "../shared/negotiate.mjs";
 import { preDealChecks, treasuryChecks } from "./swarm.mjs";
@@ -33,7 +34,11 @@ export const ORCHESTRATOR = "runner (no keys)";
 export const STEPS = ["offer", "accept", "register", "pay", "outcome", "decision"];
 export const STEPS_B = ["preflight", "request", "verify_buyer", "issue", "offer", "verify_seller", "accept", "register", "pay", "outcome", "decision"];
 // change #4: purchase order with a negotiation in front of the Phase B steps
-export const STEPS_C = ["preflight", "request", "swarm", "negotiate", "escalation", "treasury", "verify_buyer", "issue", "offer", "verify_seller", "accept", "register", "pay", "outcome", "decision"];
+// change #4c/#4c-2: each party verifies the other when its first message arrives: the seller verifies the buyer on the
+// request (before the swarm and any answer); the buyer verifies the seller agent on the seller's first answer (inside
+// negotiate, before replying);
+// verify_seller after issue still proves that this seller agent issued this invoice.
+export const STEPS_C = ["preflight", "request", "verify_buyer", "swarm", "negotiate", "verify_seller_agent", "escalation", "treasury", "issue", "offer", "verify_seller", "accept", "register", "pay", "outcome", "decision"];
 
 export class RunnerError extends Error {
   constructor(status, message, extra = {}) {
@@ -280,14 +285,13 @@ export function createRunner({
       `Purchase order ${order.id}: ${qty} units ${book.product.item} (${book.product.code}) — opening offer $${usd(order.buyerOpeningCents)}/unit (unsigned request)`,
       { api: pfApi, data: { signed: false, label: "unsigned request", order: order.id, quantity: order.quantity, item: book.product.item, productCode: book.product.code, openingCents: order.buyerOpeningCents, basedOn: order.basedOn, preflight: { ok: true, ms: pfMs, checks: pf.checks }, mandate: mandateView(pf.mandate) } });
 
-    let evidence = null;
-    try {
-      evidence = deps.loadEvidence();
-    } catch {
-      evidence = null;
-    }
+    // 2. verify_buyer — the seller verifies the buyer agent BEFORE talking price (#4c)
+    const vbr = await verifyBuyer(run, fail, "No negotiation, nothing issued.");
+    if (!vbr.ok) return;
 
-    // 2. swarm (seller side, before pricing): inventory + logistics
+    const evidence = vbr.evidence;
+
+    // 3. swarm (seller side, before its first answer): inventory + logistics
     run.currentStep = "swarm";
     const swarmApi = { service: "swarm", method: "read", path: "data/dd5/DEMO-DATA (inventory, logistics)" };
     const pre = preDealChecks({ book, order, evidence });
@@ -300,28 +304,58 @@ export function createRunner({
     }
     step(run, "swarm", "done", ACTORS.seller, ACTORS.agent, pre.map((c) => c.text).join(" · "), { api: swarmApi, data: { checks: pre } });
 
-    // 3. negotiate (DD5 rules; AI proposals when configured, always checked by the guard)
+    // 4. negotiate (DD5 rules; AI proposals when configured, always checked by the guard)
+    // 5. verify_seller_agent (#4c-2) runs INSIDE the negotiation: when the seller's first answer reaches the buyer, the buyer
+    //    verifies the seller agent BEFORE acting on it (same live export as verify_buyer). Failure stops the negotiation.
     run.currentStep = "negotiate";
     const negApi = { service: "negotiator", method: deps.negotiator === "llm" ? "ai+guard" : "rules", path: "services/shared/negotiate.mjs" };
     step(run, "negotiate", "running", ACTORS.agent, ACTORS.seller, `Negotiating ${qty} units: up to ${book.seller.maxRounds} rounds (${deps.negotiator === "llm" ? "AI proposals checked by the DD5 guard" : "DD5 rules"})`, { api: negApi, data: { moves: [] } });
     const moves = [];
-    const neg = await negotiate({
-      order, rules: book, propose: deps.propose ?? null,
-      onMove: async (m) => {
-        await pace();
-        moves.push(m);
-        step(run, "negotiate", "running", m.from === "seller" ? ACTORS.seller : ACTORS.agent, m.from === "seller" ? ACTORS.agent : ACTORS.seller,
-          `Round ${m.round} · ${m.from === "seller" ? sellerAgent : agentAlias}: ${m.action}${m.price != null ? ` $${usd(m.price)}` : ""}`, { api: negApi, data: { move: m, moves: [...moves] } });
-      },
-    });
-    const negData = { moves: neg.moves, deal: neg.deal, priceCents: neg.priceCents ?? null, round: neg.round, reason: neg.reason ?? null, lastSellerCents: neg.lastSellerCents, lastBuyerCents: neg.lastBuyerCents, negotiator: deps.negotiator ?? "rules" };
+    let sellerVerifiedAfter = null; // index in moves of the seller message that triggered verify_seller_agent
+    const vsApi = { service: "vlei", method: "agentChain", path: `${sellerAgent} in the verify_buyer export (live KELs)` };
+    const STOP = Symbol("stop");
+    let neg;
+    try {
+      neg = await negotiate({
+        order, rules: book, propose: deps.propose ?? null,
+        onMove: async (m) => {
+          await pace();
+          moves.push(m);
+          step(run, "negotiate", "running", m.from === "seller" ? ACTORS.seller : ACTORS.agent, m.from === "seller" ? ACTORS.agent : ACTORS.seller,
+            `Round ${m.round} · ${m.from === "seller" ? sellerAgent : agentAlias}: ${m.action}${m.price != null ? ` $${usd(m.price)}` : ""}`,
+            { api: negApi, data: { move: m, moves: [...moves], sellerVerifiedAfter } });
+          if (m.from !== "seller" || sellerVerifiedAfter !== null) return;
+          // first message from the seller reached the buyer → verify the sender before acting on it
+          const trigger = `${sellerAgent}'s round ${m.round} ${m.action.toLowerCase()}${m.price != null ? ` $${usd(m.price)}` : ""}`;
+          run.currentStep = "verify_seller_agent";
+          step(run, "verify_seller_agent", "running", ACTORS.agent, ACTORS.seller, `First message from ${sellerAgent} received (${trigger}) — verifying the sender before replying`, { api: vsApi, data: { trigger } });
+          await pace();
+          const sc = agentChain(vbr.evidence, sellerAgent);
+          if (!sc.ok) {
+            fail("verify_seller_agent", ACTORS.agent, ACTORS.seller, `Buyer refused: seller agent not verified — ${sc.reason}. The answer (${trigger}) is ignored; nothing issued.`,
+              { api: vsApi, data: { ...sc.data, trigger } }, "buyer_refused", `buyer refused: seller agent not verified — ${sc.reason}`);
+            throw STOP;
+          }
+          const sd = sc.data;
+          sellerVerifiedAfter = moves.length - 1;
+          step(run, "verify_seller_agent", "done", ACTORS.agent, ACTORS.seller,
+            `${sellerAgent} verified on its first message (${trigger}): delegated (live KEL) from ${sd.officer}, who holds OOR ${sd.officerOorSaid} issued by the QVI; Legal Entity ${sd.legalEntity} (LEI ${sd.lei}). LE → QVI is not checked by the exporter.`,
+            { api: vsApi, data: { ...sd, trigger } });
+          run.currentStep = "negotiate";
+        },
+      });
+    } catch (e) {
+      if (e === STOP) return;
+      throw e;
+    }
+    const negData = { sellerVerifiedAfter, moves: neg.moves, deal: neg.deal, priceCents: neg.priceCents ?? null, round: neg.round, reason: neg.reason ?? null, lastSellerCents: neg.lastSellerCents, lastBuyerCents: neg.lastBuyerCents, negotiator: deps.negotiator ?? "rules" };
     let priceCents = neg.priceCents;
     if (neg.deal) {
       step(run, "negotiate", "done", ACTORS.agent, ACTORS.seller, `Agreed at $${usd(priceCents)}/unit in round ${neg.round}`, { api: negApi, data: negData });
       step(run, "escalation", "skipped", ACTORS.agent, ACTORS.cpo, "Not needed — the agents agreed", { api: negApi });
     } else {
       step(run, "negotiate", "no_deal", ACTORS.agent, ACTORS.seller, `No deal: ${neg.reason} (buyer last $${usd(neg.lastBuyerCents)}, seller last $${usd(neg.lastSellerCents)})`, { api: negApi, data: negData });
-      // 4. escalation → the human officer (off-chain decision, recorded by the runner; not a KERI signature — see #15)
+      // 6. escalation → the human officer (off-chain decision, recorded by the runner; not a KERI signature — see #15)
       run.currentStep = "escalation";
       const escApi = { service: "runner", method: "POST", path: `/runs/${run.id}/decide` };
       step(run, "escalation", "waiting", ACTORS.agent, ACTORS.cpo,
@@ -340,7 +374,7 @@ export function createRunner({
       step(run, "escalation", "done", ACTORS.cpo, ACTORS.agent, `Approved by ${ACTORS.cpo.id}: buy at $${usd(priceCents)}/unit`, { api: escApi, data: { decision: "approve", priceCents } });
     }
 
-    // 5. treasury: seller treasury (profit/NPV) + buyer treasury (on-chain mandate route)
+    // 7. treasury: seller treasury (profit/NPV) + buyer treasury (on-chain mandate route)
     run.currentStep = "treasury";
     const tr = treasuryChecks({ book, order, priceCents, evidence, mandate: pf.mandate, maxUnits, decimals, demoScale });
     const trApi = { service: "swarm", method: "compute", path: "treasury (orders.json inputs + get_mandate)" };
@@ -351,8 +385,8 @@ export function createRunner({
     if (!tr.ok) return fail("treasury", ACTORS.seller, ACTORS.agent, `Treasury refused: ${tr.checks.filter((c) => !c.ok).map((c) => c.text).join("; ")}`, { api: trApi, data: { checks: tr.checks } }, "no_deal");
     step(run, "treasury", "done", ACTORS.seller, ACTORS.agent, tr.checks.map((c) => c.text).join(" · "), { api: trApi, data: { checks: tr.checks, priceCents, quantity: order.quantity } });
 
-    // 6–14. the Phase B steps: verify buyer → issue the vLEI invoice → … → pay on NEAR
-    return executeTail(run, tr.units, { item: book.product.item, quantity: order.quantity });
+    // 9–16. the Phase B steps: issue the vLEI invoice → … → pay on NEAR (buyer already verified above)
+    return executeTail(run, tr.units, { item: book.product.item, quantity: order.quantity }, { buyer: vbr.bd });
   }
 
   function waitForDeal(run) {
@@ -517,16 +551,8 @@ export function createRunner({
     return executeTail(run, units, parsed);
   }
 
-  /** Phase B steps from verify_buyer to the end (shared by modes "issue" and "order"). */
-  async function executeTail(run, units, parsed = {}) {
-    const amountText = `${fmt(units)} USDC`;
-    const fail = (name, actor, target, text, extra, result = "error", finishText = text) => {
-      step(run, name, "failed", actor, target, text, extra);
-      finish(run, result, finishText, { failedStep: name });
-    };
-    let planned;
-
-    // 2. verify_buyer (seller checks the buyer BEFORE issuing) — existing exporter, strict, own output file
+  /** Seller verifies the buyer agent (existing strict exporter, live KELs). Returns {ok, bd, evidence}; on failure the run is finished. */
+  async function verifyBuyer(run, fail, nothing) {
     run.currentStep = "verify_buyer";
     const vbCmd = deps.verifyBuyerCmd ?? "node.exe export-signatory-evidence.js --strict --out <runner work file>";
     step(run, "verify_buyer", "running", ACTORS.seller, ACTORS.agent, `Verifying ${agentAlias}: live KEL delegation from its OOR officer, OOR issuer, Legal Entity`, { api: { service: "vlei", cmd: vbCmd } });
@@ -536,13 +562,34 @@ export function createRunner({
     const buyer = vb.evidence ? agentChain(vb.evidence, agentAlias) : null;
     if (vb.exitCode !== 0 || !buyer?.ok) {
       const why = vb.timedOut ? "exporter timed out" : vb.spawnError ? vb.spawnError : buyer && !buyer.ok ? buyer.reason : !vb.evidence ? `exporter exit code ${vb.exitCode}, no output` : `exporter strict checks failed (exit ${vb.exitCode})`;
-      return fail("verify_buyer", ACTORS.seller, ACTORS.agent, `Seller refused: buyer not verified — ${why}. No invoice issued.`,
+      fail("verify_buyer", ACTORS.seller, ACTORS.agent, `Seller refused: buyer not verified — ${why}. ${nothing}`,
         { api: vbApi, data: { ...(buyer?.data ?? {}), raw: vbRaw } }, "seller_refused", `seller refused: buyer not verified — ${why}`);
+      return { ok: false };
     }
     const bd = buyer.data;
     step(run, "verify_buyer", "done", ACTORS.seller, ACTORS.agent,
       `${agentAlias} verified: delegated (live KEL) from ${bd.officer}, who holds OOR ${bd.officerOorSaid} issued by the QVI; Legal Entity ${bd.legalEntity} (LEI ${bd.lei}). LE → QVI is not checked by the exporter.`,
       { api: vbApi, data: { ...bd, raw: vbRaw } });
+    return { ok: true, bd, evidence: vb.evidence };
+  }
+
+  /** Phase B steps from verify_buyer to the end (shared by modes "issue" and "order"). */
+  async function executeTail(run, units, parsed = {}, opts = {}) {
+    const amountText = `${fmt(units)} USDC`;
+    const fail = (name, actor, target, text, extra, result = "error", finishText = text) => {
+      step(run, name, "failed", actor, target, text, extra);
+      finish(run, result, finishText, { failedStep: name });
+    };
+    let planned;
+
+    // 2. verify_buyer (seller checks the buyer BEFORE issuing) — skipped when mode "order" already did it before
+    //    the negotiation (change #4c: opts.buyer = that step's verified buyer data)
+    let bd = opts.buyer ?? null;
+    if (!bd) {
+      const v = await verifyBuyer(run, fail, "No invoice issued.");
+      if (!v.ok) return;
+      bd = v.bd;
+    }
 
     // 3. issue (existing vLEI script)
     run.currentStep = "issue";

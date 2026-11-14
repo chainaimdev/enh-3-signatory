@@ -4,7 +4,8 @@
 
 NEAR HACKATHON 2026 · Track: **Agent Economy** · Network: NEAR **testnet** · Demo video: _<link to the X post>_
 
-**Architecture (one page):** https://signatory-architecture.vercel.app/
+**Architecture (one page):** https://signatory-architecture.vercel.app/  
+**Narrated walkthrough (interactive, ~4 min):** https://signatorynarrative.vercel.app/
 
 Same team's other entry: **Outcome AI** — github.com/chainaimdev/chainaim-private-ai
 

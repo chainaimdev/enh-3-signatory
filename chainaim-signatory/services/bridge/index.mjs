@@ -130,7 +130,7 @@ const routes = {
     } catch (e) {
       evidence = { error: e.message };
     }
-    return [200, { ok: true, service: SERVICE, network, contractId: cfg.contractId, registrar: REGISTRAR, sellerAgent, buyerAgent: BUYER_AGENT, evidencePath, commitsDir, evidence, keysLoaded: !noSend }];
+    return [200, { ok: true, service: SERVICE, network, contractId: cfg.contractId, registrar: REGISTRAR, sellerAgent, buyerAgent: BUYER_AGENT, evidencePath, commitsDir, evidence, keysLoaded: !noSend, ap2: ap2On ? { merchantKid: merchant?.kid ?? null } : "off" }]; // 0b: ap2
   },
 
   "POST /check": async (body) => {

@@ -53,7 +53,8 @@
               },
               "may_act": [
                 "JupiterTreasuryAgent",
-                "JupiterInventoryAgent"
+                "JupiterInventoryAgent",
+                "JupiterLogisticsAgent"
               ],
               "subAgents": [
                 {
@@ -100,6 +101,46 @@
                         "description": "Reports whether the requested delivery date can be met for a proposed order.",
                         "tags": [
                           "inventory",
+                          "delivery",
+                          "advisory"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "alias": "JupiterLogisticsAgent",
+                  "agentType": "AI",
+                  "permissions": {
+                    "canDelegate": false,
+                    "scope": "logistics_operations"
+                  },
+                  "may_act": [],
+                  "description": "Sub-delegated advisory agent for freight quotes and transit times (no payment authority)",
+                  "advisoryOnly": true,
+                  "card": {
+                    "name": "Jupiter Logistics Agent",
+                    "description": "Advisory AI agent for JUPITER KNITTING COMPANY, sub-delegated by jupiterSellerAgent. Answers freight-quote and transit-time questions for a proposed order. It has no payment or signing authority.",
+                    "url": null,
+                    "officialRole": "Partner",
+                    "engagementRole": "Logistics Agent",
+                    "skills": [
+                      {
+                        "id": "freight_quote",
+                        "name": "Freight Quote",
+                        "description": "Reports carrier quotes (rate, transit days) for shipping a proposed order.",
+                        "tags": [
+                          "logistics",
+                          "freight",
+                          "advisory"
+                        ]
+                      },
+                      {
+                        "id": "transit_time",
+                        "name": "Transit Time",
+                        "description": "Reports whether the requested delivery date can be met given ocean transit time.",
+                        "tags": [
+                          "logistics",
                           "delivery",
                           "advisory"
                         ]

@@ -100,7 +100,7 @@
           }
         ],
         "validUntil": "2027-11-12T00:00:00Z",
-        "may_act": ["ca:agent/JupiterTreasuryAgent", "ca:agent/JupiterInventoryAgent"]
+        "may_act": ["ca:agent/JupiterTreasuryAgent", "ca:agent/JupiterInventoryAgent", "ca:agent/JupiterLogisticsAgent"]
       },
       "escalatesTo": "ca:person/jupiter-cso",
       "timeout": "PT4H"
@@ -160,6 +160,46 @@
             "name": "Delivery Feasibility",
             "description": "Reports whether the requested delivery date can be met for a proposed order.",
             "tags": ["inventory", "delivery", "advisory"]
+          }
+        ]
+      }
+    },
+    {
+      "@id": "ca:agent/JupiterLogisticsAgent",
+      "@type": "prov:SoftwareAgent",
+      "alias": "JupiterLogisticsAgent",
+      "agentType": "AI",
+      "actedOnBehalfOf": "ca:agent/jupiterSellerAgent",
+      "description": "Sub-delegated advisory agent for freight quotes and transit times (no payment authority)",
+      "advisoryOnly": true,
+      "mandate": {
+        "authorization_details": [
+          {
+            "type": "logistics_operations",
+            "actions": ["freight_quote", "transit_time"]
+          }
+        ],
+        "validUntil": "2027-11-12T00:00:00Z",
+        "may_act": []
+      },
+      "card": {
+        "name": "Jupiter Logistics Agent",
+        "description": "Advisory AI agent for JUPITER KNITTING COMPANY, sub-delegated by jupiterSellerAgent. Answers freight-quote and transit-time questions for a proposed order. It has no payment or signing authority.",
+        "url": null,
+        "officialRole": "Partner",
+        "engagementRole": "Logistics Agent",
+        "skills": [
+          {
+            "id": "freight_quote",
+            "name": "Freight Quote",
+            "description": "Reports carrier quotes (rate, transit days) for shipping a proposed order.",
+            "tags": ["logistics", "freight", "advisory"]
+          },
+          {
+            "id": "transit_time",
+            "name": "Transit Time",
+            "description": "Reports whether the requested delivery date can be met given ocean transit time.",
+            "tags": ["logistics", "delivery", "advisory"]
           }
         ]
       }

@@ -109,6 +109,9 @@ a.tx{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
 .bub .nm{font-weight:600;color:var(--c)}
 .bub .txt{overflow-wrap:anywhere;margin-top:2px}
 .bub time{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+/* change #4: negotiation rounds + swarm checks */
+.neg{margin-top:4px;font-size:12px}.neg table{border-collapse:collapse;width:100%}.neg td,.neg th{padding:2px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.neg .src{font-size:11px;color:var(--muted)}
+.swarm{margin-top:4px;display:grid;gap:3px;font-size:12px}.swarm .ag{font-weight:600}
 .bub.you{margin-left:auto;grid-template-columns:minmax(0,1fr)}
 .bub.you .bb{border-left-width:1px;border-right:4px solid var(--accent);border-radius:12px 4px 12px 12px;background:var(--surface)}
 .typing{font-size:12px;color:var(--muted);margin-top:4px}
@@ -199,6 +202,7 @@ table.data td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align
         <div class="row"><input id="req" type="text" autocomplete="off" maxlength="500" placeholder="Request as the buyer, e.g. Need 8,000 t-shirts, about $84,000" aria-label="Request to the buyer agent"><button id="run-text" class="btn primary" type="button" disabled>Send</button></div>
         <div class="preview" id="preview" aria-live="polite"></div>
         <div class="chips" id="scenarios" role="group" aria-label="Scenarios (click fills the chat box; nothing is sent)"></div>
+        <div class="chips" id="orders" role="group" aria-label="Purchase orders N1–N4 (click starts the run)"></div>
         <div id="run-reason"></div>
       </div>
     </section>
@@ -435,7 +439,14 @@ async function fetchRunnerInfo(){
     const t = AbortSignal.timeout(S.cfg.probeMs * 6);
     const [rn, rh] = await Promise.all([fetch(runnerBase() + "/next-invoice", {cache:"no-store", signal:t}), fetch(runnerBase() + "/health", {cache:"no-store", signal:t})]);
     const h = await jsonOrError(rh), active = isObj(h.activeRun) ? h.activeRun : null;
-    if (rn.ok){ S.runner = {st:"up", phase:"B", next: await jsonOrError(rn), runnable:[], active, why:null}; return; }
+    if (rn.ok){
+      S.runner = {st:"up", phase:"B", next: await jsonOrError(rn), runnable:[], active, why:null, orders:null, negotiator:null};
+      if (Array.isArray(h.modes) && h.modes.includes("order")){   // change #4
+        const ro = await fetch(runnerBase() + "/orders", {cache:"no-store", signal:t}); const o = await jsonOrError(ro);
+        if (ro.ok && o.ok === true && Array.isArray(o.orders)){ S.runner.orders = o.orders; S.runner.negotiator = o.negotiator || null; }
+      }
+      return;
+    }
     const ri = await fetch(runnerBase() + "/invoices", {cache:"no-store", signal:t});
     const j = await jsonOrError(ri);
     if (!ri.ok || j.ok !== true || !Array.isArray(j.invoices)) throw new Error(j.error || `HTTP ${ri.status}`);
@@ -484,6 +495,19 @@ async function startRun(text){
   attachRun(j.runId, body, S.live.pv);
   selectedScenario = null;
 }
+// change #4: purchase order N1–N4 → POST /run {mode:"order", order}
+async function startOrder(o){
+  if (runActive() || S.busy) return;
+  S.live.posting = true; S.live.err = null; renderChat();
+  const body = {mode:"order", order:o.id};
+  let res;
+  try { res = await fetch(runnerBase() + "/run", {method:"POST", headers:{"Content-Type":"application/json"}, cache:"no-store", body: JSON.stringify(body), signal: AbortSignal.timeout(30000)}); }
+  catch (e) { S.live.posting = false; S.live.err = {error:`runner not reachable at ${runnerBase()} (${e.message})`}; renderChat(); return; }
+  const j = await jsonOrError(res);
+  S.live.posting = false;
+  if (!res.ok || j.ok !== true || !isStr(j.runId)){ S.live.err = {http: res.status, error: j.error || `HTTP ${res.status}`, activeRunId: isStr(j.activeRunId) ? j.activeRunId : null}; renderChat(); return; }
+  attachRun(j.runId, {...body, text:`Purchase order ${o.id}: ${o.quantity.toLocaleString("en-US")} units, budget $${(o.buyerBudgetCents/100).toFixed(2)}/unit — ${o.title}`}, null);
+}
 function attachRun(runId, req, pv){
   if (S.live.run && S.live.run.runId === runId) return;
   const run = {runId, req, pv: pv || null, started:null, steps:[], finished:null, lastSeq:0, decide:{busy:null, err:null}, streamErr:null, ctl:null};
@@ -526,6 +550,8 @@ function onRunEvent(run, name, text){
 // True while the run waits for the approver (outcome = waiting, no decision done yet).
 function isWaiting(run){
   if (!run || run.finished) return false;
+  const esc = run.steps.find(s => s.step === "escalation");
+  if (esc && esc.status === "waiting") return true;   // change #4: failed negotiation waits for the officer
   const out = run.steps.find(s => s.step === "outcome"), dec = run.steps.find(s => s.step === "decision");
   return !!(out && out.status === "waiting" && !(dec && dec.status === "done"));
 }
@@ -959,7 +985,7 @@ function who(actor){
   const person = personOf(isStr(id) ? id : "") || personOf(account || "");
   return {name, cls, av: AV[cls] || "▫", account, person};
 }
-const STCLS = s => /no_match|no_amount|bad_amount/i.test(s) ? "pill warn" : /fail|refus|reject|error|no_match|bad_amount|timeout|cancel/i.test(s) ? "pill bad" : /done|paid/i.test(s) ? "pill ok" : /running|waiting|pending/i.test(s) ? "pill warn" : "pill";
+const STCLS = s => /no_match|no_amount|bad_amount|no_deal/i.test(s) ? "pill warn" : /fail|refus|reject|error|no_match|bad_amount|timeout|cancel/i.test(s) ? "pill bad" : /done|paid/i.test(s) ? "pill ok" : /running|waiting|pending/i.test(s) ? "pill warn" : "pill";
 function hashOf(d){
   if (isStr(d.txHash) && TXHASH.test(d.txHash)) return d.txHash;
   if (isStr(d.txUrl)){ const m = d.txUrl.split(/[/?#]/).filter(Boolean).pop(); if (m && TXHASH.test(m)) return m; }
@@ -1015,15 +1041,55 @@ function bubble(d, extra){
   const h = hashOf(d);
   if (h) body.append(el("div",{class:"meta"}, "tx ", txLink(h)));
   if (st === "running") body.append(el("div",{class:"typing",role:"status"}, el("span",{class:"spin","aria-hidden":"true"}), ` Typing… (${a.name}${tgt ? " → " + tgt.name : ""})`));
+  const ox = orderExtra(d); if (ox) body.append(ox);   // change #4
   const det = apiBlock(d); if (det) body.append(det);
   if (d.src) body.append(el("div",{class:"meta",text:d.src}));
   if (extra) body.append(extra);
   return el("div",{class:"bub " + a.cls + (st === "failed" ? " failed" : "") + (d.tone ? " " + d.tone : "")}, a.person ? el("div",{class:"av"}, icon(a.person.kind, a.person.side, 20)) : el("div",{class:"av","aria-hidden":"true",text:a.av}), body);
 }
+// change #4: negotiation rounds table and swarm/treasury checks (each agent with its vLEI identity status)
+const cents = c => Number.isFinite(c) ? "$" + (c/100).toFixed(2) : DASH;
+function orderExtra(d){
+  if (!isObj(d.data)) return null;
+  if (d.step === "negotiate" && Array.isArray(d.data.moves) && d.data.moves.length){
+    const tb = el("tbody");
+    for (const m of d.data.moves){
+      if (!isObj(m)) continue;
+      const ai = isObj(m.ai) ? (m.ai.error ? `AI: ${m.ai.error}` : `AI proposed ${m.ai.action}${Number.isFinite(m.ai.price) ? " " + cents(m.ai.price) : ""}${m.ai.model ? " (" + m.ai.model + ")" : ""}`) : null;
+      tb.append(el("tr",null, el("td",{text:String(m.round)}), el("td",{text:m.from === "seller" ? "Seller agent" : "Buyer agent"}), el("td",{text:`${m.action}${Number.isFinite(m.price) ? " " + cents(m.price) : ""}`}),
+        el("td",null, el("div",{text:scrub(m.reasoning || "")}), el("div",{class:"src",text:`${m.source === "ai" ? "AI ✓ guard kept" : m.source === "ai+guard" ? "AI → guard changed: " + (m.guard || "") : m.source === "order" ? "fixed order opening" : "DD5 rule" + (m.guard && m.guard !== "kept" ? " (guard: " + m.guard + ")" : "")}${ai ? " · " + ai : ""}`}))));
+    }
+    return el("div",{class:"neg"}, el("table",null, el("thead",null, el("tr",null, ...["Round","Who","Move","Why"].map(h => el("th",{text:h})))), tb));
+  }
+  if ((d.step === "swarm" || d.step === "treasury") && Array.isArray(d.data.checks)){
+    const NAMES = {inventory:"Inventory", logistics:"Logistics", seller_treasury:"Seller treasury", buyer_treasury:"Buyer treasury"};
+    return el("div",{class:"swarm"}, ...d.data.checks.filter(isObj).map(c => {
+      const id = isObj(c.identity) ? c.identity : {};
+      const idTxt = id.alias ? (id.verified ? `${id.alias} · vLEI ✓ (KEL-verified${id.chain ? ": " + id.chain : ""})` : `${id.alias} · vLEI ✗ ${id.note || ""}`) : (id.note || "no vLEI identity");
+      const src = isObj(c.data) && isObj(c.data.source) && c.data.source.dataMode ? ` · data: ${c.data.source.dataMode} (${c.data.source.file || "fixture"})` : "";
+      return el("div",null, el("span",{class:c.ok ? "pill ok" : "pill bad",text:c.ok ? "✓" : "✗"}), " ", el("span",{class:"ag",text:NAMES[c.agent] || c.agent}), " ",
+        el("span",{class:"meta",text:`[${idTxt}${src}]`}), el("div",{text:scrub(c.text || "")}));
+    }));
+  }
+  return null;
+}
+function renderOrders(){
+  const g = $("#orders"); if (!g) return; g.replaceChildren();
+  const orders = S.runner && Array.isArray(S.runner.orders) ? S.runner.orders : null;
+  if (!orders) return;
+  g.append(el("span",{class:"meta",text:`Purchase orders (negotiator: ${S.runner.negotiator || "?"}) — click runs it:`}));
+  for (const o of orders){
+    if (!isObj(o) || !isStr(o.id)) continue;
+    g.append(el("button",{class:"chipb",type:"button",disabled: runActive() || S.busy ? "disabled" : null,
+      title:`${o.id}: ${o.title}\n${Number(o.quantity).toLocaleString("en-US")} units · budget ${cents(o.buyerBudgetCents)} · opening ${cents(o.buyerOpeningCents)}\nbased on ${o.basedOn || ""}`,
+      onclick: () => startOrder(o), text:`▶ ${o.id}`}));
+  }
+}
 function escalationBubble(run){
   if (!isWaiting(run)) return null;
   const said = runSaid(run);
-  const out = run.steps.find(s => s.step === "outcome");
+  const escStep = run.steps.find(s => s.step === "escalation" && s.status === "waiting");
+  const out = escStep || run.steps.find(s => s.step === "outcome");
   const reasons = [serviceReason("runner","Runner")].filter(Boolean);
   const mk = what => el("button",{class: what === "approve" ? "btn primary" : "btn", type:"button", disabled: reasons.length || run.decide.busy ? "disabled" : null,
     text: run.decide.busy === what ? "Sending…" : what === "approve" ? "Approve" : "Reject", onclick: () => decideRun(run, what)});
@@ -1032,6 +1098,11 @@ function escalationBubble(run){
     run.decide.busy ? el("div",{class:"typing"}, el("span",{class:"spin","aria-hidden":"true"}), ` Typing… (sending your ${run.decide.busy} through the runner)`) : null,
     reasons.length ? el("div",{class:"reason"}, ...reasons.map(r => el("div",{text:"Blocked: " + r}))) : null,
     run.decide.err ? el("div",{class:"result bad"}, el("span",{class:"mono",text:scrub(run.decide.err)})) : null);
+  if (escStep){   // change #4: no deal between the agents — the officer decides (off-chain, recorded by the runner)
+    const dd = isObj(escStep.data) ? escStep.data : {};
+    return bubble({actor: out.target, target: out.actor, step:"escalation", status:"waiting",
+      text:`The agents found no price (${dd.reason || "no agreement"}). Approve buying at the seller's last price $${Number.isFinite(dd.proposedCents) ? (dd.proposedCents/100).toFixed(2) : "?"}/unit, or reject the order. Your decision is recorded by the runner (not KERI-signed).`}, extra);
+  }
   return bubble({actor: out.target, target:{id:"contract"}, step:"escalation", status:"waiting",
     text:`Escalated to you: ${inv ? `${inv.invoiceNumber} (${inv.amount} ${inv.currency})` : said ? fmt.short(said) : "this run's invoice"} is above the agent's limit and held by the contract. Approve or reject.`}, extra);
 }
@@ -1040,6 +1111,7 @@ function startedLine(s){
   if (isObj(s.invoice)) parts.push(`invoice ${s.invoice.invoiceNumber} · ${s.invoice.amount} ${s.invoice.currency}${s.invoice.realAmount ? " (" + s.invoice.realAmount + ")" : ""}${s.invoice.status ? " · NEAR " + s.invoice.status : ""}`);
   if (isObj(s.mandate)) parts.push(`agent limit ${s.mandate.limit}${s.mandate.revoked ? " · agent TURNED OFF" : ""}`);
   if (isObj(s.request) && isObj(s.request.parsed)){ const p = s.request.parsed; parts.push(p.amountSource ? `read "${p.amountSource}" as ${p.amount} USDC` : "no amount read"); }
+  if (isObj(s.order)) parts.push(`order ${s.order.id} · ${Number(s.order.quantity).toLocaleString("en-US")} units ${s.order.item || ""} · budget $${s.order.budget}/unit · negotiator ${s.negotiator || "rules"}`);   // change #4
   if (s.mode) parts.push(`mode ${s.mode}`);
   return el("div",{class:"sysline",text:`run ${s.runId} started` + (parts.length ? " · " + parts.join(" · ") : "")});
 }
@@ -1158,7 +1230,7 @@ function renderChat(){
   log.scrollTop = atEnd ? log.scrollHeight : top;
 }
 
-function renderAll(){ renderStrip(); renderBanners(); renderBuyer(); renderSeller(); renderLegend(); renderScenarios(); renderChat(); }
+function renderAll(){ renderStrip(); renderBanners(); renderBuyer(); renderSeller(); renderLegend(); renderScenarios(); renderOrders(); renderChat(); }
 function fullPage(title, ...body){ $("#strip").replaceChildren(); $("#main").replaceChildren(el("div",{class:"full",role:"alert"}, el("h2",{text:title}), ...body)); }
 
 /* ---------- boot ---------- */

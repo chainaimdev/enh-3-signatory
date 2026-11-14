@@ -133,6 +133,7 @@ const routes = {
       gasTgas,
       commitsDir,
       keysLoaded: !noSend,
+      ap2: ap2On ? { buyerKid: buyerAp2?.kid ?? null, merchantKid: merchantJwk?.kid ?? null } : "off", // 0b
     },
   ],
 

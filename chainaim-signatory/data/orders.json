@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "comment": "Change #4 purchase orders N1-N4. Prices are US cents per unit (USDC is the settlement token). The negotiation rules are DD5's (dd5-final-NEAR @4312cb1, A2A/js/src/agents/seller-agent + buyer-agent ruleBasedDecision / apply*Constraints), with DD5's rupee price points restated 1:1 as US cents (DD5 ₹350 floor -> $3.50). Real total = quantity x price; on-chain amount = real USD / demoScale (config). Quantities are multiples of 100 so every total is whole dollars.",
+  "source": { "repo": "dd5-final-NEAR", "commit": "4312cb1", "copied": "data/dd5/ (DEMO-DATA fixtures and 4 scenarios, unchanged)" },
+  "product": { "item": "cotton fabric", "code": "FAB-COTTON-180GSM", "unit": "unit" },
+  "seller": {
+    "agent": "jupiterSellerAgent",
+    "floorCents": 350,
+    "minMarginCents": 5,
+    "acceptTargetsCents": { "1": 380, "2": 370, "3": 360 },
+    "openingMarkup": 1.25,
+    "openingOverBuyer": 1.3,
+    "concession": { "2": 0.3, "default": 0.4 },
+    "maxRounds": 3
+  },
+  "buyer": {
+    "agent": "tommyBuyerAgent",
+    "acceptThresholdsCents": { "1": 340, "2": 360, "3": 380 },
+    "concession": { "3": 0.6, "default": 0.4 },
+    "finalRoundNearCents": 30,
+    "nearBudgetCents": 10,
+    "maxConcessionGap": 0.3,
+    "maxRounds": 3
+  },
+  "sellerTreasury": {
+    "agent": "JupiterTreasuryAgent",
+    "comment": "DD5 treasury-agent inputs (fixture _realEquivalent: unitProductionCost ₹330, overheadPerOrder ₹30,000, hurdleRateAnnual 12%) restated 1:100 as USD; Net 30.",
+    "unitCostCents": 330,
+    "overheadPerOrderUsd": 300,
+    "hurdleRateAnnual": 0.12,
+    "paymentTermsDays": 30
+  },
+  "buyerTreasury": { "agent": "TommyTreasuryAgent" },
+  "inventory": { "agent": "JupiterInventoryAgent", "fixture": "dd5/DEMO-DATA/inventory/erpnext-bin-FAB-COTTON-180GSM.json" },
+  "logistics": { "agent": "JupiterLogisticsAgent", "comment": "change #14: sub-agent of jupiterSellerAgent (legentvLEI/add-subagent.sh); shown unverified until it is in the exported evidence", "fixture": "dd5/DEMO-DATA/logistics/dcsa-MAA-LAX-50000units.json", "quoteMaxUnits": 50000 },
+  "orders": [
+    { "id": "N1", "title": "Closes in round 1 — agent pays", "basedOn": "new (DD5 R1 rule: buyer opens >= $3.80)", "quantity": 20000, "buyerBudgetCents": 415, "buyerOpeningCents": 385 },
+    { "id": "N2", "title": "Closes in round 2 — above agent limit, CPO approves on-chain", "basedOn": "close-r3-balanced-cotton (budget $4.15)", "quantity": 40000, "buyerBudgetCents": 415, "buyerOpeningCents": 330 },
+    { "id": "N3", "title": "Closes in round 3 — agent pays", "basedOn": "close-r3-narrow-zopa-cotton (budget $3.95)", "quantity": 20000, "buyerBudgetCents": 395, "buyerOpeningCents": 280 },
+    { "id": "N4", "title": "No deal (budget below seller floor) — officer decides", "basedOn": "escalate-budget-below-floor-cotton (budget $3.45)", "quantity": 20000, "buyerBudgetCents": 345, "buyerOpeningCents": 300 }
+  ]
+}

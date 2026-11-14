@@ -9,9 +9,13 @@
 //              [--issue-timeout-s 360] [--export-timeout-s 120] [--max-amount 0.25]
 //              [--invoice-template appconfig/invoiceConfig-near-2.json] [--invoice-year 2026]
 //              [--keria-container keria] [--shell-container tsx_shell]
+//     Change #4 (mode "order"): [--orders-dir ../data] [--negotiator rules|llm] [--llm-url <base url>] [--llm-model <name>]
+//              [--llm-timeout-s 15] [--llm-key-env SIGNATORY_LLM_API_KEY]   (the key is read from that env var only)
+//              [--pace-ms 0]  (pause between swarm checks / negotiation moves so a demo can be followed; 0 = none)
 // Endpoints:
 //   GET  /health · GET /invoices · GET /preflight · GET /next-invoice[?text=…]
-//   POST /run {said} | {text} | {text, mode:"issue"}  → {ok, runId, eventsUrl, mode, state, result?}
+//   POST /run {said} | {text} | {text, mode:"issue"} | {order:"N1", mode:"order"}  → {ok, runId, eventsUrl, mode, state, result?}
+//   GET  /orders (change #4: the purchase orders N1–N4 and the negotiator mode)
 //   GET  /runs/:id · GET /runs/:id/events (SSE) · POST /runs/:id/decide {decision} · POST /runs/:id/cancel
 // Origin rule (P8): an Origin header other than allowOrigin → 403; no Origin → allowed (127.0.0.1 bind).
 import { mkdirSync, readFileSync, rmSync } from "node:fs";
@@ -22,7 +26,9 @@ import { pathToFileURL } from "node:url";
 import { loadConfig, ROOT, rpc, view } from "../../scripts/lib/common.mjs";
 import { HttpError, log } from "../shared/http.mjs";
 import { isSaid } from "../shared/near.mjs";
+import { createLlmProposer } from "../shared/llm.mjs";
 import { createRunner, RunnerError } from "./engine.mjs";
+import { loadOrderBook } from "./swarm.mjs";
 import { parseRequest, toUnits } from "./logic.mjs";
 import { nextInvoiceNumber, preflight, readGrantInfo, runProcess, writeInvoiceConfig } from "./vlei.mjs";
 
@@ -39,8 +45,9 @@ export async function probe(url) {
   }
 }
 
-/** opts: {cfg, evidencePath, signerUrl, bridgeUrl, ap2?: boolean, vlei?: {dir, exportNode, issueTimeoutMs, exportTimeoutMs, template, year, keriaContainer, shellContainer}} */
-export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 = false, fetchImpl = fetch, run = runProcess }) {
+/** opts: {cfg, evidencePath, signerUrl, bridgeUrl, ap2?: boolean, vlei?: {dir, exportNode, issueTimeoutMs, exportTimeoutMs, template, year, keriaContainer, shellContainer},
+ *        order?: {book, negotiator: "rules"|"llm", propose}} (change #4) */
+export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 = false, order = null, fetchImpl = fetch, run = runProcess }) {
   const post = async (base, path, body) => {
     const t0 = Date.now();
     try {
@@ -78,6 +85,8 @@ export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 =
     deps.ap2Checkout = (said) => post(bridgeUrl, "/checkout", { said });
     deps.ap2Mandate = (b) => post(signerUrl, "/mandate", b);
   }
+  // change #4: purchase orders (needs the Phase B tools for the steps after the negotiation)
+  if (order && vlei) Object.assign(deps, { orderBook: order.book, negotiator: order.negotiator, propose: order.propose ?? null });
   if (vlei) {
     const sellerAgent = cfg.sellerAgent ?? "jupiterSellerAgent";
     const agentAccount = Object.values(cfg.accounts.aliases).find((e) => e.role === "buyer_agent")?.account;
@@ -165,10 +174,15 @@ export function startRunnerServer({ cfg, runner, deps = {}, port, allowOrigin, s
       const m = /^\/runs\/([A-Za-z0-9-]{1,64})(\/events|\/decide|\/cancel)?$/.exec(path);
       if (req.method === "GET" && path === "/health") {
         const [signer, bridge] = await Promise.all([probe(signerUrl), probe(bridgeUrl)]);
-        return send(200, { ok: true, service: SERVICE, contractId: cfg.contractId, modes: deps.preflight ? ["invoice", "issue"] : ["invoice"], activeRun: runner.summary(runner.active) || null, signer, bridge });
+        return send(200, { ok: true, service: SERVICE, contractId: cfg.contractId, modes: deps.preflight ? ["invoice", "issue", ...(deps.orderBook ? ["order"] : [])] : ["invoice"], negotiator: deps.negotiator ?? null, ap2: deps.ap2Checkout ? "on" : "off", activeRun: runner.summary(runner.active) || null, signer, bridge });
       }
       if (req.method === "GET" && path === "/invoices") {
         return send(200, { ok: true, invoices: await runner.invoices() });
+      }
+      if (req.method === "GET" && path === "/orders") {
+        if (!deps.orderBook) throw new HttpError(501, "order mode not configured");
+        const b = deps.orderBook;
+        return send(200, { ok: true, negotiator: deps.negotiator, product: b.product, source: b.source, orders: b.orders });
       }
       if (req.method === "GET" && path === "/preflight") {
         if (!deps.preflight) throw new HttpError(501, "issue mode not configured");
@@ -191,7 +205,8 @@ export function startRunnerServer({ cfg, runner, deps = {}, port, allowOrigin, s
         const body = await readJsonBody(req);
         if (body.said !== undefined && !isSaid(body.said)) throw new HttpError(400, "said must be a SAID string");
         if (body.mode === "issue" && !deps.preflight) throw new HttpError(501, "issue mode not configured");
-        const run = await runner.start({ said: body.said, text: body.text, mode: body.mode });
+        if (body.mode === "order" && !deps.orderBook) throw new HttpError(501, "order mode not configured");
+        const run = await runner.start({ said: body.said, text: body.text, mode: body.mode, order: body.order });
         return send(200, { ok: true, runId: run.id, eventsUrl: `/runs/${run.id}/events`, mode: run.mode, state: run.state, result: run.result });
       }
       if (m && req.method === "GET" && !m[2]) {
@@ -253,6 +268,13 @@ async function main() {
       "keria-container": { type: "string" },
       "shell-container": { type: "string" },
       ap2: { type: "string" },
+      "orders-dir": { type: "string" },
+      negotiator: { type: "string" },
+      "llm-url": { type: "string" },
+      "llm-model": { type: "string" },
+      "llm-timeout-s": { type: "string" },
+      "llm-key-env": { type: "string" },
+      "pace-ms": { type: "string" },
     },
   });
   const cfg = loadConfig(flags.config);
@@ -278,16 +300,32 @@ async function main() {
 
   if (!["on", "off"].includes(flags.ap2 ?? "off")) throw new Error("--ap2 must be on or off");
   const ap2 = (flags.ap2 ?? "off") === "on"; // change #3: bridge and signer must also run with --ap2 on
-  const deps = buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 });
+  // change #4: order book + negotiator. "llm" needs --llm-url and the key in the env var; per move, an unreachable AI
+  // falls back to the DD5 rule (labelled "rules" in the run). Default "rules".
+  const negotiator = flags.negotiator ?? "rules";
+  if (!["rules", "llm"].includes(negotiator)) throw new Error("--negotiator must be rules or llm");
+  const keyEnv = flags["llm-key-env"] ?? "SIGNATORY_LLM_API_KEY";
+  if (negotiator === "llm" && !flags["llm-url"]) throw new Error("--negotiator llm needs --llm-url <base url of an OpenAI-compatible chat endpoint>");
+  if (negotiator === "llm" && !process.env[keyEnv]) throw new Error(`--negotiator llm needs the API key in the environment variable ${keyEnv}`);
+  const ordersDir = resolve(flags["orders-dir"] ?? resolve(ROOT, "data"));
+  const order = {
+    book: loadOrderBook(ordersDir),
+    negotiator,
+    propose: negotiator === "llm" ? createLlmProposer({ baseUrl: flags["llm-url"], model: flags["llm-model"] ?? "default", keyEnv, timeoutMs: Number(flags["llm-timeout-s"] ?? 15) * 1000 }) : null,
+  };
+  const deps = buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2, order });
   const md = await view(cfg.rpcUrl, cfg.token, "ft_metadata");
   if (md.decimals !== cfg.tokenDecimals) throw new Error(`token decimals ${md.decimals} ≠ config ${cfg.tokenDecimals} (G-39)`);
   await view(cfg.rpcUrl, cfg.contractId, "get_config");
   deps.loadEvidence();
-  const runner = createRunner({ cfg, deps, pollMs, waitTimeoutMs: waitMinutes * 60000, maxUnits, onLog: (f) => log(SERVICE, f) });
+  const paceMs = Number(flags["pace-ms"] ?? 0);
+  if (!Number.isInteger(paceMs) || paceMs < 0 || paceMs > 10000) throw new Error("--pace-ms must be an integer 0–10000");
+  const runner = createRunner({ cfg, deps, pollMs, waitTimeoutMs: waitMinutes * 60000, maxUnits, paceMs, onLog: (f) => log(SERVICE, f) });
   log(SERVICE, {
     event: "ready", contractId: cfg.contractId, signerUrl, bridgeUrl, evidencePath, pollMs, waitMinutes, allowOrigin,
     vleiDir: vlei.dir, exportNode: vlei.exportNode, issueTimeoutS: vlei.issueTimeoutMs / 1000, exportTimeoutS: vlei.exportTimeoutMs / 1000,
     maxAmount: flags["max-amount"] ?? "0.25", template: vlei.template, ap2: ap2 ? "on" : "off",
+    negotiator, paceMs, ...(negotiator === "llm" ? { llmUrl: flags["llm-url"], llmModel: flags["llm-model"] ?? "default", llmKeyEnv: keyEnv } : {}), ordersDir, orders: order.book.orders.map((o) => o.id).join(","),
   });
   startRunnerServer({ cfg, runner, deps, port, allowOrigin, signerUrl, bridgeUrl });
 }

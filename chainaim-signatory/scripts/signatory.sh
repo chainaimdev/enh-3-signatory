@@ -2,7 +2,12 @@
 # signatory.sh — one command for Signatory: first-time setup, daily start, stop.  (2026-11-14)
 #
 #   bash scripts/signatory.sh setup [--fresh-vlei [--yes]] [--skip-npm] [--export-node <path>] [--dry-run]
-#   bash scripts/signatory.sh start [--ap2 on|off] [--vlei] [--no-ui] [--dry-run]
+#   bash scripts/signatory.sh start [--ap2 on|off] [--vlei] [--no-ui] [--background] [--dry-run]
+#                                   (default: runs in THIS terminal — Ctrl+C or closing the window stops all services;
+#                                    --background = old behaviour, services keep running until `stop`)
+#                                   [--pace-ms 1500 (pause per negotiation move; 0 = instant)]
+#                                   [--negotiator rules|llm --llm-url <url> [--llm-model <name>]]   (change #4;
+#                                   llm reads the key from env SIGNATORY_LLM_API_KEY — never put the key on the command line)
 #   bash scripts/signatory.sh stop  [--vlei] [--dry-run]
 #
 # Runs from any folder (it finds its own). Run it in WSL Ubuntu: the signer and bridge read NEAR keys from
@@ -10,7 +15,7 @@
 #
 # setup  (first time on a PC)
 #   1. tools: node >= 22, npm, jq, curl (+ docker with --fresh-vlei)
-#   2. --fresh-vlei: DESTRUCTIVE fresh vLEI stack + 4D run (≈ 25 min) — legentvLEI/stop.sh --fresh, setup.sh,
+#   2. --fresh-vlei: DESTRUCTIVE fresh vLEI stack + full org (≈ 25 min) via legentvLEI/run-5D.sh: build-org-config.js, stop.sh --fresh, setup.sh,
 #      deploy.sh --fresh, saidify-and-restart.sh, run-all-buyerseller-4D-with-subdelegation.sh with the full Signatory
 #      org (appconfig/generated/config-4c.json + config-4d.json, --force-base), the invoice issuance proof
 #      (task-scripts/invoice/invoice-export-issuance.sh), then the strict evidence export. It wipes the identities on THIS PC, so it asks you to type FRESH (or pass --yes).
@@ -40,6 +45,7 @@ CONFIG="$ROOT/config/signatory.json"
 
 MODE="${1:-}"; shift || true
 DRY=0; AP2="on"; WITH_VLEI=0; NO_UI=0; FRESH_VLEI=0; YES=0; SKIP_NPM=0
+NEGOTIATOR="rules"; LLM_URL=""; LLM_MODEL=""; BACKGROUND=0; PACE_MS=1500
 EXPORT_NODE="/mnt/c/Program Files/nodejs/node.exe"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -51,12 +57,22 @@ while [ $# -gt 0 ]; do
     --yes) YES=1 ;;
     --skip-npm) SKIP_NPM=1 ;;
     --export-node) shift; EXPORT_NODE="${1:-}" ;;
+    --negotiator) shift; NEGOTIATOR="${1:-}" ;;
+    --background) BACKGROUND=1 ;;
+    --pace-ms) shift; PACE_MS="${1:-}" ;;
+    --llm-url) shift; LLM_URL="${1:-}" ;;
+    --llm-model) shift; LLM_MODEL="${1:-}" ;;
     -h|--help) sed -n '2,30p' "$0"; exit 0 ;;
     *) echo "unknown flag: $1 (see --help)" >&2; exit 64 ;;
   esac
   shift
 done
 case "$AP2" in on|off) ;; *) echo "--ap2 must be on or off" >&2; exit 64 ;; esac
+case "$NEGOTIATOR" in rules|llm) ;; *) echo "--negotiator must be rules or llm" >&2; exit 64 ;; esac
+case "$PACE_MS" in ""|*[!0-9]*) echo "--pace-ms must be a whole number of milliseconds" >&2; exit 64 ;; esac
+RUNNER_EXTRA=(--negotiator "$NEGOTIATOR" --pace-ms "$PACE_MS")
+[ -n "$LLM_URL" ] && RUNNER_EXTRA+=(--llm-url "$LLM_URL")
+[ -n "$LLM_MODEL" ] && RUNNER_EXTRA+=(--llm-model "$LLM_MODEL")
 
 ok()   { printf '  \033[32mPASS\033[0m %s\n' "$*"; }
 warn() { printf '  \033[33mWARN\033[0m %s\n' "$*"; }
@@ -89,7 +105,29 @@ wait_http() { # url seconds
 start_bg() { # name dir logfile cmd...
   local name="$1" dir="$2" log="$3"; shift 3
   if [ "$DRY" = 1 ]; then echo "  (dry-run) cd $dir && $* > $log 2>&1 &"; return 0; fi
-  ( cd "$dir" && nohup "$@" >"$log" 2>&1 & echo $! >"$RUN_DIR/$name.pid" )
+  if [ "$BACKGROUND" = 1 ]; then
+    ( cd "$dir" && nohup "$@" >"$log" 2>&1 & echo $! >"$RUN_DIR/$name.pid" )
+  else   # foreground (default): no nohup — the services end with this terminal
+    ( cd "$dir" && exec "$@" >"$log" 2>&1 ) & echo $! >"$RUN_DIR/$name.pid"
+  fi
+}
+
+# Foreground mode: stay in this terminal; Ctrl+C / closing the window / a crashed service → stop everything.
+hold_foreground() {
+  [ "$DRY" = 1 ] && { echo "  (dry-run) would stay in the foreground until Ctrl+C"; return 0; }
+  trap 'echo; stop_all; exit 0' INT TERM HUP
+  echo
+  echo "  Running in this terminal. Press Ctrl+C (or close this window) to stop all services."
+  local names=(signer bridge runner); [ "$NO_UI" = 1 ] || names+=(ui)
+  while sleep 2; do
+    for n in "${names[@]}"; do
+      local pid; pid="$(cat "$RUN_DIR/$n.pid" 2>/dev/null || true)"
+      if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+        bad "$n stopped unexpectedly — last log lines:"; tail -n 15 "$RUN_DIR/$n.log" 2>/dev/null
+        trap - INT TERM HUP; stop_all; exit 1
+      fi
+    done
+  done
 }
 
 stop_all() {
@@ -136,14 +174,14 @@ do_start() {
     hdr "vLEI stack (same identities, no 4D): legentvLEI/start-vlei.sh"
     ( cd "$VLEI" && run ./start-vlei.sh ) || { bad "start-vlei.sh failed — see its output above"; exit 1; }
   fi
-  hdr "services (ap2 $AP2)"
+  hdr "services (ap2 $AP2, negotiator $NEGOTIATOR, pace ${PACE_MS} ms)"
   start_bg signer "$SERVICES" "$RUN_DIR/signer.log" node signer/index.mjs --ap2 "$AP2"
   start_bg bridge "$SERVICES" "$RUN_DIR/bridge.log" node bridge/index.mjs --ap2 "$AP2"
   for s in "signer $SIGNER_PORT" "bridge $BRIDGE_PORT"; do
     set -- $s
     if wait_http "http://127.0.0.1:$2/health" 60; then ok "$1 up on :$2"; else bad "$1 did not start — last log lines:"; tail -n 15 "$RUN_DIR/$1.log"; exit 1; fi
   done
-  start_bg runner "$SERVICES" "$RUN_DIR/runner.log" node runner/index.mjs --ap2 "$AP2"
+  start_bg runner "$SERVICES" "$RUN_DIR/runner.log" node runner/index.mjs --ap2 "$AP2" "${RUNNER_EXTRA[@]}"
   if wait_http "http://127.0.0.1:$RUNNER_PORT/health" 90; then ok "runner up on :$RUNNER_PORT"; else bad "runner did not start — last log lines:"; tail -n 15 "$RUN_DIR/runner.log"; exit 1; fi
 
   hdr "UI config → configured contract and service URLs (health --stage all --write-ui-config)"
@@ -155,6 +193,7 @@ do_start() {
     if wait_http "http://127.0.0.1:$UI_PORT/" 20; then ok "UI up on :$UI_PORT"; else bad "UI did not start"; tail -n 10 "$RUN_DIR/ui.log"; exit 1; fi
   fi
   summary
+  [ "$BACKGROUND" = 1 ] || hold_foreground
 }
 
 # ------------------------------------------------------------------ setup
@@ -169,30 +208,17 @@ do_setup() {
 
   if [ "$FRESH_VLEI" = 1 ]; then
     command -v docker >/dev/null && docker ps >/dev/null 2>&1 && ok "docker reachable" || { bad "docker not reachable"; echo "  fix: start Docker Desktop (WSL integration on); permission denied → sudo usermod -aG docker \$USER"; exit 1; }
-    hdr "vLEI: FRESH stack + 4D (destructive on this PC)"
+    hdr "vLEI: FRESH stack + full org via run-5D.sh (destructive on this PC)"
     if [ "$YES" != 1 ] && [ "$DRY" != 1 ]; then
       echo "  This deletes the vLEI identities, credentials and passcodes on THIS PC and creates new ones (≈ 25 min)."
       read -r -p "  Type FRESH to continue: " ans
       [ "$ans" = "FRESH" ] || { echo "  cancelled"; exit 1; }
     fi
-    if [ ! -f "$VLEI/.env" ]; then
-      run sh -c "printf 'UID=%s\nGID=%s\n' \"\$(id -u)\" \"\$(id -g)\" > '$VLEI/.env'" && ok "created legentvLEI/.env (UID/GID only)"
-    else
-      ok "legentvLEI/.env exists (not read)"
-    fi
-    ( cd "$VLEI" \
-      && run ./stop.sh --fresh \
-      && run ./setup.sh \
-      && run ./deploy.sh --fresh \
-      && run ./saidify-and-restart.sh \
-      && run ./run-all-buyerseller-4D-with-subdelegation.sh --config-4c ./appconfig/generated/config-4c.json \
-             --config-4d ./appconfig/generated/config-4d.json --force-base --invoice-config ./appconfig/invoiceConfig-near.json \
-      && run env MSYS_NO_PATHCONV=1 ./task-scripts/invoice/invoice-export-issuance.sh jupiterSellerAgent ) \
-      || { bad "vLEI step failed — see its output above (if WSL cannot run it, run this setup step in Git Bash)"; exit 1; }
-    hdr "evidence export (strict) → UI/data/signatory-evidence.json"
-    local exnode="node"; [ -x "$EXPORT_NODE" ] && exnode="$EXPORT_NODE"
-    ( cd "$VLEI" && run "$exnode" export-signatory-evidence.js --strict --out ../UI/data/signatory-evidence.json ) \
-      && ok "evidence exported" || { bad "export failed"; missing+=("re-run the export: cd legentvLEI && node export-signatory-evidence.js --strict --out ../UI/data/signatory-evidence.json"); }
+    # one command for the whole org (4 officers, 4 agents, 4 sub-agents): legentvLEI/run-5D.sh
+    # (company files → config, fresh stack, 4D, issuance proof, strict export, strict trust tree)
+    ( cd "$VLEI" && run ./run-5D.sh --yes --export-node "$EXPORT_NODE" ) \
+      && ok "vLEI org built and evidence exported (run-5D.sh)" \
+      || { bad "run-5D.sh failed — see its output above (if WSL cannot run it, run legentvLEI/run-5D.sh in Git Bash)"; exit 1; }
   else
     hdr "vLEI"
     warn "skipped (no --fresh-vlei): the existing stack and identities are kept. Daily: signatory.sh start --vlei"

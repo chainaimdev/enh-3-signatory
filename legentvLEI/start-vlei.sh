@@ -69,6 +69,7 @@ while [ $# -gt 0 ]; do
 done
 
 cd "$(dirname "$0")"
+SCRIPT_DIR="$(pwd -P)"   # absolute; re-entered before node runs (a Docker/WSL restart can leave a stale cwd → uv_cwd ENOENT)
 
 echo -e "${CYAN}══ start-vlei.sh: restart with existing identities ══${NC}"
 
@@ -116,6 +117,7 @@ if [ "$RUN_CHECK" -eq 0 ]; then
 fi
 
 echo -e "${GREEN}[5/5] Checking identities...${NC}"
+cd / && cd "$SCRIPT_DIR" || { echo "cannot re-enter $SCRIPT_DIR"; exit 1; }
 node ./print-org-trust-tree.js --config "$CONFIG_FILE" --task-data ./task-data --strict
 
 QVI_OOBI="$(jq -r '.oobi // empty' ./task-data/qvi-info.json 2>/dev/null || true)"

@@ -18,7 +18,13 @@
 //   Change #3 (only when the runner runs with --ap2 on; absent otherwise, and every flow is unchanged):
 //                 deps.ap2Checkout(said) → bridge POST /checkout · deps.ap2Mandate({said, checkout, merchantAuthorization})
 //                 → signer POST /mandate. Used inside the Phase B `accept` step, after verify_seller.
+//   Change #4 mode "order" (purchase order → swarm → negotiation → treasury → the Phase B steps from verify_buyer):
+//                 deps.orderBook (swarm.mjs loadOrderBook) · deps.propose (llm.mjs proposer, or null = DD5 rules only)
+//                 · deps.negotiator ("rules" | "llm"). Steps: preflight, request, swarm, negotiate, escalation,
+//                 treasury, verify_buyer … decision. A failed negotiation waits for the officer (decide approve/reject).
 import { formatUnits } from "../../scripts/lib/common.mjs";
+import { negotiate, usd } from "../shared/negotiate.mjs";
+import { preDealChecks, treasuryChecks } from "./swarm.mjs";
 import { evidenceInvoices } from "../bridge/rules.mjs";
 import { listInvoices, matchInvoice, parseRequest } from "./logic.mjs";
 import { agentChain, lineItemDescription, parseIssueOutput, proofJson, proofTail } from "./vlei.mjs";
@@ -26,6 +32,8 @@ import { agentChain, lineItemDescription, parseIssueOutput, proofJson, proofTail
 export const ORCHESTRATOR = "runner (no keys)";
 export const STEPS = ["offer", "accept", "register", "pay", "outcome", "decision"];
 export const STEPS_B = ["preflight", "request", "verify_buyer", "issue", "offer", "verify_seller", "accept", "register", "pay", "outcome", "decision"];
+// change #4: purchase order with a negotiation in front of the Phase B steps
+export const STEPS_C = ["preflight", "request", "swarm", "negotiate", "escalation", "treasury", "verify_buyer", "issue", "offer", "verify_seller", "accept", "register", "pay", "outcome", "decision"];
 
 export class RunnerError extends Error {
   constructor(status, message, extra = {}) {
@@ -49,6 +57,7 @@ export function createRunner({
   keepRuns = 20,
   minUnits = 100n, // 0.0001 USDC (vLEI float guard)
   maxUnits = 250000n, // --max-amount 0.25 (the CPO limit)
+  paceMs = 0, // change #4: pause between swarm checks / negotiation moves so a demo can follow them (--pace-ms)
   onLog = () => {},
 }) {
   const decimals = cfg.tokenDecimals;
@@ -84,7 +93,7 @@ export function createRunner({
 
   function newRun(mode) {
     const id = `run-${Date.now().toString(36)}-${(++counter).toString(36)}`;
-    const run = { id, mode, plan: mode === "issue" ? STEPS_B : STEPS, state: "running", events: [], listeners: new Set(), seq: 0, said: null, waiter: null, createdAt: new Date().toISOString() };
+    const run = { id, mode, plan: mode === "order" ? STEPS_C : mode === "issue" ? STEPS_B : STEPS, state: "running", events: [], listeners: new Set(), seq: 0, said: null, waiter: null, createdAt: new Date().toISOString() };
     runs.set(id, run);
     if (runs.size > keepRuns) {
       for (const [k, r] of runs) {
@@ -103,7 +112,7 @@ export function createRunner({
   }
 
   function step(run, name, status, actor, target, text, extra = {}) {
-    const index = run.plan.indexOf(name) + (run.mode === "issue" ? 0 : 1);
+    const index = run.plan.indexOf(name) + (run.mode === "invoice" ? 1 : 0);
     const api = { ...(extra.api || {}), orchestrator: ORCHESTRATOR };
     emit(run, "step", { step: name, index, status, actor, target, text, ...extra, api });
   }
@@ -120,9 +129,10 @@ export function createRunner({
 
   // ---------------------------------------------------------------- start
 
-  async function start({ said, text, mode } = {}) {
+  async function start({ said, text, mode, order } = {}) {
     if (active) throw new RunnerError(409, "a run is already active", { activeRunId: active.id });
-    if (mode !== undefined && !["invoice", "issue"].includes(mode)) throw new RunnerError(400, 'mode must be "invoice" or "issue"');
+    if (mode !== undefined && !["invoice", "issue", "order"].includes(mode)) throw new RunnerError(400, 'mode must be "invoice", "issue" or "order"');
+    if (mode === "order") return startOrder(order); // change #4
     if (said === undefined && (typeof text !== "string" || !text.trim())) throw new RunnerError(400, "give said or text");
     if (said !== undefined && typeof said !== "string") throw new RunnerError(400, "said must be a string");
     if (text !== undefined && (typeof text !== "string" || text.length > 500)) throw new RunnerError(400, "text must be a string of at most 500 characters");
@@ -222,6 +232,143 @@ export function createRunner({
       if (run.state !== "finished") finish(run, "error", `runner error: ${e.message}`, { failedStep: run.currentStep });
     });
     return run;
+  }
+
+  // ---------------------------------------------------------------- change #4: purchase order
+
+  function startOrder(orderId) {
+    if (!deps.orderBook || !deps.preflight) throw new RunnerError(501, "order mode not configured");
+    if (typeof orderId !== "string") throw new RunnerError(400, 'mode "order" needs {order: "<id>"}');
+    const order = deps.orderBook.orders.find((o) => o.id === orderId);
+    if (!order) throw new RunnerError(404, `no order ${orderId} (have ${deps.orderBook.orders.map((o) => o.id).join(", ")})`);
+    const run = newRun("order");
+    active = run;
+    emit(run, "run", {
+      state: "started", mode: run.mode, steps: run.plan, said: null,
+      order: { ...order, item: deps.orderBook.product.item, productCode: deps.orderBook.product.code, budget: usd(order.buyerBudgetCents), opening: usd(order.buyerOpeningCents) },
+      negotiator: deps.negotiator ?? "rules",
+    });
+    executeOrder(run, order).catch((e) => {
+      if (run.state !== "finished") finish(run, "error", `runner error: ${e.message}`, { failedStep: run.currentStep });
+    });
+    return run;
+  }
+
+  async function executeOrder(run, order) {
+    const book = deps.orderBook;
+    const fail = (name, actor, target, text, extra, result = "error", finishText = text) => {
+      step(run, name, "failed", actor, target, text, extra);
+      finish(run, result, finishText, { failedStep: name });
+    };
+    const qty = order.quantity.toLocaleString("en-US");
+    const pace = () => (paceMs > 0 ? deps.sleep(paceMs) : Promise.resolve());
+
+    // 0. preflight (same checks as Phase B)
+    run.currentStep = "preflight";
+    const t0 = Date.now();
+    const pf = await deps.preflight();
+    const pfMs = Date.now() - t0;
+    const pfApi = { service: "runner", method: "GET", path: "/preflight", httpStatus: null, ms: pfMs };
+    if (!pf.ok) {
+      const bad = pf.checks.filter((c) => !c.ok);
+      return fail("preflight", ACTORS.runner, ACTORS.runner, `Preflight failed: ${bad.map((c) => `${c.name} (${c.detail})`).join("; ")} — nothing ordered`, { api: pfApi, data: { checks: pf.checks } });
+    }
+
+    // 1. request: the buyer agent's purchase order (unsigned request)
+    run.currentStep = "request";
+    step(run, "request", "done", ACTORS.agent, ACTORS.seller,
+      `Purchase order ${order.id}: ${qty} units ${book.product.item} (${book.product.code}) — opening offer $${usd(order.buyerOpeningCents)}/unit (unsigned request)`,
+      { api: pfApi, data: { signed: false, label: "unsigned request", order: order.id, quantity: order.quantity, item: book.product.item, productCode: book.product.code, openingCents: order.buyerOpeningCents, basedOn: order.basedOn, preflight: { ok: true, ms: pfMs, checks: pf.checks }, mandate: mandateView(pf.mandate) } });
+
+    let evidence = null;
+    try {
+      evidence = deps.loadEvidence();
+    } catch {
+      evidence = null;
+    }
+
+    // 2. swarm (seller side, before pricing): inventory + logistics
+    run.currentStep = "swarm";
+    const swarmApi = { service: "swarm", method: "read", path: "data/dd5/DEMO-DATA (inventory, logistics)" };
+    const pre = preDealChecks({ book, order, evidence });
+    for (let i = 0; i < pre.length && paceMs > 0; i++) {
+      step(run, "swarm", "running", ACTORS.seller, ACTORS.agent, `Checking: ${pre.slice(0, i + 1).map((c) => c.agent).join(", ")}…`, { api: swarmApi, data: { checks: pre.slice(0, i + 1) } });
+      await pace();
+    }
+    if (!pre.every((c) => c.ok)) {
+      return fail("swarm", ACTORS.seller, ACTORS.agent, `Swarm check failed: ${pre.filter((c) => !c.ok).map((c) => c.text).join("; ")}`, { api: swarmApi, data: { checks: pre } }, "no_deal");
+    }
+    step(run, "swarm", "done", ACTORS.seller, ACTORS.agent, pre.map((c) => c.text).join(" · "), { api: swarmApi, data: { checks: pre } });
+
+    // 3. negotiate (DD5 rules; AI proposals when configured, always checked by the guard)
+    run.currentStep = "negotiate";
+    const negApi = { service: "negotiator", method: deps.negotiator === "llm" ? "ai+guard" : "rules", path: "services/shared/negotiate.mjs" };
+    step(run, "negotiate", "running", ACTORS.agent, ACTORS.seller, `Negotiating ${qty} units: up to ${book.seller.maxRounds} rounds (${deps.negotiator === "llm" ? "AI proposals checked by the DD5 guard" : "DD5 rules"})`, { api: negApi, data: { moves: [] } });
+    const moves = [];
+    const neg = await negotiate({
+      order, rules: book, propose: deps.propose ?? null,
+      onMove: async (m) => {
+        await pace();
+        moves.push(m);
+        step(run, "negotiate", "running", m.from === "seller" ? ACTORS.seller : ACTORS.agent, m.from === "seller" ? ACTORS.agent : ACTORS.seller,
+          `Round ${m.round} · ${m.from === "seller" ? sellerAgent : agentAlias}: ${m.action}${m.price != null ? ` $${usd(m.price)}` : ""}`, { api: negApi, data: { move: m, moves: [...moves] } });
+      },
+    });
+    const negData = { moves: neg.moves, deal: neg.deal, priceCents: neg.priceCents ?? null, round: neg.round, reason: neg.reason ?? null, lastSellerCents: neg.lastSellerCents, lastBuyerCents: neg.lastBuyerCents, negotiator: deps.negotiator ?? "rules" };
+    let priceCents = neg.priceCents;
+    if (neg.deal) {
+      step(run, "negotiate", "done", ACTORS.agent, ACTORS.seller, `Agreed at $${usd(priceCents)}/unit in round ${neg.round}`, { api: negApi, data: negData });
+      step(run, "escalation", "skipped", ACTORS.agent, ACTORS.cpo, "Not needed — the agents agreed", { api: negApi });
+    } else {
+      step(run, "negotiate", "no_deal", ACTORS.agent, ACTORS.seller, `No deal: ${neg.reason} (buyer last $${usd(neg.lastBuyerCents)}, seller last $${usd(neg.lastSellerCents)})`, { api: negApi, data: negData });
+      // 4. escalation → the human officer (off-chain decision, recorded by the runner; not a KERI signature — see #15)
+      run.currentStep = "escalation";
+      const escApi = { service: "runner", method: "POST", path: `/runs/${run.id}/decide` };
+      step(run, "escalation", "waiting", ACTORS.agent, ACTORS.cpo,
+        `Escalated to ${ACTORS.cpo.id}: approve buying at the seller's last price $${usd(neg.lastSellerCents)}/unit, or reject the order`,
+        { api: escApi, data: { kind: "deal", proposedCents: neg.lastSellerCents, buyerBudgetCents: order.buyerBudgetCents, reason: neg.reason, signed: false, label: "officer decision recorded by the runner (not KERI-signed)" } });
+      run.state = "waiting";
+      const r = await waitForDeal(run);
+      run.state = "running";
+      if (r.kind === "cancelled") return finish(run, "cancelled", "Run cancelled; no order placed");
+      if (r.kind === "timeout") return finish(run, "timeout", `No officer decision within ${Math.round(waitTimeoutMs / 60000)} min; no order placed`);
+      if (r.decision === "reject") {
+        step(run, "escalation", "done", ACTORS.cpo, ACTORS.agent, `Rejected by ${ACTORS.cpo.id}: no order`, { api: escApi, data: { decision: "reject" } });
+        return finish(run, "no_deal", `${order.id}: officer rejected — no order placed`);
+      }
+      priceCents = neg.lastSellerCents;
+      step(run, "escalation", "done", ACTORS.cpo, ACTORS.agent, `Approved by ${ACTORS.cpo.id}: buy at $${usd(priceCents)}/unit`, { api: escApi, data: { decision: "approve", priceCents } });
+    }
+
+    // 5. treasury: seller treasury (profit/NPV) + buyer treasury (on-chain mandate route)
+    run.currentStep = "treasury";
+    const tr = treasuryChecks({ book, order, priceCents, evidence, mandate: pf.mandate, maxUnits, decimals, demoScale });
+    const trApi = { service: "swarm", method: "compute", path: "treasury (orders.json inputs + get_mandate)" };
+    for (let i = 0; i < tr.checks.length && paceMs > 0; i++) {
+      step(run, "treasury", "running", ACTORS.seller, ACTORS.agent, `Checking: ${tr.checks.slice(0, i + 1).map((c) => c.agent).join(", ")}…`, { api: trApi, data: { checks: tr.checks.slice(0, i + 1) } });
+      await pace();
+    }
+    if (!tr.ok) return fail("treasury", ACTORS.seller, ACTORS.agent, `Treasury refused: ${tr.checks.filter((c) => !c.ok).map((c) => c.text).join("; ")}`, { api: trApi, data: { checks: tr.checks } }, "no_deal");
+    step(run, "treasury", "done", ACTORS.seller, ACTORS.agent, tr.checks.map((c) => c.text).join(" · "), { api: trApi, data: { checks: tr.checks, priceCents, quantity: order.quantity } });
+
+    // 6–14. the Phase B steps: verify buyer → issue the vLEI invoice → … → pay on NEAR
+    return executeTail(run, tr.units, { item: book.product.item, quantity: order.quantity });
+  }
+
+  function waitForDeal(run) {
+    return new Promise((resolveWait) => {
+      let done = false;
+      const timer = setTimeout(() => resolve({ kind: "timeout" }), waitTimeoutMs);
+      timer.unref?.();
+      function resolve(v) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        run.waiter = null;
+        resolveWait(v);
+      }
+      run.waiter = { resolve, kind: "deal" };
+    });
   }
 
   // ---------------------------------------------------------------- shared steps
@@ -366,6 +513,18 @@ export function createRunner({
           preflight: { ok: true, ms: pfMs, checks: pf.checks }, mandate: mandateView(pf.mandate),
         },
       });
+
+    return executeTail(run, units, parsed);
+  }
+
+  /** Phase B steps from verify_buyer to the end (shared by modes "issue" and "order"). */
+  async function executeTail(run, units, parsed = {}) {
+    const amountText = `${fmt(units)} USDC`;
+    const fail = (name, actor, target, text, extra, result = "error", finishText = text) => {
+      step(run, name, "failed", actor, target, text, extra);
+      finish(run, result, finishText, { failedStep: name });
+    };
+    let planned;
 
     // 2. verify_buyer (seller checks the buyer BEFORE issuing) — existing exporter, strict, own output file
     run.currentStep = "verify_buyer";
@@ -522,6 +681,11 @@ export function createRunner({
     if (run.state !== "waiting" || !run.waiter) throw new RunnerError(409, `run is ${run.state}, not waiting for a decision`);
     if (!["approve", "reject"].includes(decision)) throw new RunnerError(400, "decision must be approve or reject");
     if (run.deciding) throw new RunnerError(409, "a decision is already being sent");
+    if (run.waiter.kind === "deal") {
+      // change #4: officer decision on a failed negotiation (off-chain; the on-chain decision below is unchanged)
+      run.waiter.resolve({ kind: "decided", decision });
+      return { ok: true, decision };
+    }
     run.deciding = true;
     try {
       const { body: r, http } = unwrap(await deps.signerDecide(decision, run.said));

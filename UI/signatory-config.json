@@ -2,7 +2,7 @@
   "evidenceUrl": "./data/signatory-evidence.json",
   "accountsUrl": "./data/accounts.json",
   "rpcUrl": "https://test.rpc.fastnear.com",
-  "contractId": "chainaim-signatory.testnet",
+  "contractId": "chainaim-signatory-v2.testnet",
   "signerUrl": "http://127.0.0.1:8771",
   "bridgeUrl": "http://127.0.0.1:8772",
   "advisorsUrl": "",

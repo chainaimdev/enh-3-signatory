@@ -77,7 +77,7 @@ node scripts/view.mjs events            # contract event log (NEP-297)
 | Path | What it is |
 |---|---|
 | `chainaim-signatory/contract/` | Rust NEAR contract (near-sdk 5.30.1), 48 unit tests (`cargo test`) |
-| `chainaim-signatory/services/` | Node services: `signer/` (8771), `bridge/` (8772), `runner/` (8774), `shared/` (commitment, AP2), `test/` (78 tests, `npm test`, frozen evidence fixture) |
+| `chainaim-signatory/services/` | Node services: `signer/` (8771), `bridge/` (8772), `runner/` (8774), `shared/` (commitment, AP2), `test/` (90 tests, `npm test`, frozen evidence fixture); `data/` (purchase orders N1–N4 + DD5 data, change #4) |
 | `chainaim-signatory/scripts/` | **`signatory.sh` (setup / start / stop — the only command you need)**, plus `deploy.sh`, `set-mandates.sh`, `health.mjs`, `view.mjs`, `ap2-keys.mjs` |
 | `chainaim-signatory/config/` | `signatory.json` (network, contract, ports), `accounts.json` (accounts + mandates) |
 | `UI/` | `Agent Escalation Console.html` (the chat UI), `serve.mjs` (static server), `data/` (evidence + accounts, no secrets) |
@@ -124,10 +124,12 @@ bash $S setup --fresh-vlei
 ```
 
 1. checks node ≥ 22, npm, jq, curl, docker;
-2. **fresh vLEI stack + 4D run** (stop --fresh, setup, deploy --fresh, saidify, 4D, strict evidence export) — this **deletes the vLEI identities on that PC**, so it asks you to type `FRESH`;
+2. **fresh vLEI stack + the full org** via `legentvLEI/run-5D.sh` — 4 OOR officers, 4 agents, 4 sub-agents (Treasury ×2, Inventory, Logistics), built from `appconfig/org/companies/*.json` (build-org-config → fresh stack → 4D → issuance proof → strict export → strict trust tree). It **deletes the vLEI identities on that PC**, so it asks you to type `FRESH`. `run-5D.sh` also runs on its own: `cd legentvLEI && ./run-5D.sh`;
 3. `npm install` for the services;
 4. read-only checks: key files present, evidence present, `health.mjs --stage contract` (accounts, storage, contract, mandates);
 5. ends with `setup complete` or a numbered list of what is still missing.
+
+To add **one** agent to an org that already exists (no wipe): `cd legentvLEI && ./add-subagent.sh <Agent> <ParentAgent>` (after adding it to the company file and `node build-org-config.js …`), then re-export the evidence.
 
 Without `--fresh-vlei`, setup keeps the existing vLEI stack and only does steps 1, 3–5 (safe to re-run any time). If the vLEI step does not run in WSL on your machine, run it in Git Bash: `bash chainaim-signatory/scripts/signatory.sh setup --fresh-vlei --skip-npm`.
 
@@ -135,6 +137,7 @@ Without `--fresh-vlei`, setup keeps the existing vLEI stack and only does steps 
 
 ```bash
 bash $S start            # add --vlei after a reboot (restarts the vLEI Docker stack, same identities, no 4D)
+# runs in this terminal: Ctrl+C or closing the window stops all services (--background = keep running until `stop`)
 ```
 
 It stops old copies, starts the **signer (8771), bridge (8772) and runner (8774)** with AP2 on (`--ap2 off` to disable), waits for each, points the UI at the configured contract (`health.mjs --stage all --write-ui-config`), starts the **UI (8765)** and prints:
@@ -143,10 +146,19 @@ It stops old copies, starts the **signer (8771), bridge (8772) and runner (8774)
 
 The top strip should show vLEI, NEAR, Signer, Bridge and Runner up. Logs: `chainaim-signatory/private/run/*.log`.
 
+**Negotiator (purchase orders N1–N4).** Default `--negotiator rules`: the DD5 rules decide every move (same result every run). With an AI endpoint (OpenAI-compatible `/v1/chat/completions`, e.g. the private-ai gateway):
+
+```bash
+export SIGNATORY_LLM_API_KEY=...        # in your own terminal only — never in git, chat or on the command line
+bash $S start --negotiator llm --llm-url http://127.0.0.1:<gateway port> [--llm-model <name>]
+```
+
+The AI proposes each move; the DD5 guard checks it (seller never below $3.55, buyer never above its budget); if the AI is unreachable or its answer is unusable, that move uses the DD5 rule and is labelled so in the UI.
+
 ### 4.5 Tests (no keys, no network)
 
 ```bash
-cd chainaim-signatory/services && npm test     # 78 tests
+cd chainaim-signatory/services && npm test     # 90 tests
 cd ../contract && cargo test                   # 48 tests
 ```
 
@@ -168,6 +180,17 @@ Click a card to fill the chat box (you can edit it), then send.
 | 8 | *(click "Turn off agent" first)* Need 5,000 t-shirts, total $42,000 | 0.042 | issued → verified → **refused**, refund |
 | 9 | Sample order of 1 t-shirt, total $50 | 0.00005 | refused before issuing (below 0.0001) |
 | 10 | Need cotton t-shirts for next month | — | stops: no amount given |
+
+**Purchase orders (change #4)** — the ▶ N1…N4 chips start the run directly: buyer agent order → swarm (inventory, logistics) → negotiation (DD5 rules, US cents/unit; DD5 rupee price points restated 1:1 as cents, e.g. ₹350 floor → $3.50) → treasury (seller profit/NPV, buyer mandate route) → the same verify → issue → pay steps as above.
+
+| Order | Qty | Budget | Rules result | On-chain | Expected |
+|---|---|---|---|---|---|
+| N1 | 20,000 | $4.15 | agreed $3.85 in round 1 | 0.077 | **paid** by the agent |
+| N2 | 40,000 | $4.15 | agreed $3.73 in round 2 | 0.1492 | **pending** → CPO Approve → paid |
+| N3 | 20,000 | $3.95 | agreed $3.83 in round 3 | 0.0766 | paid |
+| N4 | 20,000 | $3.45 | **no deal** (below the seller's $3.55 minimum) | — | officer Approve (buy at the seller's last $4.10 → 0.082, paid) or Reject (nothing issued) |
+
+Data: `chainaim-signatory/data/orders.json` (orders + rules) and `data/dd5/` (DD5 inventory, logistics and treasury fixtures and 4 scenarios, copied unchanged from dd5-final-NEAR @4312cb1). The Logistics agent has no vLEI identity yet and is shown that way.
 
 Every chat bubble has a **details** section with the real API call, status, duration, raw response and transaction link. After scenario 8, re-enable the agent with `bash scripts/set-mandates.sh`.
 

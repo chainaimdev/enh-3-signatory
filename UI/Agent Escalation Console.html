@@ -589,6 +589,8 @@ const LINK_TEXT = {
   "officer holds OOR issued by the QVI": ["OOR credential: stored record", "OOR credential: stored record not matched", "OOR credential: not checked"],
   "officer → Legal Entity": ["officer → LE: config", "officer → LE: not in config", "officer → LE: not checked"],
   "Legal Entity → QVI": ["LE → QVI: verified", "LE → QVI: not verified", "LE → QVI: not checked"],
+  "agent → delegator (live vLEI verifier)": ["Live vLEI verifier ✓ (vlei_verification, KEL seal)", "Live vLEI verifier ✗", "live vLEI verifier: not configured"],   // #16a
+  "OOR → LE → QVI → GLEIF (live Sally)": ["Sally ✓ OOR → LE → QVI → GLEIF (live, signed result)", "Sally ✗ OOR chain not confirmed", "Sally: not configured"],   // #16b
 };
 function checkLabel(data){
   if (!isObj(data) || !Array.isArray(data.links) || !data.links.length) return null;

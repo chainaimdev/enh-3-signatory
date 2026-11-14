@@ -12,6 +12,13 @@
 //     Change #4 (mode "order"): [--orders-dir ../data] [--negotiator rules|llm] [--llm-url <base url>] [--llm-model <name>]
 //              [--llm-timeout-s 15] [--llm-key-env SIGNATORY_LLM_API_KEY]   (the key is read from that env var only)
 //              [--pace-ms 0]  (pause between swarm checks / negotiation moves so a demo can be followed; 0 = none)
+//     Change #16a: [--vlei-verifier required|off] [--vlei-verifier-url http://127.0.0.1:9724]  every identity check also calls
+//              POST <url>/verify/agent-delegation (legentvLEI vlei_verification container); required = a "not verified" or
+//              unreachable verifier refuses the counterparty.
+//     Change #16b: [--sally required|off] [--sally-hook-container legentvlei-resource-1] [--sally-aid <AID>]  the counterparty's
+//              officer presents its OOR to Sally (existing tsx_shell task); Sally's signed web-hook result (docker logs of
+//              the hook container) must say "iss" for that credential. Sally AID default: VERIFIER_AID from
+//              legentvLEI/task-scripts/workshop-env-vars.sh.
 // Endpoints:
 //   GET  /health · GET /invoices · GET /preflight · GET /next-invoice[?text=…]
 //   POST /run {said} | {text} | {text, mode:"issue"} | {order:"N1", mode:"order"}  → {ok, runId, eventsUrl, mode, state, result?}
@@ -30,7 +37,7 @@ import { createLlmProposer } from "../shared/llm.mjs";
 import { createRunner, RunnerError } from "./engine.mjs";
 import { loadOrderBook } from "./swarm.mjs";
 import { parseRequest, toUnits } from "./logic.mjs";
-import { nextInvoiceNumber, preflight, readGrantInfo, runProcess, writeInvoiceConfig } from "./vlei.mjs";
+import { nextInvoiceNumber, preflight, presentOorToSally, readGrantInfo, runProcess, verifyDelegationLive, writeInvoiceConfig } from "./vlei.mjs";
 
 const SERVICE = "runner";
 const MAX_BODY = 16 * 1024;
@@ -47,7 +54,7 @@ export async function probe(url) {
 
 /** opts: {cfg, evidencePath, signerUrl, bridgeUrl, ap2?: boolean, vlei?: {dir, exportNode, issueTimeoutMs, exportTimeoutMs, template, year, keriaContainer, shellContainer},
  *        order?: {book, negotiator: "rules"|"llm", propose}} (change #4) */
-export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 = false, order = null, fetchImpl = fetch, run = runProcess }) {
+export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 = false, order = null, vleiVerifierUrl = null, sally = null, fetchImpl = fetch, run = runProcess }) {
   const post = async (base, path, body) => {
     const t0 = Date.now();
     try {
@@ -85,6 +92,10 @@ export function buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2 =
     deps.ap2Checkout = (said) => post(bridgeUrl, "/checkout", { said });
     deps.ap2Mandate = (b) => post(signerUrl, "/mandate", b);
   }
+  // change #16a: live vLEI verifier for every identity check (absent = not configured, shown as "not checked")
+  if (vleiVerifierUrl) deps.verifyDelegation = (pair) => verifyDelegationLive({ url: vleiVerifierUrl, pair, fetchImpl });
+  // change #16b: live OOR chain check by Sally (needs the vLEI folder for the presentation task)
+  if (sally && vlei) deps.sallyCheck = ({ officerAlias, oorSaid }) => presentOorToSally({ vleiDir: vlei.dir, officerAlias, oorSaid, hookContainer: sally.hookContainer, sallyAid: sally.aid, run, sleep: deps.sleep });
   // change #4: purchase orders (needs the Phase B tools for the steps after the negotiation)
   if (order && vlei) Object.assign(deps, { orderBook: order.book, negotiator: order.negotiator, propose: order.propose ?? null });
   if (vlei) {
@@ -174,7 +185,7 @@ export function startRunnerServer({ cfg, runner, deps = {}, port, allowOrigin, s
       const m = /^\/runs\/([A-Za-z0-9-]{1,64})(\/events|\/decide|\/cancel)?$/.exec(path);
       if (req.method === "GET" && path === "/health") {
         const [signer, bridge] = await Promise.all([probe(signerUrl), probe(bridgeUrl)]);
-        return send(200, { ok: true, service: SERVICE, contractId: cfg.contractId, modes: deps.preflight ? ["invoice", "issue", ...(deps.orderBook ? ["order"] : [])] : ["invoice"], negotiator: deps.negotiator ?? null, ap2: deps.ap2Checkout ? "on" : "off", activeRun: runner.summary(runner.active) || null, signer, bridge });
+        return send(200, { ok: true, service: SERVICE, contractId: cfg.contractId, modes: deps.preflight ? ["invoice", "issue", ...(deps.orderBook ? ["order"] : [])] : ["invoice"], negotiator: deps.negotiator ?? null, ap2: deps.ap2Checkout ? "on" : "off", vleiVerifier: deps.verifyDelegation ? "on" : "off", sally: deps.sallyCheck ? "on" : "off", activeRun: runner.summary(runner.active) || null, signer, bridge });
       }
       if (req.method === "GET" && path === "/invoices") {
         return send(200, { ok: true, invoices: await runner.invoices() });
@@ -275,6 +286,11 @@ async function main() {
       "llm-timeout-s": { type: "string" },
       "llm-key-env": { type: "string" },
       "pace-ms": { type: "string" },
+      "vlei-verifier": { type: "string" },
+      "vlei-verifier-url": { type: "string" },
+      sally: { type: "string" },
+      "sally-hook-container": { type: "string" },
+      "sally-aid": { type: "string" },
     },
   });
   const cfg = loadConfig(flags.config);
@@ -313,7 +329,25 @@ async function main() {
     negotiator,
     propose: negotiator === "llm" ? createLlmProposer({ baseUrl: flags["llm-url"], model: flags["llm-model"] ?? "default", keyEnv, timeoutMs: Number(flags["llm-timeout-s"] ?? 15) * 1000 }) : null,
   };
-  const deps = buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2, order });
+  const vleiVerifier = flags["vlei-verifier"] ?? "required";
+  if (!["required", "off"].includes(vleiVerifier)) throw new Error("--vlei-verifier must be required or off");
+  const vleiVerifierUrl = vleiVerifier === "off" ? null : flags["vlei-verifier-url"] ?? "http://127.0.0.1:9724";
+  const sallyMode = flags.sally ?? "required";
+  if (!["required", "off"].includes(sallyMode)) throw new Error("--sally must be required or off");
+  let sally = null;
+  if (sallyMode === "required") {
+    let aid = flags["sally-aid"] ?? null;
+    if (!aid) {
+      try {
+        aid = /VERIFIER_AID='(E[A-Za-z0-9_-]{43})'/.exec(readFileSync(resolve(vlei.dir, "task-scripts", "workshop-env-vars.sh"), "utf8"))?.[1] ?? null;
+      } catch {
+        aid = null;
+      }
+    }
+    if (!aid) throw new Error("--sally required: Sally AID not found (pass --sally-aid or check legentvLEI/task-scripts/workshop-env-vars.sh)");
+    sally = { hookContainer: flags["sally-hook-container"] ?? "legentvlei-resource-1", aid };
+  }
+  const deps = buildDeps({ cfg, evidencePath, signerUrl, bridgeUrl, vlei, ap2, order, vleiVerifierUrl, sally });
   const md = await view(cfg.rpcUrl, cfg.token, "ft_metadata");
   if (md.decimals !== cfg.tokenDecimals) throw new Error(`token decimals ${md.decimals} ≠ config ${cfg.tokenDecimals} (G-39)`);
   await view(cfg.rpcUrl, cfg.contractId, "get_config");
@@ -325,7 +359,7 @@ async function main() {
     event: "ready", contractId: cfg.contractId, signerUrl, bridgeUrl, evidencePath, pollMs, waitMinutes, allowOrigin,
     vleiDir: vlei.dir, exportNode: vlei.exportNode, issueTimeoutS: vlei.issueTimeoutMs / 1000, exportTimeoutS: vlei.exportTimeoutMs / 1000,
     maxAmount: flags["max-amount"] ?? "0.25", template: vlei.template, ap2: ap2 ? "on" : "off",
-    negotiator, paceMs, ...(negotiator === "llm" ? { llmUrl: flags["llm-url"], llmModel: flags["llm-model"] ?? "default", llmKeyEnv: keyEnv } : {}), ordersDir, orders: order.book.orders.map((o) => o.id).join(","),
+    negotiator, paceMs, vleiVerifier: vleiVerifierUrl ?? "off", sally: sally ? { hookContainer: sally.hookContainer, aid: sally.aid } : "off", ...(negotiator === "llm" ? { llmUrl: flags["llm-url"], llmModel: flags["llm-model"] ?? "default", llmKeyEnv: keyEnv } : {}), ordersDir, orders: order.book.orders.map((o) => o.id).join(","),
   });
   startRunnerServer({ cfg, runner, deps, port, allowOrigin, signerUrl, bridgeUrl });
 }

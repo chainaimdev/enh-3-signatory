@@ -1,0 +1,30 @@
+2026-11-14 07:29:19 [sally] INFO     demo      .on_post       -   64 ** HEADERS **
+{'ACCEPT-ENCODING': 'identity',
+ 'CONNECTION': 'close',
+ 'CONTENT-LENGTH': '720',
+ 'CONTENT-TYPE': 'application/json',
+ 'HOST': 'resource:9923',
+ 'SALLY-RESOURCE': 'EBNaNu-M9P5cgrnfl2Fvymy4E_jvxxyjb70PRtiANlJy',
+ 'SALLY-TIMESTAMP': '2026-11-14T07:29:19.579292+00:00',
+2026-11-14 07:29:19 [sally] INFO     demo      .on_post       -   65 None
+ 'SIGNATURE': 'indexed="?1";signer="EMrjKv0T43sslqFfhlEHC9v3t9UoxHWrGznQ1EveRXUO";sig0="P2wqo8Asx5rK-vSZ6tMXkC-0W6FtUsjvDoFuwOhicsG2WTixsXIEcTjxBC-0RtFCbugnJo1HVBFCx-Nh6plTAg=="',
+ 'SIGNATURE-INPUT': 'sig0=("sally-resource" "@method" "@path" '
+                    '"sally-timestamp");created=1794641359;keyid="3iCLq0mcb-UFOwrlmj3c_qPgU0vpKnrChn50uXhdIEM=";alg="ed25519"'}
+2026-11-14 07:29:19 [sally] INFO     demo      .on_post       -   66 *************
+2026-11-14 07:29:19 [sally] INFO     demo      .on_post       -   68 **** BODY ****
+{'action': 'iss',
+ 'actor': 'EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2',
+ 'data': {'LEI': '54930012QJWZMYHNJW95',
+          'authCredential': 'EFo9DHtFMARg01krp_iRcP2UKu8ldY8SbONUTfFp7k3w',
+          'credential': 'EFPeui5k7xY20MqH02XmNggtc7U1EvMBUht_RSH-OI4b',
+          'issueTimestamp': '2026-11-13T15:52:23.273000+00:00',
+          'issuer': 'EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2',
+          'legalEntityCredential': 'EHk4Qf9ffSGWO-9OAKloBlFLH0j6wHxeR1wQpCKIj8Ys',
+          'officialRole': 'Authorised Representative',
+          'personLegalName': 'Chief Procurement Officer',
+          'qviCredential': 'EOgXZWFmG4s0nzujs0GqLeihW-uTVisxeUUeov58Ye0S',
+          'recipient': 'EMmf0aDN_F5SVt2-hI2eybSSV1M-cYSf4TO0Pbd2Z9ZO',
+          'schema': 'EBNaNu-M9P5cgrnfl2Fvymy4E_jvxxyjb70PRtiANlJy',
+          'type': 'OOR'}}
+2026-11-14 07:29:19 [sally] INFO     demo      .on_post       -   70 None
+2026-11-14 07:29:19 [sally] INFO     demo      .on_post       -   71 **************

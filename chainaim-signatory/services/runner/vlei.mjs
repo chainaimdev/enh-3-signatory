@@ -360,3 +360,119 @@ export async function preflight({ cfg, vleiDir, exportNode, signerUrl, bridgeUrl
   }
   return { ok: checks.every((c) => c.ok), checks, mandate };
 }
+
+// ------------------------------------------------------------------ change #16a: live vLEI verifier + identity-only checks
+
+/** AIDs and OOBIs of an agent and its delegator (officer, or parent agent for a sub-agent) from the evidence. */
+export function delegationPair(evidence, alias) {
+  const companies = evidence?.companies || [];
+  for (const c of companies) {
+    const agent = (c.agents || []).find((a) => a.alias === alias);
+    if (!agent) continue;
+    const parent = (c.officers || []).find((o) => o.aid === agent.delegator) || (c.agents || []).find((a) => a.aid === agent.delegator);
+    return { agentAid: agent.aid ?? null, agentOobi: agent.oobi ?? null, parentAid: agent.delegator ?? null, parentAlias: parent?.alias ?? agent.delegatorAlias ?? null, parentOobi: parent?.oobi ?? null };
+  }
+  return null;
+}
+
+/**
+ * POST <url>/verify/agent-delegation on the vlei_verification container (legentvLEI config/verifier-sally/
+ * verification_service_keri_v3.py): it resolves both OOBIs inside the Docker network and checks that the agent's
+ * inception is a dip whose di = the parent AID and that the parent's KEL anchors it. No secrets are sent.
+ * Returns {checked:true, verified, ms, httpStatus, url, response} or {checked:true, verified:false, error, ...}.
+ */
+export async function verifyDelegationLive({ url, pair, fetchImpl = fetch, timeoutMs = 15000 }) {
+  const endpoint = `${url.replace(/\/+$/, "")}/verify/agent-delegation`;
+  if (!pair?.agentAid || !pair?.parentAid || !pair?.agentOobi || !pair?.parentOobi) {
+    return { checked: true, verified: false, url: endpoint, error: "agent or parent AID/OOBI missing in the evidence" };
+  }
+  const t0 = Date.now();
+  try {
+    const r = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ aid: pair.parentAid, agent_aid: pair.agentAid, parent_oobi: pair.parentOobi, agent_oobi: pair.agentOobi }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    const j = await r.json().catch(() => null);
+    const verified = r.ok && j?.verified === true;
+    return { checked: true, verified, ms: Date.now() - t0, httpStatus: r.status, url: endpoint, response: j ? { verified: j.verified ?? null, valid: j.valid ?? null, message: j.message ?? j.error ?? null, verification: j.verification ?? null } : null, ...(verified ? {} : { error: j?.message || j?.error || `HTTP ${r.status}` }) };
+  } catch (e) {
+    return { checked: true, verified: false, ms: Date.now() - t0, httpStatus: null, url: endpoint, error: `vLEI verifier not reachable (${e.name === "TimeoutError" ? "timeout" : e.message})` };
+  }
+}
+
+/** Exporter failures that are about invoices only (an unrelated half-issued invoice must not block an identity check). */
+export function splitExportFailures(evidence, { keepInvoice = null } = {}) {
+  const failures = evidence?.checks?.failures ?? [];
+  const isInvoice = (f) => /^invoice |^IPEX grant carries|^--invoice-said/.test(f);
+  const mine = (f) => keepInvoice && keepInvoice.some((k) => k && f.includes(k));
+  return { blocking: failures.filter((f) => !isInvoice(f) || mine(f)), warnings: failures.filter((f) => isInvoice(f) && !mine(f)) };
+}
+
+// ------------------------------------------------------------------ change #16b: live OOR chain check by Sally
+
+/**
+ * Parses the Sally web-hook container log ("sally hook demo": prints HEADERS then BODY for every POST).
+ * Returns [{action, credential, data:{…}, signer}] in log order. Only parses; trusts nothing it cannot read.
+ */
+export function parseSallyHookLog(text) {
+  // Robust to how docker splits the hook's output into stdout/stderr (the dicts and the "**** BODY ****" markers can
+  // arrive on different streams): every body dict starts with 'action'; its fields follow within the same dict.
+  const t = String(text || "");
+  const out = [];
+  const starts = [...t.matchAll(/'action':\s*'([a-z]+)'/g)];
+  for (let i = 0; i < starts.length; i++) {
+    const from = starts[i].index;
+    const to = i + 1 < starts.length ? starts[i + 1].index : Math.min(t.length, from + 3000);
+    const body = t.slice(from, to);
+    const fields = { action: starts[i][1] };
+    for (const m of body.matchAll(/'([A-Za-z]+)':\s*'([^']*)'/g)) if (!(m[1] in fields)) fields[m[1]] = m[2];
+    const signers = [...t.slice(Math.max(0, from - 4000), from).matchAll(/signer="(E[A-Za-z0-9_-]{43})"/g)];
+    if (fields.credential) out.push({ action: fields.action, credential: fields.credential, data: fields, signer: signers.at(-1)?.[1] ?? null });
+  }
+  return out;
+}
+
+/**
+ * The officer presents its OOR credential to Sally (IPEX grant, existing sig-wallet task person-acdc-present-oor.ts in
+ * tsx_shell; the holder's passcode stays in legentvLEI's workshop env script, the runner never reads it), then the
+ * Sally web-hook log is polled for Sally's signed result for that credential. Sally only posts "iss" after verifying the
+ * chain OOR → OOR-auth → LE credential → QVI credential → GLEIF root (GEDA_PRE) and that nothing is revoked.
+ * Returns {checked:true, verified, action, ms, presentSaid, result:{LEI, legalEntityCredential, qviCredential,
+ * authCredential, issuer, officialRole, personLegalName}, signer, error?}.
+ */
+export async function presentOorToSally({ vleiDir, officerAlias, oorSaid, hookContainer = "legentvlei-resource-1", sallyAid = null, run = runProcess, sleep, timeoutMs = 45000, pollMs = 1500 }) {
+  const t0 = Date.now();
+  if (!officerAlias || !/^E[A-Za-z0-9_-]{43}$/.test(oorSaid || "")) return { checked: true, verified: false, ms: 0, error: "officer alias or OOR SAID missing in the evidence" };
+  // Results are counted, not time-filtered: the WSL clock and the Docker VM clock can differ, so "--since" is unreliable.
+  const readHook = async () => {
+    const r = await run("bash", ["-c", 'docker logs "$1" 2>&1', "hook-log", hookContainer], { timeoutMs: 15000 });
+    return parseSallyHookLog(`${r.stdout}\n${r.stderr}`).filter((h) => h.credential === oorSaid);
+  };
+  const before = (await readHook()).length;
+  const present = await run("bash", ["-c",
+    'source ./task-scripts/workshop-env-vars.sh >/dev/null 2>&1 && docker exec -i tsx_shell /vlei/tsx-script-runner.sh person/person-acdc-present-oor.ts docker "$PERSON_SALT" "$1" "$2" "$VERIFIER_AID"',
+    "present-oor", officerAlias, oorSaid], { cwd: vleiDir, timeoutMs: 60000 });
+  const presentSaid = /said:\s*'(E[A-Za-z0-9_-]{43})'/.exec(present.stdout || "")?.[1] ?? null;
+  if (present.exitCode !== 0 || !presentSaid) {
+    return { checked: true, verified: false, ms: Date.now() - t0, error: `presentation to Sally failed (${present.timedOut ? "timeout" : present.spawnError || `exit ${present.exitCode}`})`, raw: proofTail(`${present.stdout}\n${present.stderr}`, 12) };
+  }
+  const wait = sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+  while (Date.now() - t0 < timeoutMs) {
+    await wait(pollMs);
+    const hits = await readHook();
+    const last = hits.length > before ? hits.at(-1) : null; // only a NEW result, posted after this presentation
+    if (last) {
+      const signerOk = !sallyAid || last.signer === sallyAid;
+      const verified = last.action === "iss" && signerOk;
+      const d = last.data;
+      return {
+        checked: true, verified, action: last.action, ms: Date.now() - t0, presentSaid, signer: last.signer,
+        result: { type: d.type ?? null, LEI: d.LEI ?? null, issuer: d.issuer ?? null, legalEntityCredential: d.legalEntityCredential ?? null, qviCredential: d.qviCredential ?? null, authCredential: d.authCredential ?? null, officialRole: d.officialRole ?? null, personLegalName: d.personLegalName ?? null },
+        ...(verified ? {} : { error: !signerOk ? `web-hook result not signed by Sally (${last.signer})` : `Sally reported "${last.action}" for ${oorSaid}` }),
+      };
+    }
+  }
+  return { checked: true, verified: false, ms: Date.now() - t0, presentSaid, error: `no Sally result for ${oorSaid} within ${Math.round(timeoutMs / 1000)} s` };
+}

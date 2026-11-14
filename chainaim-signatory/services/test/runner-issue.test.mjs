@@ -314,8 +314,12 @@ test("B1 (S-7C order): request → verify_buyer → issue → offer → verify_s
   assert.equal(vb.api.exitCode, 0);
   assert.deepEqual(vb.data.links.map((l) => [l.link, l.verified]), [
     ["agent → OOR officer", true], ["officer holds OOR issued by the QVI", true], ["officer → Legal Entity", true], ["Legal Entity → QVI", false],
+    ["agent → delegator (live vLEI verifier)", false], // #16a: not configured in this fake → shown as not checked
+    ["OOR → LE → QVI → GLEIF (live Sally)", false], // #16b: not configured in this fake → shown as not checked
   ]);
-  assert.match(vb.text, /LE → QVI is not checked by the exporter/);
+  assert.equal(vb.data.links.at(-1).checked, false);
+  assert.equal(vb.data.links.at(-2).checked, false);
+  assert.match(vb.text, /Sally: not configured. LE → QVI is not checked./);
   const vsel = steps.find((e) => e.data.step === "verify_seller" && e.data.status === "done").data;
   assert.deepEqual([vsel.actor.id, vsel.target.id], ["tommyBuyerAgent", "jupiterSellerAgent"]);
   assert.equal(vsel.data.export.allChecksPassed, true);

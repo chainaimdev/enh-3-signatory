@@ -381,3 +381,158 @@ test("4c: an unverified buyer stops before the swarm; an unverified seller agent
     assert.ok(!calls.some((c) => ["config", "issue", "register", "pay"].includes(c[0])));
   }
 });
+
+// ------------------------------------------------------------------ #16a live vLEI verifier + identity-only export checks
+
+test("16a: verifyDelegationLive posts {aid, agent_aid, parent_oobi, agent_oobi} and reads {verified}", async () => {
+  const { delegationPair, verifyDelegationLive, splitExportFailures } = await import("../runner/vlei.mjs");
+  const pair = delegationPair(evidence, "tommyBuyerAgent");
+  assert.equal(pair.parentAlias, "Tommy_Chief_Procurement_Officer");
+  assert.match(pair.agentOobi, /^http:\/\/keria:3902\/oobi\//);
+  const sub = delegationPair(evidence, "JupiterInventoryAgent");
+  assert.equal(sub.parentAlias, "jupiterSellerAgent");
+  let body = null;
+  const ok = await verifyDelegationLive({ url: "http://127.0.0.1:9724/", pair, fetchImpl: async (u, init) => { body = [u, JSON.parse(init.body)]; return { ok: true, status: 200, json: async () => ({ valid: true, verified: true, message: "ok", verification: { delegation_found: true } }) }; } });
+  assert.equal(body[0], "http://127.0.0.1:9724/verify/agent-delegation");
+  assert.deepEqual(body[1], { aid: pair.parentAid, agent_aid: pair.agentAid, parent_oobi: pair.parentOobi, agent_oobi: pair.agentOobi });
+  assert.equal(ok.verified, true);
+  const no = await verifyDelegationLive({ url: "http://x", pair, fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ verified: false, message: "delegation not found" }) }) });
+  assert.deepEqual([no.verified, no.error], [false, "delegation not found"]);
+  const down = await verifyDelegationLive({ url: "http://x", pair, fetchImpl: async () => { throw new Error("ECONNREFUSED"); } });
+  assert.match(down.error, /not reachable/);
+  const split = splitExportFailures({ checks: { failures: ["invoice EKIQ: no issuance proof (run …)", "tommyBuyerAgent: delegator X is not Y"] } });
+  assert.deepEqual([split.blocking.length, split.warnings.length], [1, 1]);
+  assert.equal(splitExportFailures({ checks: { failures: ["invoice EKIQ: no issuance proof"] } }, { keepInvoice: ["EKIQ"] }).blocking.length, 1, "this run's own invoice blocks");
+});
+
+test("16a: live verifier ✓ is shown in both identity checks; ✗ or unreachable refuses the counterparty", async () => {
+  {
+    const { deps } = fakeOrder();
+    const asked = [];
+    deps.verifyDelegation = async (pair) => { asked.push(pair.parentAlias); return { checked: true, verified: true, ms: 12, url: "http://127.0.0.1:9724/verify/agent-delegation", response: { verified: true } }; };
+    const runner = createRunner({ cfg, deps, pollMs: 1 });
+    const run = await runner.start({ mode: "order", order: "N1" });
+    await until(run, finished);
+    assert.equal(run.result, "paid");
+    assert.deepEqual(asked, ["Tommy_Chief_Procurement_Officer", "Jupiter_Chief_Sales_Officer", "Jupiter_Chief_Sales_Officer"], "buyer, seller on first answer, seller again with the invoice");
+    const vb = run.events.find((e) => e.data.step === "verify_buyer" && e.data.status === "done").data;
+    assert.match(vb.text, /Live vLEI verifier ✓ \(12 ms\)/);
+    assert.equal(vb.data.links.find((l) => l.link === "agent → delegator (live vLEI verifier)").verified, true);
+  }
+  for (const [answer, re] of [[{ checked: true, verified: false, error: "delegation not found", url: "u" }, /delegation not found/], [{ checked: true, verified: false, error: "vLEI verifier not reachable (ECONNREFUSED)", url: "u" }, /not reachable/]]) {
+    const { deps, calls } = fakeOrder();
+    deps.verifyDelegation = async () => answer;
+    const runner = createRunner({ cfg, deps, pollMs: 1 });
+    const run = await runner.start({ mode: "order", order: "N1" });
+    await until(run, finished);
+    assert.equal(run.result, "seller_refused");
+    assert.match(run.events.at(-1).data.text, re);
+    assert.ok(!run.events.some((e) => e.data.step === "negotiate"));
+    assert.ok(!calls.some((c) => ["config", "issue", "pay"].includes(c[0])));
+  }
+});
+
+test("16a: an old half-issued invoice in the export does not block verify_buyer (warning only)", async () => {
+  const { deps } = fakeOrder();
+  const ev = JSON.parse(JSON.stringify(evidence));
+  ev.checks = { strict: true, passed: false, failures: ["invoice EOLD: no issuance proof (run …)"], notes: [] };
+  deps.runVerifyBuyer = async () => ({ exitCode: 1, stdout: "1 check failure(s)", stderr: "", ms: 1, cmd: "x", evidence: ev });
+  const runner = createRunner({ cfg, deps, pollMs: 1 });
+  const run = await runner.start({ mode: "order", order: "N1" });
+  await until(run, (r) => r.events.some((e) => e.data.step === "verify_buyer" && e.data.status !== "running"));
+  const vb = run.events.find((e) => e.data.step === "verify_buyer" && e.data.status !== "running").data;
+  assert.equal(vb.status, "done");
+  assert.match(vb.text, /1 unrelated invoice check\(s\) failed/);
+  assert.deepEqual(vb.data.exportWarnings, ["invoice EOLD: no issuance proof (run …)"]);
+  await until(run, finished);
+});
+
+// ------------------------------------------------------------------ #16b live OOR chain by Sally
+
+const SALLY_AID = "EMrjKv0T43sslqFfhlEHC9v3t9UoxHWrGznQ1EveRXUO";
+const OOR_CPO = "EFPeui5k7xY20MqH02XmNggtc7U1EvMBUht_RSH-OI4b";
+
+test("16b: the real Sally web-hook log (14 Nov 07:29) parses to a signed 'iss' with the full chain", async () => {
+  const { parseSallyHookLog } = await import("../runner/vlei.mjs");
+  const log = readFileSync(resolve(ROOT, "services", "test", "fixtures", "sally-hook-oor-iss.log"), "utf8");
+  const [h] = parseSallyHookLog(log);
+  assert.deepEqual([h.action, h.credential, h.signer], ["iss", OOR_CPO, SALLY_AID]);
+  assert.equal(h.data.LEI, "54930012QJWZMYHNJW95");
+  assert.equal(h.data.legalEntityCredential, "EHk4Qf9ffSGWO-9OAKloBlFLH0j6wHxeR1wQpCKIj8Ys");
+  assert.equal(h.data.qviCredential, "EOgXZWFmG4s0nzujs0GqLeihW-uTVisxeUUeov58Ye0S");
+  assert.deepEqual(parseSallyHookLog("Sally Web Hook Sample listening on 9923"), []);
+});
+
+test("16b: presentOorToSally presents, then waits for a NEW signed result for THAT credential (iss ✓, rev ✗, wrong signer ✗, none ✗)", async () => {
+  const { presentOorToSally } = await import("../runner/vlei.mjs");
+  const log = readFileSync(resolve(ROOT, "services", "test", "fixtures", "sally-hook-oor-iss.log"), "utf8");
+  // hook log before the presentation = `before`; after = before + the new result
+  const mk = (after, { before = "Sally Web Hook Sample listening on 9923", presentOut = "{ said: 'EAhzSaVkVPiNGSq10omfPP_LzNU67peuCFSdIcc24VQX' }\n" } = {}) => {
+    const calls = [];
+    let presented = false;
+    const run = async (cmd, args) => {
+      calls.push([cmd, args[0], ...args.slice(-2)]);
+      if (args[1].includes("tsx-script-runner")) { presented = true; return { exitCode: 0, stdout: presentOut, stderr: "", ms: 5 }; }
+      return { exitCode: 0, stdout: presented ? `${before}\n${after}` : before, stderr: "", ms: 5 };
+    };
+    return { run, calls };
+  };
+  const go = (f, extra = {}) => presentOorToSally({ vleiDir: "/x", officerAlias: "Tommy_Chief_Procurement_Officer", oorSaid: OOR_CPO, sallyAid: SALLY_AID, run: f.run, sleep: async () => {}, pollMs: 1, ...extra });
+  let f = mk(log);
+  let r = await go(f);
+  assert.deepEqual([r.verified, r.action, r.result.LEI, r.presentSaid], [true, "iss", "54930012QJWZMYHNJW95", "EAhzSaVkVPiNGSq10omfPP_LzNU67peuCFSdIcc24VQX"]);
+  const present = f.calls.find((c) => c.includes("Tommy_Chief_Procurement_Officer"));
+  assert.deepEqual(present.slice(-2), ["Tommy_Chief_Procurement_Officer", OOR_CPO], "alias and SAID passed as arguments, not in the script text");
+  // an OLD result for the same credential (already in the log before presenting) is not accepted as this check's result
+  r = await go(mk("", { before: log }), { timeoutMs: 20 });
+  assert.match(r.error, /no Sally result/);
+  // a second presentation of the same credential: old iss + new iss → the new one counts
+  r = await go(mk(log, { before: log }));
+  assert.equal(r.verified, true);
+  r = await go(mk(log.replace("'action': 'iss'", "'action': 'rev'")));
+  assert.deepEqual([r.verified, r.error], [false, `Sally reported "rev" for ${OOR_CPO}`]);
+  r = await go(mk(log), { sallyAid: "E" + "x".repeat(43) });
+  assert.match(r.error, /not signed by Sally/);
+  r = await go(mk(log, { presentOut: "Error: no credential" }));
+  assert.match(r.error, /presentation to Sally failed/);
+});
+
+test("16b: the parser also works when docker splits the hook output into stdout and stderr (dicts before markers)", async () => {
+  const { parseSallyHookLog } = await import("../runner/vlei.mjs");
+  const log = readFileSync(resolve(ROOT, "services", "test", "fixtures", "sally-hook-oor-iss.log"), "utf8").split("\n");
+  const markers = log.filter((l) => l.includes("[sally]")).join("\n");
+  const dicts = log.filter((l) => !l.includes("[sally]")).join("\n");
+  const [h] = parseSallyHookLog(`${dicts}\n${markers}`);
+  assert.deepEqual([h.action, h.credential, h.signer, h.data.LEI], ["iss", OOR_CPO, SALLY_AID, "54930012QJWZMYHNJW95"]);
+});
+
+test("16b: Sally ✓ turns 'LE → QVI' into verified in both identity checks; Sally ✗ refuses the counterparty", async () => {
+  const ok = (who) => ({ checked: true, verified: true, action: "iss", ms: 2100, signer: SALLY_AID, result: { LEI: who === "Tommy_Chief_Procurement_Officer" ? "54930012QJWZMYHNJW95" : "3358004DXAMRWRUIYJ05", legalEntityCredential: "ELE", qviCredential: "EQVI" } });
+  {
+    const { deps } = fakeOrder();
+    const asked = [];
+    deps.sallyCheck = async ({ officerAlias }) => { asked.push(officerAlias); return ok(officerAlias); };
+    const runner = createRunner({ cfg, deps, pollMs: 1 });
+    const run = await runner.start({ mode: "order", order: "N3" });
+    await until(run, finished);
+    assert.equal(run.result, "paid");
+    assert.deepEqual(asked, ["Tommy_Chief_Procurement_Officer", "Jupiter_Chief_Sales_Officer"]);
+    for (const name of ["verify_buyer", "verify_seller_agent"]) {
+      const d = run.events.filter((e) => e.data.step === name && e.data.status === "done").pop().data;
+      assert.match(d.text, /Sally ✓ OOR → LE → QVI → GLEIF/);
+      const le = d.data.links.find((l) => l.link === "Legal Entity → QVI");
+      assert.deepEqual([le.verified, le.checked], [true, true]);
+      assert.equal(d.data.links.at(-1).link, "OOR → LE → QVI → GLEIF (live Sally)");
+    }
+  }
+  {
+    const { deps, calls } = fakeOrder();
+    deps.sallyCheck = async ({ officerAlias }) => (officerAlias === "Jupiter_Chief_Sales_Officer" ? { checked: true, verified: false, error: `Sally reported "rev" for X` } : ok(officerAlias));
+    const runner = createRunner({ cfg, deps, pollMs: 1 });
+    const run = await runner.start({ mode: "order", order: "N3" });
+    await until(run, finished);
+    assert.equal(run.result, "buyer_refused");
+    assert.match(run.events.at(-1).data.text, /Sally did not confirm Jupiter_Chief_Sales_Officer/);
+    assert.ok(!calls.some((c) => ["config", "issue", "pay"].includes(c[0])));
+  }
+});

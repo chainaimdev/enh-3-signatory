@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-14T07:07:12.088Z",
+  "generatedAt": "2026-11-14T07:42:01.755Z",
   "source": {
     "gedaAid": "EMkEgFq2hDJ1VHWhFnFajeYO-YVOXadLh5QmV_tbOWZq",
     "qviAid": "EHe0UlKZbhpmPDmfrOE6SLtjO1IpeFeskNYYyExjzhG2",
@@ -66,7 +66,7 @@
           "scope": "sales_operations",
           "advisoryOnly": false,
           "delegationVerified": true,
-          "kel": "{\"v\":\"KERI10JSON00012b_\",\"t\":\"icp\",\"d\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\",\"i\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\",\"s\":\"0\",\"kt\":\"1\",\"k\":[\"DA_e28cX8JbtDPIpFGfmfIzZqDjV0-cMZY4JsOVpTTWe\"],\"nt\":\"1\",\"n\":[\"EPi8i_sn5ePog6Lf4Zyop_XMgkHuOImJ7AoK9CpCV21q\"],\"bt\":\"0\",\"b\":[],\"c\":[],\"a\":[]}-VAn-AABAACsdIw8H0EkgLpaLBjLliFRYMaYI1b6kQhf3vYuSGexZH_CMmIUc4xSKJ50hKLXUWDETMMnXNvkmk2ZRJfHn9UB-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2026-11-13T15c49c25d117170p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EB9nK-wOy8FsFGjLhCW-9Dlpa3eEmlh_zVQhLc-pDXQE\",\"i\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\",\"s\":\"1\",\"p\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\",\"a\":[{\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"0\",\"d\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\"}]}-VAn-AABAABPihrOoA29UDBjKRKBYuKwkNgY7iOcCdr3IpJInLwsBqv1HOIETkP0PoyPyz1WEzBKzdI0Oau2B2CZu4tk61EJ-EAB0AAAAAAAAAAAAAAAAAAAAAAB1AAG2026-11-13T15c49c33d497208p00c00{\"v\":\"KERI10JSON00015f_\",\"t\":\"dip\",\"d\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"0\",\"kt\":\"1\",\"k\":[\"DHKarQkWiBP131I0_yu9GtlOudmT5N5SFTRAdoPHKBlL\"],\"nt\":\"1\",\"n\":[\"EBnePR-pHf1Ati55aL3Y7H02eF08cEX2xmy88TChsOj_\"],\"bt\":\"0\",\"b\":[],\"c\":[],\"a\":[],\"di\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\"}-VA5-AABAABgbVQKz_nt82WsDS1Fhny6xcb7egIsjsStcULPKMnVDqW4LDLZv4x01RyGeDo7IMuJamC86RlpoAHTL6FfZm0G-GAB0AAAAAAAAAAAAAAAAAAAAAABEB9nK-wOy8FsFGjLhCW-9Dlpa3eEmlh_zVQhLc-pDXQE-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2026-11-13T15c49c25d987583p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EPIJ92nREtX42qvIhKfsNsexnbaKLax57oyohIg4duCs\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"1\",\"p\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"a\":[{\"i\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\",\"s\":\"0\",\"d\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\"}]}-VAn-AABAADyHpSBHlQV5vWn4iWRIBAjhPiyJgEBZcqwL48KE-0UrxQL46u9e4oGVXqAZxJsgUKjy98PTWH6B_6vjzgDKKMJ-EAB0AAAAAAAAAAAAAAAAAAAAAAB1AAG2026-11-13T15c53c24d359434p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"ECU1tEozKhplF_QMbDgqjgFo3QflSoeIVNZZ_JRFAOoc\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"2\",\"p\":\"EPIJ92nREtX42qvIhKfsNsexnbaKLax57oyohIg4duCs\",\"a\":[{\"i\":\"EF2xJE7wjseUicFCAR5vHx9lddlrfo31Sy0_vcTh7Qzh\",\"s\":\"0\",\"d\":\"EIP0bCHQWW52JRvDr7BtBsRbGHd7f3Hhe7Yx4QqZw1rU\"}]}-VAn-AABAAD35poC5FHCRbb7KFJmIf0CcJhYrf3Hl_Sde_uOVFDNcBgRk8u7Q4jD6iNme-wVDIT2lm7eIma-VrmW3_XhrwIM-EAB0AAAAAAAAAAAAAAAAAAAAAAC1AAG2026-11-13T15c53c43d739342p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EKO0zXRfamoZn4UGBoie1FS_MFLteDj2AT87ljcLq3hp\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"3\",\"p\":\"ECU1tEozKhplF_QMbDgqjgFo3QflSoeIVNZZ_JRFAOoc\",\"a\":[{\"i\":\"ENZRtxT0mMnve5eypR5Bk1wfs68QygDz9CXJzX1aUcl8\",\"s\":\"0\",\"d\":\"ENZRtxT0mMnve5eypR5Bk1wfs68QygDz9CXJzX1aUcl8\"}]}-VAn-AABAABYtCMpC3YdIGm53_RCpuLREXhIr9qH-7rbAoKlpJfEURAAuGlxvzercloxnfQH1xwAXVXJcyvOtHFRPUKvSJYN-EAB0AAAAAAAAAAAAAAAAAAAAAAD1AAG2026-11-13T15c54c21d588094p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EJbA4aKAJd1wr3m_MlXjRxxljLDicLDSzPkyb9dcXznx\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"4\",\"p\":\"EKO0zXRfamoZn4UGBoie1FS_MFLteDj2AT87ljcLq3hp\",\"a\":[{\"i\":\"EP-MmSkKIyEHpN9pWkRKeR_GYdISp3HG-xTuh5qQjakE\",\"s\":\"0\",\"d\":\"EP-MmSkKIyEHpN9pWkRKeR_GYdISp3HG-xTuh5qQjakE\"}]}-VAn-AABAAB4lW1kocdfSZ1WiZfkOzM9lrWv9FhBioefY3t2OsS0aDJ_4ZH0M_LMdUnf1VIqzK0tp6WXuRHnNjVwbJa90nQF-EAB0AAAAAAAAAAAAAAAAAAAAAAE1AAG2026-11-13T15c55c02d947712p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EHFv_NEfoIPyYxm_zyBiGVpwqFY6ZqFfiHBZjqU90V7X\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"5\",\"p\":\"EJbA4aKAJd1wr3m_MlXjRxxljLDicLDSzPkyb9dcXznx\",\"a\":[{\"i\":\"EEh10JYeqQ6p8j-hRnYEDnwYqh4pPRHcl2WXt9MuMbfO\",\"s\":\"0\",\"d\":\"EMYYpgWFv5owIeNViMASMmqN0ww3LRPcoyoSyMYHRmyW\"}]}-VAn-AABAAB-82iCiL2nvq7nCUil3fPeTB9iFeuGkle-MrGM4GBX-zUgHTl2VN9IRCIwsIwrovz-Ez8POiJpr8n-_3ErGZ0P-EAB0AAAAAAAAAAAAAAAAAAAAAAF1AAG2026-11-13T16c01c53d994888p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"ENAnzl9VKhz1RqG1o2gnpSEdxtAcBNtDhd_watVhKIPX\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"6\",\"p\":\"EHFv_NEfoIPyYxm_zyBiGVpwqFY6ZqFfiHBZjqU90V7X\",\"a\":[{\"i\":\"ENloHejXqtXgBdUH5zz4x8EUcDR5vN6rNXYrYE7-xAfw\",\"s\":\"0\",\"d\":\"EJLHOT5buaHRov9dVWjg4ylPRlsbVt-7TjqQnmTSlNaB\"}]}-VAn-AABAABfI3QtzPqWxV6vP5paaP9cF2AuGDcyWAY88fMYbR7k_3EWczmAtUEBxHTxtWSiUzcODzN6mIc1cQSIY-Ot1VMA-EAB0AAAAAAAAAAAAAAAAAAAAAAG1AAG2026-11-13T16c16c42d285091p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EIz1GCDVOt8H3M4fsRoC7Xwhhtp8BGZZQUpOzxBpyFZd\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"7\",\"p\":\"ENAnzl9VKhz1RqG1o2gnpSEdxtAcBNtDhd_watVhKIPX\",\"a\":[{\"i\":\"EBbOUera-DRc-1TOLpKCG3aKyz5gU9RxkpJh3nb5eTM7\",\"s\":\"0\",\"d\":\"ENjDVkBP4fCRCo0AvBu3a5lHZSOYovCLYWwSJGyjCjhi\"}]}-VAn-AABAABDDIVH8l9KlpZiuvBId7WjSLk2NeRO3RTRREq6VvIN3yxuRKP9aQq6C9J0W69g4Bfgoft9VFRmDX7v9QF-7NgB-EAB0AAAAAAAAAAAAAAAAAAAAAAH1AAG2026-11-13T16c25c49d889861p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EB8PtWS4Z2oEt461vawj8GrOn23Z9InPrgefDzBPaxNh\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"8\",\"p\":\"EIz1GCDVOt8H3M4fsRoC7Xwhhtp8BGZZQUpOzxBpyFZd\",\"a\":[{\"i\":\"EJgNuCUa3iQbBZo-0woHjbF5JrsEMsZbQOObmlHKgiNJ\",\"s\":\"0\",\"d\":\"EClZRof2Jc9ad_Fr2Dm41bXIim5r21DpX1jkJAdCF2tg\"}]}-VAn-AABAABi4mVHCoC9mNJ6mptH19_VkY9bFwTQFEJkiXJXTmYliUeCDS-iSq95sN257zoc0j4OImEPiaXIxw_7rmcvDmAJ-EAB0AAAAAAAAAAAAAAAAAAAAAAI1AAG2026-11-13T16c27c03d967883p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EFijBaeM_AIXxgVP8wVpTXv6ufHeCQ_4wBc6djkQHl7b\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"9\",\"p\":\"EB8PtWS4Z2oEt461vawj8GrOn23Z9InPrgefDzBPaxNh\",\"a\":[{\"i\":\"EL0MLpLscTf3pn2T-IQi2cuchxizz6Qh4LbF5h9hTcZd\",\"s\":\"0\",\"d\":\"EM2f8POFXCBWHNziWkFqpTATlKTdM6Q78vi5oLbmZTmW\"}]}-VAn-AABAABuaSK_FoetluoSskCseYbX6D8JVgOsdQuz5DR3I6RG3RMvRwFCOjh0d6Hmi0Qwp1lhVuz1toUYrQ3SIQwI1SEN-EAB0AAAAAAAAAAAAAAAAAAAAAAJ1AAG2026-11-13T16c34c02d840724p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EBxlFHvOih0w3Z3N8mnCCRz-0vZXAhfI43iXQHdIonPp\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"a\",\"p\":\"EFijBaeM_AIXxgVP8wVpTXv6ufHeCQ_4wBc6djkQHl7b\",\"a\":[{\"i\":\"EADH6PmZPFTguzb35iy5Cx31zu1r99zrhC1kgRmcHEmE\",\"s\":\"0\",\"d\":\"EPHZlHCo2O_HO_akKSk2wX5xWaeKblcgKCiWix-drUM5\"}]}-VAn-AABAAAWb2PMMxv_GHs64bAfuAx2i8kYYJkvKHNYSqELBIfI3JHBJkv-Sq3JK9Rl_ZgtWUJwCq2O4Ny3xZLgYDoOezkD-EAB0AAAAAAAAAAAAAAAAAAAAAAK1AAG2026-11-13T16c36c19d540484p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EGUWZbol_BbtBUT4IMzZDpLwCNmEJskcLg758mmdsr6t\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"b\",\"p\":\"EBxlFHvOih0w3Z3N8mnCCRz-0vZXAhfI43iXQHdIonPp\",\"a\":[{\"i\":\"EGDNSkB7Ytqp_7pDqbhOr0mMBt20vYy2rGHJJpgY7Hao\",\"s\":\"0\",\"d\":\"ELuazS2f8i0rHlNvjeoMEWdhQhGZ-d3CzfCFhU6YNXwt\"}]}-VAn-AABAABHbF08WphD9eZBirbXIS4QW2zlMNcemqvqPd8oJGK5tBGsxod1w3cYFkQntGyYWRWbmXfMA2SZD1zIMBdHyWUB-EAB0AAAAAAAAAAAAAAAAAAAAAAL1AAG2026-11-14T05c46c00d446469p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EP9V85eQPmnFGXs5HkK_ARpRFJxZxXemfQtikK1wJw7b\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"c\",\"p\":\"EGUWZbol_BbtBUT4IMzZDpLwCNmEJskcLg758mmdsr6t\",\"a\":[{\"i\":\"ELqCmPkd0Mwi50Pk_pGsuyGvVGXLuahQksmAP_a3-VkH\",\"s\":\"0\",\"d\":\"ELqCmPkd0Mwi50Pk_pGsuyGvVGXLuahQksmAP_a3-VkH\"}]}-VAn-AABAAALFG5_LQkKYCOH4jm1kvZiqlfh0Tl6h9Jm5PI6tBP-nrFMOsFLmWvrmJHDNEaRFeBsHEZCLXY9Y6zWj6XigGgN-EAB0AAAAAAAAAAAAAAAAAAAAAAM1AAG2026-11-14T05c58c37d139589p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"ENhXCojnlivDNmHrqCmOUEwg3QiirX33aKdGtCH6_-w6\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"d\",\"p\":\"EP9V85eQPmnFGXs5HkK_ARpRFJxZxXemfQtikK1wJw7b\",\"a\":[{\"i\":\"EEgvbOGl_O3_q6LD2duACc1lW9A0DxtTsIGKVUDywZQ_\",\"s\":\"0\",\"d\":\"EKz6dj732avHJCsjKIV4AH27PpAXmCB1nyRDx2v0Hddf\"}]}-VAn-AABAAAuz7thosVDDZhKZYYdfOrssVx3emLAX7lLLhwxMztrNyjTDEGEwyDzxTZV4nu3n_awIVm-aSZtQDG3sc-GamsI-EAB0AAAAAAAAAAAAAAAAAAAAAAN1AAG2026-11-14T06c00c47d354645p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EORSFAUNpKftgkYV7JTFGcv-GhR_6yMkcIL51eLVNwch\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"e\",\"p\":\"ENhXCojnlivDNmHrqCmOUEwg3QiirX33aKdGtCH6_-w6\",\"a\":[{\"i\":\"ELnqtiM_hHiTHDJDOAm54jlIxFdFxYoX0snDsCIgi_Zz\",\"s\":\"0\",\"d\":\"EDrodtMpmCxuEkYEHX9y2bcUpaEpSBkJ4UPjTU42JEKC\"}]}-VAn-AABAACEn2uH2Aj0D4Ig-gwMo01HCdMt7mDbnZIq39OBoxqN39iHsaKuUMVE3qPjfQuGZyfYghtXh95hx2EUxyns7l4L-EAB0AAAAAAAAAAAAAAAAAAAAAAO1AAG2026-11-14T06c03c28d388708p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EIE6j47d905FrPzjdmIdwLoZUKne9KVgZ3zvNoOWf_33\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"f\",\"p\":\"EORSFAUNpKftgkYV7JTFGcv-GhR_6yMkcIL51eLVNwch\",\"a\":[{\"i\":\"EFUT15I0Hc3pLC53sBTsBxQfBkBkUUrlyKnwRZrmh0NF\",\"s\":\"0\",\"d\":\"EFUWDg4ZfaJmrv2V_I-1jziyz3VDh-AlNRUkQf_zo_kq\"}]}-VAn-AABAADV77wAtzHzSXwAvvXEHgutj_vfkl3wlakKssa2bk-GhLN_YEaP-HTAE-2NILjHNazcdTG_z3nDyM4CSurkMs0E-EAB0AAAAAAAAAAAAAAAAAAAAAAP1AAG2026-11-14T06c12c05d387629p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EKOWUs6jOTOE_PigJX7tcqkg4RAhssf4s3rVGEL1m864\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"10\",\"p\":\"EIE6j47d905FrPzjdmIdwLoZUKne9KVgZ3zvNoOWf_33\",\"a\":[{\"i\":\"EIaZAszTLW4UCX-ksn7H8OQNFQD-DlxYouWRyU6S7y9f\",\"s\":\"0\",\"d\":\"ENWD4qjQX5ld4W878RYZefVjkT47YGuBNaCDoDQBALs_\"}]}-VAn-AABAAB6ULlW8flqNkNYJx0D2Wz6C1XoqBiStoLEdOIv0LZBT8O0pVr9eKSGE0HjhIL8SVf39JaG9J6D1f2EjMq7qIoC-EAB0AAAAAAAAAAAAAAAAAAAAAAQ1AAG2026-11-14T06c13c05d232161p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EEUi_ClkD844c2Sl05PkE77st5Ya-E5rPuPTeo5mIFjk\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"11\",\"p\":\"EKOWUs6jOTOE_PigJX7tcqkg4RAhssf4s3rVGEL1m864\",\"a\":[{\"i\":\"EHIUEam5S6JcOoO0Thb0U1Ck5fHz3IpkxsvR5ShtIyDU\",\"s\":\"0\",\"d\":\"EJgJT6FBH878bc-ZcgSSiPmVZt6Lxnf7GRY77z1yjnsK\"}]}-VAn-AABAAAKCOzpZEvN5GnlFdGRTardiAjVJYMCyOssmXJxNvdg0R1f21PaNGlsCcEqQZdbnxhRJ8ihNv6NJyJthxuRcfUN-EAB0AAAAAAAAAAAAAAAAAAAAAAR1AAG2026-11-14T06c14c34d768289p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EH6Y0rVvigoxVpY5j3qEyfpt1nmptJFFmClAIvmT1JFx\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"12\",\"p\":\"EEUi_ClkD844c2Sl05PkE77st5Ya-E5rPuPTeo5mIFjk\",\"a\":[{\"i\":\"EO93ouorUkVRbrsOP6A53GbkjjmHxpYeU1eqjbvNAUEq\",\"s\":\"0\",\"d\":\"EA9YVIq628qfcjP1nEunuutRRDszf3OMmqIFrPpEVY4A\"}]}-VAn-AABAABnwRDGL5Bh2cW7F3B7GdJ0qNRxZ4dPivaCSaK4U1ldJCBUz6TWJ2X65RtqWttQBOFKBtWzxopTnNusB3CkyCEB-EAB0AAAAAAAAAAAAAAAAAAAAAAS1AAG2026-11-14T06c47c17d729135p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EBV6bQ32arimYEKfYgPK0qwIjn4BjhbsCYULb4kKi52d\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"13\",\"p\":\"EH6Y0rVvigoxVpY5j3qEyfpt1nmptJFFmClAIvmT1JFx\",\"a\":[{\"i\":\"EKIQeXMypUPFqm8Y5Zqdn4r6VJGTLU5g_kWNML7N1rrg\",\"s\":\"0\",\"d\":\"EKkbFagU2d3hskkXebT3bEx8Qk7KtHssDMnU9-tGib4O\"}]}-VAn-AABAABFmgi8_J8SRyh7L25AtPK78aA7uRCh9wA_Wr6sWIHUPnAyUaZ8btedTpugc8VKzrFBCk4Y9wZ0WYWXlN891okH-EAB0AAAAAAAAAAAAAAAAAAAAAAT1AAG2026-11-14T06c55c19d204867p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EKodjXzTPzasH09jlOSJ9WdTZhYvLLN336vLd3lTD6Iv\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"14\",\"p\":\"EBV6bQ32arimYEKfYgPK0qwIjn4BjhbsCYULb4kKi52d\",\"a\":[{\"i\":\"EAdVVLI9Zt60u-3pSFYc8SSjr5-ghUC76CKJ8mqqPIKb\",\"s\":\"0\",\"d\":\"EL17l-ep_4qHa3XM7P6dA4n0kBPsO8PCj4l1lI37YyEm\"}]}-VAn-AABAACI4tHNWguPeTmZ877U4IwAF4iuLoNutbyAUMSvHH5Ej1DKaSe78ME2F91Mdn8PLBPHBSeb6zA6-izRKjyZo50P-EAB0AAAAAAAAAAAAAAAAAAAAAAU1AAG2026-11-14T06c58c45d920871p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EJ5QextUWwWr8w3-jR_dtykPl8VPPPUOmmkfp50Q4eOh\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"15\",\"p\":\"EKodjXzTPzasH09jlOSJ9WdTZhYvLLN336vLd3lTD6Iv\",\"a\":[{\"i\":\"EMUFYhHCBkWb-gSrKnlp_iTSwkEZRgVpFe37Ap9IphwP\",\"s\":\"0\",\"d\":\"EDAL6W_Yrb4MFME0mBs8zynvLeafwbtk9oPjOlE-l4u-\"}]}-VAn-AABAABrBLxl7Q-YV32qwwLtz0KeuiQ0iyjHBrqf6VhgDjZNwk5X_JKovj_37NKdnF2BQMKOJjLkSnYNd2tIcZlUbCgI-EAB0AAAAAAAAAAAAAAAAAAAAAAV1AAG2026-11-14T06c59c34d858816p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EOHfPyDmPlM1yaHz17xARYBApptM-RbWvBMSfGFse2bo\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"16\",\"p\":\"EJ5QextUWwWr8w3-jR_dtykPl8VPPPUOmmkfp50Q4eOh\",\"a\":[{\"i\":\"EG6auFH89akZTbi-tljsmgp_0XevNhrn0eebgJ403idG\",\"s\":\"0\",\"d\":\"EFdxrxZqOEZNw8scyWmMPrrNJN2mjs6uYAwEm2Bv97LX\"}]}-VAn-AABAACAFnMbx_nnTcWxuszn81VGUT8f6RqrkSVK77F_fSff0d0I8HqmylCpcR1FyIlHqQU-dwIIV5gvv_HJSX-RtPsN-EAB0AAAAAAAAAAAAAAAAAAAAAAW1AAG2026-11-14T07c03c58d890790p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EHzCRVWUcThGxSQ8g_mSRvr-YdB_UYx7FQxTuz09uB8i\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"17\",\"p\":\"EOHfPyDmPlM1yaHz17xARYBApptM-RbWvBMSfGFse2bo\",\"a\":[{\"i\":\"EDrl3dp3TftFOLqDqiWIedi8S7GivQAlNmKc-TbGOwPJ\",\"s\":\"0\",\"d\":\"EHQJHkqsDLS-cY0q4bhooPE6UOw0J0Px9jXXEdKg09cj\"}]}-VAn-AABAAA24i9phbJtZKgRVONGmZ39Tj1j-H8voDNAbkA-fwPwsPqus7u8CdgXzXfaDJpTjZu9HLDto-ABJnJFqwI-xMED-EAB0AAAAAAAAAAAAAAAAAAAAAAX1AAG2026-11-14T07c06c57d298582p00c00{\"v\":\"KERI10JSON00012b_\",\"t\":\"icp\",\"d\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\",\"i\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\",\"s\":\"0\",\"kt\":\"1\",\"k\":[\"DCF2InT4m3C04YscRHXFGpMejz1zwzbyQL9TXK02xKKo\"],\"nt\":\"1\",\"n\":[\"EO0Woqvu4gMiQjCBrIlD2a_uGQ7KTALUr1nXkGWdC6k5\"],\"bt\":\"0\",\"b\":[],\"c\":[],\"a\":[]}-VAn-AABAACfYapO1IJSs6c0wB0Zz5EKZwZ45UZ_GEGLcNsPiw7QfhpKGzYDwf-GEXrv7rlvIS1RtYd33CkkpRXCdHc_mWgA-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2026-11-13T15c49c24d194452p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EBWIWkzsbrOG0bHyvn8T7qZtUxV6IodeNXCz4CL9Aldr\",\"i\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\",\"s\":\"1\",\"p\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\",\"a\":[{\"i\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\",\"s\":\"0\",\"d\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\"}]}-VAn-AABAAB5RQMx00BsIwH-C8PsBxGB6pNlVgTOY_y0Xe_TL1uSrI3DJNpqhn3wvJvdibXbGfgEK9wGiFPdEeKlkzc2nZ8A-EAB0AAAAAAAAAAAAAAAAAAAAAAB1AAG2026-11-13T15c49c25d064526p00c00{\"v\":\"KERI10JSON00015f_\",\"t\":\"dip\",\"d\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\",\"i\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\",\"s\":\"0\",\"kt\":\"1\",\"k\":[\"DNTSjulaPbstpjGATstKRpG31NXBF4oA1nMSNxPpUW9s\"],\"nt\":\"1\",\"n\":[\"EDduLbMfL1kNMdlKw5N94DD78sjwwRV-arLNb5ixme5t\"],\"bt\":\"0\",\"b\":[],\"c\":[],\"a\":[],\"di\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\"}-VA5-AABAAB2cjribphrIF8xXI4cL_zIOUA_Q9S66VlVIpcaho-PBULoPDb_N7ChKhAqFctY2LyCtuCBRpZScpWD7S43Z-YL-GAB0AAAAAAAAAAAAAAAAAAAAAABEBWIWkzsbrOG0bHyvn8T7qZtUxV6IodeNXCz4CL9Aldr-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2026-11-13T15c49c23d940020p00c00{\"v\":\"KERI10JSON0000f6_\",\"t\":\"rpy\",\"d\":\"EJfy89cOhYs1N_iJ5DEx7UHoLSMjJaQDuSsCvn0jJUnD\",\"dt\":\"2025-10-09T00:00:00.000000+00:00\",\"r\":\"/loc/scheme\",\"a\":{\"eid\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\",\"scheme\":\"http\",\"url\":\"http://keria:3902/\"}}-VA0-FABEMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP0AAAAAAAAAAAAAAAAAAAAAAAEMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP-AABAABTVFcMCFca3CLOgL2hRtTVuhRHq2uFd0lac3NQ9ABzJuomPnQHY83BMLueK94ogpZfZ7UjdhFPbkAOYfr3IzoC{\"v\":\"KERI10JSON000111_\",\"t\":\"rpy\",\"d\":\"EJGFdSpQwxhp-Ffzg5xALJn080R9FogY9tOZ68ZFZLRA\",\"dt\":\"2026-11-13T15:49:38.646000+00:00\",\"r\":\"/end/role/add\",\"a\":{\"cid\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"role\":\"agent\",\"eid\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\"}}-VA0-FABEMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk0AAAAAAAAAAAAAAAAAAAAAAAEMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk-AABAABxDTN-Nc4o3tqz6QCq0KZK71wDe2bW3c2bvNnfP1bCu4xZ_N9goly1KLPI-YBiBEI1eJ6FFo6S_MUS4lNiFtEK"
+          "kel": "{\"v\":\"KERI10JSON00012b_\",\"t\":\"icp\",\"d\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\",\"i\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\",\"s\":\"0\",\"kt\":\"1\",\"k\":[\"DA_e28cX8JbtDPIpFGfmfIzZqDjV0-cMZY4JsOVpTTWe\"],\"nt\":\"1\",\"n\":[\"EPi8i_sn5ePog6Lf4Zyop_XMgkHuOImJ7AoK9CpCV21q\"],\"bt\":\"0\",\"b\":[],\"c\":[],\"a\":[]}-VAn-AABAACsdIw8H0EkgLpaLBjLliFRYMaYI1b6kQhf3vYuSGexZH_CMmIUc4xSKJ50hKLXUWDETMMnXNvkmk2ZRJfHn9UB-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2026-11-13T15c49c25d117170p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EB9nK-wOy8FsFGjLhCW-9Dlpa3eEmlh_zVQhLc-pDXQE\",\"i\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\",\"s\":\"1\",\"p\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\",\"a\":[{\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"0\",\"d\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\"}]}-VAn-AABAABPihrOoA29UDBjKRKBYuKwkNgY7iOcCdr3IpJInLwsBqv1HOIETkP0PoyPyz1WEzBKzdI0Oau2B2CZu4tk61EJ-EAB0AAAAAAAAAAAAAAAAAAAAAAB1AAG2026-11-13T15c49c33d497208p00c00{\"v\":\"KERI10JSON00015f_\",\"t\":\"dip\",\"d\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"0\",\"kt\":\"1\",\"k\":[\"DHKarQkWiBP131I0_yu9GtlOudmT5N5SFTRAdoPHKBlL\"],\"nt\":\"1\",\"n\":[\"EBnePR-pHf1Ati55aL3Y7H02eF08cEX2xmy88TChsOj_\"],\"bt\":\"0\",\"b\":[],\"c\":[],\"a\":[],\"di\":\"EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4\"}-VA5-AABAABgbVQKz_nt82WsDS1Fhny6xcb7egIsjsStcULPKMnVDqW4LDLZv4x01RyGeDo7IMuJamC86RlpoAHTL6FfZm0G-GAB0AAAAAAAAAAAAAAAAAAAAAABEB9nK-wOy8FsFGjLhCW-9Dlpa3eEmlh_zVQhLc-pDXQE-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2026-11-13T15c49c25d987583p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EPIJ92nREtX42qvIhKfsNsexnbaKLax57oyohIg4duCs\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"1\",\"p\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"a\":[{\"i\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\",\"s\":\"0\",\"d\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\"}]}-VAn-AABAADyHpSBHlQV5vWn4iWRIBAjhPiyJgEBZcqwL48KE-0UrxQL46u9e4oGVXqAZxJsgUKjy98PTWH6B_6vjzgDKKMJ-EAB0AAAAAAAAAAAAAAAAAAAAAAB1AAG2026-11-13T15c53c24d359434p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"ECU1tEozKhplF_QMbDgqjgFo3QflSoeIVNZZ_JRFAOoc\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"2\",\"p\":\"EPIJ92nREtX42qvIhKfsNsexnbaKLax57oyohIg4duCs\",\"a\":[{\"i\":\"EF2xJE7wjseUicFCAR5vHx9lddlrfo31Sy0_vcTh7Qzh\",\"s\":\"0\",\"d\":\"EIP0bCHQWW52JRvDr7BtBsRbGHd7f3Hhe7Yx4QqZw1rU\"}]}-VAn-AABAAD35poC5FHCRbb7KFJmIf0CcJhYrf3Hl_Sde_uOVFDNcBgRk8u7Q4jD6iNme-wVDIT2lm7eIma-VrmW3_XhrwIM-EAB0AAAAAAAAAAAAAAAAAAAAAAC1AAG2026-11-13T15c53c43d739342p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EKO0zXRfamoZn4UGBoie1FS_MFLteDj2AT87ljcLq3hp\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"3\",\"p\":\"ECU1tEozKhplF_QMbDgqjgFo3QflSoeIVNZZ_JRFAOoc\",\"a\":[{\"i\":\"ENZRtxT0mMnve5eypR5Bk1wfs68QygDz9CXJzX1aUcl8\",\"s\":\"0\",\"d\":\"ENZRtxT0mMnve5eypR5Bk1wfs68QygDz9CXJzX1aUcl8\"}]}-VAn-AABAABYtCMpC3YdIGm53_RCpuLREXhIr9qH-7rbAoKlpJfEURAAuGlxvzercloxnfQH1xwAXVXJcyvOtHFRPUKvSJYN-EAB0AAAAAAAAAAAAAAAAAAAAAAD1AAG2026-11-13T15c54c21d588094p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EJbA4aKAJd1wr3m_MlXjRxxljLDicLDSzPkyb9dcXznx\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"4\",\"p\":\"EKO0zXRfamoZn4UGBoie1FS_MFLteDj2AT87ljcLq3hp\",\"a\":[{\"i\":\"EP-MmSkKIyEHpN9pWkRKeR_GYdISp3HG-xTuh5qQjakE\",\"s\":\"0\",\"d\":\"EP-MmSkKIyEHpN9pWkRKeR_GYdISp3HG-xTuh5qQjakE\"}]}-VAn-AABAAB4lW1kocdfSZ1WiZfkOzM9lrWv9FhBioefY3t2OsS0aDJ_4ZH0M_LMdUnf1VIqzK0tp6WXuRHnNjVwbJa90nQF-EAB0AAAAAAAAAAAAAAAAAAAAAAE1AAG2026-11-13T15c55c02d947712p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EHFv_NEfoIPyYxm_zyBiGVpwqFY6ZqFfiHBZjqU90V7X\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"5\",\"p\":\"EJbA4aKAJd1wr3m_MlXjRxxljLDicLDSzPkyb9dcXznx\",\"a\":[{\"i\":\"EEh10JYeqQ6p8j-hRnYEDnwYqh4pPRHcl2WXt9MuMbfO\",\"s\":\"0\",\"d\":\"EMYYpgWFv5owIeNViMASMmqN0ww3LRPcoyoSyMYHRmyW\"}]}-VAn-AABAAB-82iCiL2nvq7nCUil3fPeTB9iFeuGkle-MrGM4GBX-zUgHTl2VN9IRCIwsIwrovz-Ez8POiJpr8n-_3ErGZ0P-EAB0AAAAAAAAAAAAAAAAAAAAAAF1AAG2026-11-13T16c01c53d994888p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"ENAnzl9VKhz1RqG1o2gnpSEdxtAcBNtDhd_watVhKIPX\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"6\",\"p\":\"EHFv_NEfoIPyYxm_zyBiGVpwqFY6ZqFfiHBZjqU90V7X\",\"a\":[{\"i\":\"ENloHejXqtXgBdUH5zz4x8EUcDR5vN6rNXYrYE7-xAfw\",\"s\":\"0\",\"d\":\"EJLHOT5buaHRov9dVWjg4ylPRlsbVt-7TjqQnmTSlNaB\"}]}-VAn-AABAABfI3QtzPqWxV6vP5paaP9cF2AuGDcyWAY88fMYbR7k_3EWczmAtUEBxHTxtWSiUzcODzN6mIc1cQSIY-Ot1VMA-EAB0AAAAAAAAAAAAAAAAAAAAAAG1AAG2026-11-13T16c16c42d285091p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EIz1GCDVOt8H3M4fsRoC7Xwhhtp8BGZZQUpOzxBpyFZd\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"7\",\"p\":\"ENAnzl9VKhz1RqG1o2gnpSEdxtAcBNtDhd_watVhKIPX\",\"a\":[{\"i\":\"EBbOUera-DRc-1TOLpKCG3aKyz5gU9RxkpJh3nb5eTM7\",\"s\":\"0\",\"d\":\"ENjDVkBP4fCRCo0AvBu3a5lHZSOYovCLYWwSJGyjCjhi\"}]}-VAn-AABAABDDIVH8l9KlpZiuvBId7WjSLk2NeRO3RTRREq6VvIN3yxuRKP9aQq6C9J0W69g4Bfgoft9VFRmDX7v9QF-7NgB-EAB0AAAAAAAAAAAAAAAAAAAAAAH1AAG2026-11-13T16c25c49d889861p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EB8PtWS4Z2oEt461vawj8GrOn23Z9InPrgefDzBPaxNh\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"8\",\"p\":\"EIz1GCDVOt8H3M4fsRoC7Xwhhtp8BGZZQUpOzxBpyFZd\",\"a\":[{\"i\":\"EJgNuCUa3iQbBZo-0woHjbF5JrsEMsZbQOObmlHKgiNJ\",\"s\":\"0\",\"d\":\"EClZRof2Jc9ad_Fr2Dm41bXIim5r21DpX1jkJAdCF2tg\"}]}-VAn-AABAABi4mVHCoC9mNJ6mptH19_VkY9bFwTQFEJkiXJXTmYliUeCDS-iSq95sN257zoc0j4OImEPiaXIxw_7rmcvDmAJ-EAB0AAAAAAAAAAAAAAAAAAAAAAI1AAG2026-11-13T16c27c03d967883p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EFijBaeM_AIXxgVP8wVpTXv6ufHeCQ_4wBc6djkQHl7b\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"9\",\"p\":\"EB8PtWS4Z2oEt461vawj8GrOn23Z9InPrgefDzBPaxNh\",\"a\":[{\"i\":\"EL0MLpLscTf3pn2T-IQi2cuchxizz6Qh4LbF5h9hTcZd\",\"s\":\"0\",\"d\":\"EM2f8POFXCBWHNziWkFqpTATlKTdM6Q78vi5oLbmZTmW\"}]}-VAn-AABAABuaSK_FoetluoSskCseYbX6D8JVgOsdQuz5DR3I6RG3RMvRwFCOjh0d6Hmi0Qwp1lhVuz1toUYrQ3SIQwI1SEN-EAB0AAAAAAAAAAAAAAAAAAAAAAJ1AAG2026-11-13T16c34c02d840724p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EBxlFHvOih0w3Z3N8mnCCRz-0vZXAhfI43iXQHdIonPp\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"a\",\"p\":\"EFijBaeM_AIXxgVP8wVpTXv6ufHeCQ_4wBc6djkQHl7b\",\"a\":[{\"i\":\"EADH6PmZPFTguzb35iy5Cx31zu1r99zrhC1kgRmcHEmE\",\"s\":\"0\",\"d\":\"EPHZlHCo2O_HO_akKSk2wX5xWaeKblcgKCiWix-drUM5\"}]}-VAn-AABAAAWb2PMMxv_GHs64bAfuAx2i8kYYJkvKHNYSqELBIfI3JHBJkv-Sq3JK9Rl_ZgtWUJwCq2O4Ny3xZLgYDoOezkD-EAB0AAAAAAAAAAAAAAAAAAAAAAK1AAG2026-11-13T16c36c19d540484p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EGUWZbol_BbtBUT4IMzZDpLwCNmEJskcLg758mmdsr6t\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"b\",\"p\":\"EBxlFHvOih0w3Z3N8mnCCRz-0vZXAhfI43iXQHdIonPp\",\"a\":[{\"i\":\"EGDNSkB7Ytqp_7pDqbhOr0mMBt20vYy2rGHJJpgY7Hao\",\"s\":\"0\",\"d\":\"ELuazS2f8i0rHlNvjeoMEWdhQhGZ-d3CzfCFhU6YNXwt\"}]}-VAn-AABAABHbF08WphD9eZBirbXIS4QW2zlMNcemqvqPd8oJGK5tBGsxod1w3cYFkQntGyYWRWbmXfMA2SZD1zIMBdHyWUB-EAB0AAAAAAAAAAAAAAAAAAAAAAL1AAG2026-11-14T05c46c00d446469p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EP9V85eQPmnFGXs5HkK_ARpRFJxZxXemfQtikK1wJw7b\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"c\",\"p\":\"EGUWZbol_BbtBUT4IMzZDpLwCNmEJskcLg758mmdsr6t\",\"a\":[{\"i\":\"ELqCmPkd0Mwi50Pk_pGsuyGvVGXLuahQksmAP_a3-VkH\",\"s\":\"0\",\"d\":\"ELqCmPkd0Mwi50Pk_pGsuyGvVGXLuahQksmAP_a3-VkH\"}]}-VAn-AABAAALFG5_LQkKYCOH4jm1kvZiqlfh0Tl6h9Jm5PI6tBP-nrFMOsFLmWvrmJHDNEaRFeBsHEZCLXY9Y6zWj6XigGgN-EAB0AAAAAAAAAAAAAAAAAAAAAAM1AAG2026-11-14T05c58c37d139589p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"ENhXCojnlivDNmHrqCmOUEwg3QiirX33aKdGtCH6_-w6\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"d\",\"p\":\"EP9V85eQPmnFGXs5HkK_ARpRFJxZxXemfQtikK1wJw7b\",\"a\":[{\"i\":\"EEgvbOGl_O3_q6LD2duACc1lW9A0DxtTsIGKVUDywZQ_\",\"s\":\"0\",\"d\":\"EKz6dj732avHJCsjKIV4AH27PpAXmCB1nyRDx2v0Hddf\"}]}-VAn-AABAAAuz7thosVDDZhKZYYdfOrssVx3emLAX7lLLhwxMztrNyjTDEGEwyDzxTZV4nu3n_awIVm-aSZtQDG3sc-GamsI-EAB0AAAAAAAAAAAAAAAAAAAAAAN1AAG2026-11-14T06c00c47d354645p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EORSFAUNpKftgkYV7JTFGcv-GhR_6yMkcIL51eLVNwch\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"e\",\"p\":\"ENhXCojnlivDNmHrqCmOUEwg3QiirX33aKdGtCH6_-w6\",\"a\":[{\"i\":\"ELnqtiM_hHiTHDJDOAm54jlIxFdFxYoX0snDsCIgi_Zz\",\"s\":\"0\",\"d\":\"EDrodtMpmCxuEkYEHX9y2bcUpaEpSBkJ4UPjTU42JEKC\"}]}-VAn-AABAACEn2uH2Aj0D4Ig-gwMo01HCdMt7mDbnZIq39OBoxqN39iHsaKuUMVE3qPjfQuGZyfYghtXh95hx2EUxyns7l4L-EAB0AAAAAAAAAAAAAAAAAAAAAAO1AAG2026-11-14T06c03c28d388708p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EIE6j47d905FrPzjdmIdwLoZUKne9KVgZ3zvNoOWf_33\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"f\",\"p\":\"EORSFAUNpKftgkYV7JTFGcv-GhR_6yMkcIL51eLVNwch\",\"a\":[{\"i\":\"EFUT15I0Hc3pLC53sBTsBxQfBkBkUUrlyKnwRZrmh0NF\",\"s\":\"0\",\"d\":\"EFUWDg4ZfaJmrv2V_I-1jziyz3VDh-AlNRUkQf_zo_kq\"}]}-VAn-AABAADV77wAtzHzSXwAvvXEHgutj_vfkl3wlakKssa2bk-GhLN_YEaP-HTAE-2NILjHNazcdTG_z3nDyM4CSurkMs0E-EAB0AAAAAAAAAAAAAAAAAAAAAAP1AAG2026-11-14T06c12c05d387629p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EKOWUs6jOTOE_PigJX7tcqkg4RAhssf4s3rVGEL1m864\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"10\",\"p\":\"EIE6j47d905FrPzjdmIdwLoZUKne9KVgZ3zvNoOWf_33\",\"a\":[{\"i\":\"EIaZAszTLW4UCX-ksn7H8OQNFQD-DlxYouWRyU6S7y9f\",\"s\":\"0\",\"d\":\"ENWD4qjQX5ld4W878RYZefVjkT47YGuBNaCDoDQBALs_\"}]}-VAn-AABAAB6ULlW8flqNkNYJx0D2Wz6C1XoqBiStoLEdOIv0LZBT8O0pVr9eKSGE0HjhIL8SVf39JaG9J6D1f2EjMq7qIoC-EAB0AAAAAAAAAAAAAAAAAAAAAAQ1AAG2026-11-14T06c13c05d232161p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EEUi_ClkD844c2Sl05PkE77st5Ya-E5rPuPTeo5mIFjk\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"11\",\"p\":\"EKOWUs6jOTOE_PigJX7tcqkg4RAhssf4s3rVGEL1m864\",\"a\":[{\"i\":\"EHIUEam5S6JcOoO0Thb0U1Ck5fHz3IpkxsvR5ShtIyDU\",\"s\":\"0\",\"d\":\"EJgJT6FBH878bc-ZcgSSiPmVZt6Lxnf7GRY77z1yjnsK\"}]}-VAn-AABAAAKCOzpZEvN5GnlFdGRTardiAjVJYMCyOssmXJxNvdg0R1f21PaNGlsCcEqQZdbnxhRJ8ihNv6NJyJthxuRcfUN-EAB0AAAAAAAAAAAAAAAAAAAAAAR1AAG2026-11-14T06c14c34d768289p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EH6Y0rVvigoxVpY5j3qEyfpt1nmptJFFmClAIvmT1JFx\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"12\",\"p\":\"EEUi_ClkD844c2Sl05PkE77st5Ya-E5rPuPTeo5mIFjk\",\"a\":[{\"i\":\"EO93ouorUkVRbrsOP6A53GbkjjmHxpYeU1eqjbvNAUEq\",\"s\":\"0\",\"d\":\"EA9YVIq628qfcjP1nEunuutRRDszf3OMmqIFrPpEVY4A\"}]}-VAn-AABAABnwRDGL5Bh2cW7F3B7GdJ0qNRxZ4dPivaCSaK4U1ldJCBUz6TWJ2X65RtqWttQBOFKBtWzxopTnNusB3CkyCEB-EAB0AAAAAAAAAAAAAAAAAAAAAAS1AAG2026-11-14T06c47c17d729135p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EBV6bQ32arimYEKfYgPK0qwIjn4BjhbsCYULb4kKi52d\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"13\",\"p\":\"EH6Y0rVvigoxVpY5j3qEyfpt1nmptJFFmClAIvmT1JFx\",\"a\":[{\"i\":\"EKIQeXMypUPFqm8Y5Zqdn4r6VJGTLU5g_kWNML7N1rrg\",\"s\":\"0\",\"d\":\"EKkbFagU2d3hskkXebT3bEx8Qk7KtHssDMnU9-tGib4O\"}]}-VAn-AABAABFmgi8_J8SRyh7L25AtPK78aA7uRCh9wA_Wr6sWIHUPnAyUaZ8btedTpugc8VKzrFBCk4Y9wZ0WYWXlN891okH-EAB0AAAAAAAAAAAAAAAAAAAAAAT1AAG2026-11-14T06c55c19d204867p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EKodjXzTPzasH09jlOSJ9WdTZhYvLLN336vLd3lTD6Iv\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"14\",\"p\":\"EBV6bQ32arimYEKfYgPK0qwIjn4BjhbsCYULb4kKi52d\",\"a\":[{\"i\":\"EAdVVLI9Zt60u-3pSFYc8SSjr5-ghUC76CKJ8mqqPIKb\",\"s\":\"0\",\"d\":\"EL17l-ep_4qHa3XM7P6dA4n0kBPsO8PCj4l1lI37YyEm\"}]}-VAn-AABAACI4tHNWguPeTmZ877U4IwAF4iuLoNutbyAUMSvHH5Ej1DKaSe78ME2F91Mdn8PLBPHBSeb6zA6-izRKjyZo50P-EAB0AAAAAAAAAAAAAAAAAAAAAAU1AAG2026-11-14T06c58c45d920871p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EJ5QextUWwWr8w3-jR_dtykPl8VPPPUOmmkfp50Q4eOh\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"15\",\"p\":\"EKodjXzTPzasH09jlOSJ9WdTZhYvLLN336vLd3lTD6Iv\",\"a\":[{\"i\":\"EMUFYhHCBkWb-gSrKnlp_iTSwkEZRgVpFe37Ap9IphwP\",\"s\":\"0\",\"d\":\"EDAL6W_Yrb4MFME0mBs8zynvLeafwbtk9oPjOlE-l4u-\"}]}-VAn-AABAABrBLxl7Q-YV32qwwLtz0KeuiQ0iyjHBrqf6VhgDjZNwk5X_JKovj_37NKdnF2BQMKOJjLkSnYNd2tIcZlUbCgI-EAB0AAAAAAAAAAAAAAAAAAAAAAV1AAG2026-11-14T06c59c34d858816p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EOHfPyDmPlM1yaHz17xARYBApptM-RbWvBMSfGFse2bo\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"16\",\"p\":\"EJ5QextUWwWr8w3-jR_dtykPl8VPPPUOmmkfp50Q4eOh\",\"a\":[{\"i\":\"EG6auFH89akZTbi-tljsmgp_0XevNhrn0eebgJ403idG\",\"s\":\"0\",\"d\":\"EFdxrxZqOEZNw8scyWmMPrrNJN2mjs6uYAwEm2Bv97LX\"}]}-VAn-AABAACAFnMbx_nnTcWxuszn81VGUT8f6RqrkSVK77F_fSff0d0I8HqmylCpcR1FyIlHqQU-dwIIV5gvv_HJSX-RtPsN-EAB0AAAAAAAAAAAAAAAAAAAAAAW1AAG2026-11-14T07c03c58d890790p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EHzCRVWUcThGxSQ8g_mSRvr-YdB_UYx7FQxTuz09uB8i\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"17\",\"p\":\"EOHfPyDmPlM1yaHz17xARYBApptM-RbWvBMSfGFse2bo\",\"a\":[{\"i\":\"EDrl3dp3TftFOLqDqiWIedi8S7GivQAlNmKc-TbGOwPJ\",\"s\":\"0\",\"d\":\"EHQJHkqsDLS-cY0q4bhooPE6UOw0J0Px9jXXEdKg09cj\"}]}-VAn-AABAAA24i9phbJtZKgRVONGmZ39Tj1j-H8voDNAbkA-fwPwsPqus7u8CdgXzXfaDJpTjZu9HLDto-ABJnJFqwI-xMED-EAB0AAAAAAAAAAAAAAAAAAAAAAX1AAG2026-11-14T07c06c57d298582p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EACZ6AzxNcJUhjoeAJsNj39YH4T6fp84vmkpPlJZHeoK\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"18\",\"p\":\"EHzCRVWUcThGxSQ8g_mSRvr-YdB_UYx7FQxTuz09uB8i\",\"a\":[{\"i\":\"EAgAJ9F-c-P6-X6TZWufnMYPbbN_HiC5LHMWw-43r755\",\"s\":\"0\",\"d\":\"EEGnZaEj23e-5Vb32aAlGDu8XxVUic46YJfBjEVQlPLa\"}]}-VAn-AABAAC2eK8qooHAILdNskbJ5mdExEM5jZpriJrHYZCN2Izeh0dJnzvUYo7tosOFTZRERH43W3LJytCMKWMTjQFTowkB-EAB0AAAAAAAAAAAAAAAAAAAAAAY1AAG2026-11-14T07c20c55d951354p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"EO00IXqvZORQtlJQqBKzA-MT18s-QRzOaYB1MBn1gLzV\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"19\",\"p\":\"EACZ6AzxNcJUhjoeAJsNj39YH4T6fp84vmkpPlJZHeoK\",\"a\":[{\"i\":\"EKHRzBHgRY2HrUIkMqPEFmu52O0k5v84uHcRH0lec3lJ\",\"s\":\"0\",\"d\":\"EOo4DzktVhrnTQcnweVZq_WbWUQsQiOtNfuPZLegzgzo\"}]}-VAn-AABAAAqKUapTzwHZZVTjtsAe8deJiYmf4671CsvNl4376lslmkPnS15pw3tFH5wYc5z32UdvGrbMBAN0HESqa8hqhkO-EAB0AAAAAAAAAAAAAAAAAAAAAAZ1AAG2026-11-14T07c22c30d076333p00c00{\"v\":\"KERI10JSON00013b_\",\"t\":\"ixn\",\"d\":\"ENMtnDnDzv5hoUxOY3sNEOyWzz-JSx5QLZbHRbuEOb2d\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"s\":\"1a\",\"p\":\"EO00IXqvZORQtlJQqBKzA-MT18s-QRzOaYB1MBn1gLzV\",\"a\":[{\"i\":\"ELTvFYF2oAOS-utjRv4PD-MPil8FmVfC_hBaDFMbM4Fj\",\"s\":\"0\",\"d\":\"EKhYoIM9Y5_d96rdbcGWe6QGmwMHvBMarVwEtFAS9ZL5\"}]}-VAn-AABAAB92VR22HRyNm5igc7TtWJGAxn0j_MXAu6fNX2svnZxDYfmaxFgzWYbG47HuTSedtDasNeSs5PpLwaC9PXeY-UO-EAB0AAAAAAAAAAAAAAAAAAAAAAa1AAG2026-11-14T07c41c48d021604p00c00{\"v\":\"KERI10JSON00012b_\",\"t\":\"icp\",\"d\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\",\"i\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\",\"s\":\"0\",\"kt\":\"1\",\"k\":[\"DCF2InT4m3C04YscRHXFGpMejz1zwzbyQL9TXK02xKKo\"],\"nt\":\"1\",\"n\":[\"EO0Woqvu4gMiQjCBrIlD2a_uGQ7KTALUr1nXkGWdC6k5\"],\"bt\":\"0\",\"b\":[],\"c\":[],\"a\":[]}-VAn-AABAACfYapO1IJSs6c0wB0Zz5EKZwZ45UZ_GEGLcNsPiw7QfhpKGzYDwf-GEXrv7rlvIS1RtYd33CkkpRXCdHc_mWgA-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2026-11-13T15c49c24d194452p00c00{\"v\":\"KERI10JSON00013a_\",\"t\":\"ixn\",\"d\":\"EBWIWkzsbrOG0bHyvn8T7qZtUxV6IodeNXCz4CL9Aldr\",\"i\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\",\"s\":\"1\",\"p\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\",\"a\":[{\"i\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\",\"s\":\"0\",\"d\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\"}]}-VAn-AABAAB5RQMx00BsIwH-C8PsBxGB6pNlVgTOY_y0Xe_TL1uSrI3DJNpqhn3wvJvdibXbGfgEK9wGiFPdEeKlkzc2nZ8A-EAB0AAAAAAAAAAAAAAAAAAAAAAB1AAG2026-11-13T15c49c25d064526p00c00{\"v\":\"KERI10JSON00015f_\",\"t\":\"dip\",\"d\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\",\"i\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\",\"s\":\"0\",\"kt\":\"1\",\"k\":[\"DNTSjulaPbstpjGATstKRpG31NXBF4oA1nMSNxPpUW9s\"],\"nt\":\"1\",\"n\":[\"EDduLbMfL1kNMdlKw5N94DD78sjwwRV-arLNb5ixme5t\"],\"bt\":\"0\",\"b\":[],\"c\":[],\"a\":[],\"di\":\"EL7Sv88Hpz0op9nF5R-zVn4rvEfjT7oiIaMWb61kKmmG\"}-VA5-AABAAB2cjribphrIF8xXI4cL_zIOUA_Q9S66VlVIpcaho-PBULoPDb_N7ChKhAqFctY2LyCtuCBRpZScpWD7S43Z-YL-GAB0AAAAAAAAAAAAAAAAAAAAAABEBWIWkzsbrOG0bHyvn8T7qZtUxV6IodeNXCz4CL9Aldr-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2026-11-13T15c49c23d940020p00c00{\"v\":\"KERI10JSON0000f6_\",\"t\":\"rpy\",\"d\":\"EJfy89cOhYs1N_iJ5DEx7UHoLSMjJaQDuSsCvn0jJUnD\",\"dt\":\"2025-10-09T00:00:00.000000+00:00\",\"r\":\"/loc/scheme\",\"a\":{\"eid\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\",\"scheme\":\"http\",\"url\":\"http://keria:3902/\"}}-VA0-FABEMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP0AAAAAAAAAAAAAAAAAAAAAAAEMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP-AABAABTVFcMCFca3CLOgL2hRtTVuhRHq2uFd0lac3NQ9ABzJuomPnQHY83BMLueK94ogpZfZ7UjdhFPbkAOYfr3IzoC{\"v\":\"KERI10JSON000111_\",\"t\":\"rpy\",\"d\":\"EJGFdSpQwxhp-Ffzg5xALJn080R9FogY9tOZ68ZFZLRA\",\"dt\":\"2026-11-13T15:49:38.646000+00:00\",\"r\":\"/end/role/add\",\"a\":{\"cid\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"role\":\"agent\",\"eid\":\"EMIhFZlQx6gtmLq0qd4T8zB_Ch8-1crylkgokjz2EIcP\"}}-VA0-FABEMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk0AAAAAAAAAAAAAAAAAAAAAAAEMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk-AABAABxDTN-Nc4o3tqz6QCq0KZK71wDe2bW3c2bvNnfP1bCu4xZ_N9goly1KLPI-YBiBEI1eJ6FFo6S_MUS4lNiFtEK"
         },
         {
           "alias": "JupiterTreasuryAgent",
@@ -2173,6 +2173,306 @@
           "t": "ixn"
         },
         "fetchedAt": "2026-11-14T07:07:11.752Z"
+      },
+      "issuanceVerified": true,
+      "issuerDelegatedFrom": {
+        "officerAlias": "Jupiter_Chief_Sales_Officer",
+        "officerAid": "EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4",
+        "officerOorSaid": "EK0RtBmmVkTRYZFWigEltl8cYlZ-uLEcfTX6mFx1aeaX"
+      }
+    },
+    {
+      "said": "EAgAJ9F-c-P6-X6TZWufnMYPbbN_HiC5LHMWw-43r755",
+      "schemaSaid": "EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu",
+      "registry": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+      "selfAttested": true,
+      "issuerAlias": "jupiterSellerAgent",
+      "issuerAid": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+      "holderAlias": "tommyBuyerAgent",
+      "holderAid": "EEVIKW5UQLFBvXfWmQyfPtE-PnVgLGYiA_YaBYNKHs7z",
+      "acdcRaw": "{\"v\":\"ACDC10JSON0004d8_\",\"d\":\"EAgAJ9F-c-P6-X6TZWufnMYPbbN_HiC5LHMWw-43r755\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"ri\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\",\"s\":\"EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu\",\"a\":{\"d\":\"EPN30ifr-wd3YMwnnBe7IXeQVv3PFnnO2fQ8kLCGCswl\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"dt\":\"2026-11-14T07:20:52Z\",\"invoiceNumber\":\"INV-2026-0036\",\"invoiceDate\":\"2026-11-14T00:00:00Z\",\"dueDate\":\"2026-12-14T00:00:00Z\",\"sellerLEI\":\"3358004DXAMRWRUIYJ05\",\"buyerLEI\":\"54930012QJWZMYHNJW95\",\"currency\":\"USDC\",\"totalAmount\":0.0766,\"lineItems\":[{\"description\":\"Cotton fabric, 20,000 pcs (demo scale 1:1,000,000; real 76,600.00 USD)\",\"quantity\":1,\"unitPrice\":0.0766,\"amount\":0.0766}],\"paymentTerms\":{\"terms\":\"Net 30 days from invoice date\",\"discountCurve\":[]},\"paymentMethod\":\"blockchain\",\"paymentChainID\":\"near:testnet\",\"paymentWalletAddress\":\"chainaim-jupiter-payee.testnet\",\"ref_uri\":\"urn:chainaim:order:INV-2026-0036\"},\"r\":{\"d\":\"\",\"usageDisclaimer\":{\"l\":\"This is a self-attested invoice credential issued by the agent. The issuer and holder are the same entity.\"},\"selfAttestation\":{\"l\":\"This credential is self-attested. The trust chain derives from the agent delegation to the GLEIF root.\"}}}",
+      "acdc": {
+        "v": "ACDC10JSON0004d8_",
+        "d": "EAgAJ9F-c-P6-X6TZWufnMYPbbN_HiC5LHMWw-43r755",
+        "i": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+        "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+        "s": "EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu",
+        "a": {
+          "d": "EPN30ifr-wd3YMwnnBe7IXeQVv3PFnnO2fQ8kLCGCswl",
+          "i": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+          "dt": "2026-11-14T07:20:52Z",
+          "invoiceNumber": "INV-2026-0036",
+          "invoiceDate": "2026-11-14T00:00:00Z",
+          "dueDate": "2026-12-14T00:00:00Z",
+          "sellerLEI": "3358004DXAMRWRUIYJ05",
+          "buyerLEI": "54930012QJWZMYHNJW95",
+          "currency": "USDC",
+          "totalAmount": 0.0766,
+          "lineItems": [
+            {
+              "description": "Cotton fabric, 20,000 pcs (demo scale 1:1,000,000; real 76,600.00 USD)",
+              "quantity": 1,
+              "unitPrice": 0.0766,
+              "amount": 0.0766
+            }
+          ],
+          "paymentTerms": {
+            "terms": "Net 30 days from invoice date",
+            "discountCurve": []
+          },
+          "paymentMethod": "blockchain",
+          "paymentChainID": "near:testnet",
+          "paymentWalletAddress": "chainaim-jupiter-payee.testnet",
+          "ref_uri": "urn:chainaim:order:INV-2026-0036"
+        },
+        "r": {
+          "d": "",
+          "usageDisclaimer": {
+            "l": "This is a self-attested invoice credential issued by the agent. The issuer and holder are the same entity."
+          },
+          "selfAttestation": {
+            "l": "This credential is self-attested. The trust chain derives from the agent delegation to the GLEIF root."
+          }
+        }
+      },
+      "ipex": {
+        "grantSaid": "EBvHaV5brF388WeBmU58cBGVh3Oy3aJsSOht_ylWf4FM",
+        "grantCredentialSaid": "EAgAJ9F-c-P6-X6TZWufnMYPbbN_HiC5LHMWw-43r755",
+        "admitSuccess": true,
+        "admitGrantSaid": "EBvHaV5brF388WeBmU58cBGVh3Oy3aJsSOht_ylWf4FM",
+        "credentialHeld": true
+      },
+      "issuance": {
+        "telEvent": {
+          "said": "EEGnZaEj23e-5Vb32aAlGDu8XxVUic46YJfBjEVQlPLa",
+          "t": "iss",
+          "s": "0",
+          "dt": "2026-11-14T07:20:52Z",
+          "sad": {
+            "v": "KERI10JSON0000e1_",
+            "t": "iss",
+            "d": "EEGnZaEj23e-5Vb32aAlGDu8XxVUic46YJfBjEVQlPLa",
+            "i": "EAgAJ9F-c-P6-X6TZWufnMYPbbN_HiC5LHMWw-43r755",
+            "s": "0",
+            "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+            "dt": "2026-11-14T07:20:52Z"
+          },
+          "cesr": "{\"v\":\"KERI10JSON0000e1_\",\"t\":\"iss\",\"d\":\"EEGnZaEj23e-5Vb32aAlGDu8XxVUic46YJfBjEVQlPLa\",\"i\":\"EAgAJ9F-c-P6-X6TZWufnMYPbbN_HiC5LHMWw-43r755\",\"s\":\"0\",\"ri\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\",\"dt\":\"2026-11-14T07:20:52Z\"}-VAS-GAB0AAAAAAAAAAAAAAAAAAAAAAYEACZ6AzxNcJUhjoeAJsNj39YH4T6fp84vmkpPlJZHeoK"
+        },
+        "telState": {
+          "et": "iss",
+          "s": "0",
+          "d": "EEGnZaEj23e-5Vb32aAlGDu8XxVUic46YJfBjEVQlPLa",
+          "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+          "dt": "2026-11-14T07:20:52Z"
+        },
+        "registry": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+        "anchor": {
+          "kelSeq": "18",
+          "ixnSaid": "EACZ6AzxNcJUhjoeAJsNj39YH4T6fp84vmkpPlJZHeoK",
+          "t": "ixn"
+        },
+        "fetchedAt": "2026-11-14T07:21:06.767Z"
+      },
+      "issuanceVerified": true,
+      "issuerDelegatedFrom": {
+        "officerAlias": "Jupiter_Chief_Sales_Officer",
+        "officerAid": "EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4",
+        "officerOorSaid": "EK0RtBmmVkTRYZFWigEltl8cYlZ-uLEcfTX6mFx1aeaX"
+      }
+    },
+    {
+      "said": "EKHRzBHgRY2HrUIkMqPEFmu52O0k5v84uHcRH0lec3lJ",
+      "schemaSaid": "EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu",
+      "registry": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+      "selfAttested": true,
+      "issuerAlias": "jupiterSellerAgent",
+      "issuerAid": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+      "holderAlias": "tommyBuyerAgent",
+      "holderAid": "EEVIKW5UQLFBvXfWmQyfPtE-PnVgLGYiA_YaBYNKHs7z",
+      "acdcRaw": "{\"v\":\"ACDC10JSON0004d9_\",\"d\":\"EKHRzBHgRY2HrUIkMqPEFmu52O0k5v84uHcRH0lec3lJ\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"ri\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\",\"s\":\"EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu\",\"a\":{\"d\":\"EDOMpWl6pfKGiORRWG0FsQrfvlysHsPAZjTpaaf3r_yz\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"dt\":\"2026-11-14T07:22:26Z\",\"invoiceNumber\":\"INV-2026-0037\",\"invoiceDate\":\"2026-11-14T00:00:00Z\",\"dueDate\":\"2026-12-14T00:00:00Z\",\"sellerLEI\":\"3358004DXAMRWRUIYJ05\",\"buyerLEI\":\"54930012QJWZMYHNJW95\",\"currency\":\"USDC\",\"totalAmount\":0.1492,\"lineItems\":[{\"description\":\"Cotton fabric, 40,000 pcs (demo scale 1:1,000,000; real 149,200.00 USD)\",\"quantity\":1,\"unitPrice\":0.1492,\"amount\":0.1492}],\"paymentTerms\":{\"terms\":\"Net 30 days from invoice date\",\"discountCurve\":[]},\"paymentMethod\":\"blockchain\",\"paymentChainID\":\"near:testnet\",\"paymentWalletAddress\":\"chainaim-jupiter-payee.testnet\",\"ref_uri\":\"urn:chainaim:order:INV-2026-0037\"},\"r\":{\"d\":\"\",\"usageDisclaimer\":{\"l\":\"This is a self-attested invoice credential issued by the agent. The issuer and holder are the same entity.\"},\"selfAttestation\":{\"l\":\"This credential is self-attested. The trust chain derives from the agent delegation to the GLEIF root.\"}}}",
+      "acdc": {
+        "v": "ACDC10JSON0004d9_",
+        "d": "EKHRzBHgRY2HrUIkMqPEFmu52O0k5v84uHcRH0lec3lJ",
+        "i": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+        "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+        "s": "EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu",
+        "a": {
+          "d": "EDOMpWl6pfKGiORRWG0FsQrfvlysHsPAZjTpaaf3r_yz",
+          "i": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+          "dt": "2026-11-14T07:22:26Z",
+          "invoiceNumber": "INV-2026-0037",
+          "invoiceDate": "2026-11-14T00:00:00Z",
+          "dueDate": "2026-12-14T00:00:00Z",
+          "sellerLEI": "3358004DXAMRWRUIYJ05",
+          "buyerLEI": "54930012QJWZMYHNJW95",
+          "currency": "USDC",
+          "totalAmount": 0.1492,
+          "lineItems": [
+            {
+              "description": "Cotton fabric, 40,000 pcs (demo scale 1:1,000,000; real 149,200.00 USD)",
+              "quantity": 1,
+              "unitPrice": 0.1492,
+              "amount": 0.1492
+            }
+          ],
+          "paymentTerms": {
+            "terms": "Net 30 days from invoice date",
+            "discountCurve": []
+          },
+          "paymentMethod": "blockchain",
+          "paymentChainID": "near:testnet",
+          "paymentWalletAddress": "chainaim-jupiter-payee.testnet",
+          "ref_uri": "urn:chainaim:order:INV-2026-0037"
+        },
+        "r": {
+          "d": "",
+          "usageDisclaimer": {
+            "l": "This is a self-attested invoice credential issued by the agent. The issuer and holder are the same entity."
+          },
+          "selfAttestation": {
+            "l": "This credential is self-attested. The trust chain derives from the agent delegation to the GLEIF root."
+          }
+        }
+      },
+      "ipex": {
+        "grantSaid": "EPGT-sxHvVCe-bPDQ0LlV0u2pFCuabhIk3L1sS5HKg1E",
+        "grantCredentialSaid": "EKHRzBHgRY2HrUIkMqPEFmu52O0k5v84uHcRH0lec3lJ",
+        "admitSuccess": true,
+        "admitGrantSaid": "EPGT-sxHvVCe-bPDQ0LlV0u2pFCuabhIk3L1sS5HKg1E",
+        "credentialHeld": true
+      },
+      "issuance": {
+        "telEvent": {
+          "said": "EOo4DzktVhrnTQcnweVZq_WbWUQsQiOtNfuPZLegzgzo",
+          "t": "iss",
+          "s": "0",
+          "dt": "2026-11-14T07:22:26Z",
+          "sad": {
+            "v": "KERI10JSON0000e1_",
+            "t": "iss",
+            "d": "EOo4DzktVhrnTQcnweVZq_WbWUQsQiOtNfuPZLegzgzo",
+            "i": "EKHRzBHgRY2HrUIkMqPEFmu52O0k5v84uHcRH0lec3lJ",
+            "s": "0",
+            "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+            "dt": "2026-11-14T07:22:26Z"
+          },
+          "cesr": "{\"v\":\"KERI10JSON0000e1_\",\"t\":\"iss\",\"d\":\"EOo4DzktVhrnTQcnweVZq_WbWUQsQiOtNfuPZLegzgzo\",\"i\":\"EKHRzBHgRY2HrUIkMqPEFmu52O0k5v84uHcRH0lec3lJ\",\"s\":\"0\",\"ri\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\",\"dt\":\"2026-11-14T07:22:26Z\"}-VAS-GAB0AAAAAAAAAAAAAAAAAAAAAAZEO00IXqvZORQtlJQqBKzA-MT18s-QRzOaYB1MBn1gLzV"
+        },
+        "telState": {
+          "et": "iss",
+          "s": "0",
+          "d": "EOo4DzktVhrnTQcnweVZq_WbWUQsQiOtNfuPZLegzgzo",
+          "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+          "dt": "2026-11-14T07:22:26Z"
+        },
+        "registry": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+        "anchor": {
+          "kelSeq": "19",
+          "ixnSaid": "EO00IXqvZORQtlJQqBKzA-MT18s-QRzOaYB1MBn1gLzV",
+          "t": "ixn"
+        },
+        "fetchedAt": "2026-11-14T07:22:41.250Z"
+      },
+      "issuanceVerified": true,
+      "issuerDelegatedFrom": {
+        "officerAlias": "Jupiter_Chief_Sales_Officer",
+        "officerAid": "EHfwdg7mNVYvytMlkPs1bUcIJiVmtdesb7koIYOe0zV4",
+        "officerOorSaid": "EK0RtBmmVkTRYZFWigEltl8cYlZ-uLEcfTX6mFx1aeaX"
+      }
+    },
+    {
+      "said": "ELTvFYF2oAOS-utjRv4PD-MPil8FmVfC_hBaDFMbM4Fj",
+      "schemaSaid": "EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu",
+      "registry": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+      "selfAttested": true,
+      "issuerAlias": "jupiterSellerAgent",
+      "issuerAid": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+      "holderAlias": "tommyBuyerAgent",
+      "holderAid": "EEVIKW5UQLFBvXfWmQyfPtE-PnVgLGYiA_YaBYNKHs7z",
+      "acdcRaw": "{\"v\":\"ACDC10JSON0004d5_\",\"d\":\"ELTvFYF2oAOS-utjRv4PD-MPil8FmVfC_hBaDFMbM4Fj\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"ri\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\",\"s\":\"EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu\",\"a\":{\"d\":\"EEOdeDXkM9UihCieaLnuSGr4-w3htLaJJ1DnB3bGXJwe\",\"i\":\"EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk\",\"dt\":\"2026-11-14T07:41:43Z\",\"invoiceNumber\":\"INV-2026-0038\",\"invoiceDate\":\"2026-11-14T00:00:00Z\",\"dueDate\":\"2026-12-14T00:00:00Z\",\"sellerLEI\":\"3358004DXAMRWRUIYJ05\",\"buyerLEI\":\"54930012QJWZMYHNJW95\",\"currency\":\"USDC\",\"totalAmount\":0.077,\"lineItems\":[{\"description\":\"Cotton fabric, 20,000 pcs (demo scale 1:1,000,000; real 77,000.00 USD)\",\"quantity\":1,\"unitPrice\":0.077,\"amount\":0.077}],\"paymentTerms\":{\"terms\":\"Net 30 days from invoice date\",\"discountCurve\":[]},\"paymentMethod\":\"blockchain\",\"paymentChainID\":\"near:testnet\",\"paymentWalletAddress\":\"chainaim-jupiter-payee.testnet\",\"ref_uri\":\"urn:chainaim:order:INV-2026-0038\"},\"r\":{\"d\":\"\",\"usageDisclaimer\":{\"l\":\"This is a self-attested invoice credential issued by the agent. The issuer and holder are the same entity.\"},\"selfAttestation\":{\"l\":\"This credential is self-attested. The trust chain derives from the agent delegation to the GLEIF root.\"}}}",
+      "acdc": {
+        "v": "ACDC10JSON0004d5_",
+        "d": "ELTvFYF2oAOS-utjRv4PD-MPil8FmVfC_hBaDFMbM4Fj",
+        "i": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+        "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+        "s": "EIKpV6ZqOn2Rg-DY86bIKDixNlgdvUQoSpijhVqs_EPu",
+        "a": {
+          "d": "EEOdeDXkM9UihCieaLnuSGr4-w3htLaJJ1DnB3bGXJwe",
+          "i": "EMAiQMZ8ZhO5sRshLJJ-K3ZPTzwyWkEyMEFtdPrB0NHk",
+          "dt": "2026-11-14T07:41:43Z",
+          "invoiceNumber": "INV-2026-0038",
+          "invoiceDate": "2026-11-14T00:00:00Z",
+          "dueDate": "2026-12-14T00:00:00Z",
+          "sellerLEI": "3358004DXAMRWRUIYJ05",
+          "buyerLEI": "54930012QJWZMYHNJW95",
+          "currency": "USDC",
+          "totalAmount": 0.077,
+          "lineItems": [
+            {
+              "description": "Cotton fabric, 20,000 pcs (demo scale 1:1,000,000; real 77,000.00 USD)",
+              "quantity": 1,
+              "unitPrice": 0.077,
+              "amount": 0.077
+            }
+          ],
+          "paymentTerms": {
+            "terms": "Net 30 days from invoice date",
+            "discountCurve": []
+          },
+          "paymentMethod": "blockchain",
+          "paymentChainID": "near:testnet",
+          "paymentWalletAddress": "chainaim-jupiter-payee.testnet",
+          "ref_uri": "urn:chainaim:order:INV-2026-0038"
+        },
+        "r": {
+          "d": "",
+          "usageDisclaimer": {
+            "l": "This is a self-attested invoice credential issued by the agent. The issuer and holder are the same entity."
+          },
+          "selfAttestation": {
+            "l": "This credential is self-attested. The trust chain derives from the agent delegation to the GLEIF root."
+          }
+        }
+      },
+      "ipex": {
+        "grantSaid": "EJxSfwDOaKr9Q8gUtK8UPvYqw3i6yCOCjJ7PS6U3FnOY",
+        "grantCredentialSaid": "ELTvFYF2oAOS-utjRv4PD-MPil8FmVfC_hBaDFMbM4Fj",
+        "admitSuccess": true,
+        "admitGrantSaid": "EJxSfwDOaKr9Q8gUtK8UPvYqw3i6yCOCjJ7PS6U3FnOY",
+        "credentialHeld": true
+      },
+      "issuance": {
+        "telEvent": {
+          "said": "EKhYoIM9Y5_d96rdbcGWe6QGmwMHvBMarVwEtFAS9ZL5",
+          "t": "iss",
+          "s": "0",
+          "dt": "2026-11-14T07:41:43Z",
+          "sad": {
+            "v": "KERI10JSON0000e1_",
+            "t": "iss",
+            "d": "EKhYoIM9Y5_d96rdbcGWe6QGmwMHvBMarVwEtFAS9ZL5",
+            "i": "ELTvFYF2oAOS-utjRv4PD-MPil8FmVfC_hBaDFMbM4Fj",
+            "s": "0",
+            "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+            "dt": "2026-11-14T07:41:43Z"
+          },
+          "cesr": "{\"v\":\"KERI10JSON0000e1_\",\"t\":\"iss\",\"d\":\"EKhYoIM9Y5_d96rdbcGWe6QGmwMHvBMarVwEtFAS9ZL5\",\"i\":\"ELTvFYF2oAOS-utjRv4PD-MPil8FmVfC_hBaDFMbM4Fj\",\"s\":\"0\",\"ri\":\"EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo\",\"dt\":\"2026-11-14T07:41:43Z\"}-VAS-GAB0AAAAAAAAAAAAAAAAAAAAAAaENMtnDnDzv5hoUxOY3sNEOyWzz-JSx5QLZbHRbuEOb2d"
+        },
+        "telState": {
+          "et": "iss",
+          "s": "0",
+          "d": "EKhYoIM9Y5_d96rdbcGWe6QGmwMHvBMarVwEtFAS9ZL5",
+          "ri": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+          "dt": "2026-11-14T07:41:43Z"
+        },
+        "registry": "EKXh5yPmGxCfMcaIPs4earvxRv2OP-wOeD8bBuk8hTJo",
+        "anchor": {
+          "kelSeq": "1a",
+          "ixnSaid": "ENMtnDnDzv5hoUxOY3sNEOyWzz-JSx5QLZbHRbuEOb2d",
+          "t": "ixn"
+        },
+        "fetchedAt": "2026-11-14T07:42:01.460Z"
       },
       "issuanceVerified": true,
       "issuerDelegatedFrom": {

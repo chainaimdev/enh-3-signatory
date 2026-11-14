@@ -28,7 +28,7 @@ import { negotiate, usd } from "../shared/negotiate.mjs";
 import { preDealChecks, treasuryChecks } from "./swarm.mjs";
 import { evidenceInvoices } from "../bridge/rules.mjs";
 import { listInvoices, matchInvoice, parseRequest } from "./logic.mjs";
-import { agentChain, lineItemDescription, parseIssueOutput, proofJson, proofTail } from "./vlei.mjs";
+import { agentChain, delegationPair, lineItemDescription, parseIssueOutput, proofJson, proofTail, splitExportFailures } from "./vlei.mjs";
 
 export const ORCHESTRATOR = "runner (no keys)";
 export const STEPS = ["offer", "accept", "register", "pay", "outcome", "decision"];
@@ -331,15 +331,28 @@ export function createRunner({
           step(run, "verify_seller_agent", "running", ACTORS.agent, ACTORS.seller, `First message from ${sellerAgent} received (${trigger}) — verifying the sender before replying`, { api: vsApi, data: { trigger } });
           await pace();
           const sc = agentChain(vbr.evidence, sellerAgent);
+          const slive = sc.ok ? await liveCheck(vbr.evidence, sellerAgent) : null;
+          if (sc.ok && slive.checked && !slive.verified) {
+            fail("verify_seller_agent", ACTORS.agent, ACTORS.seller, `Buyer refused: the live vLEI verifier did not confirm ${sellerAgent} — ${slive.error}. The answer (${trigger}) is ignored; nothing issued.`,
+              { api: vsApi, data: { ...sc.data, links: [...sc.data.links, liveLink(slive)], live: slive, trigger } }, "buyer_refused", `buyer refused: live vLEI verifier did not confirm ${sellerAgent} — ${slive.error}`);
+            throw STOP;
+          }
           if (!sc.ok) {
             fail("verify_seller_agent", ACTORS.agent, ACTORS.seller, `Buyer refused: seller agent not verified — ${sc.reason}. The answer (${trigger}) is ignored; nothing issued.`,
               { api: vsApi, data: { ...sc.data, trigger } }, "buyer_refused", `buyer refused: seller agent not verified — ${sc.reason}`);
             throw STOP;
           }
-          const sd = sc.data;
+          step(run, "verify_seller_agent", "running", ACTORS.agent, ACTORS.seller, `Delegation ✓ (live verifier). Asking ${sc.data.officer} to present its OOR credential to Sally…`, { api: vsApi, data: { trigger } });
+          const ssally = await sallyCheck(sc.data);
+          const sd = { ...sc.data, links: withSally([...sc.data.links, liveLink(slive)], ssally), live: slive, sally: ssally };
+          if (ssally.checked && !ssally.verified) {
+            fail("verify_seller_agent", ACTORS.agent, ACTORS.seller, `Buyer refused: Sally did not confirm ${sd.officer}'s OOR chain — ${ssally.error}. The answer (${trigger}) is ignored; nothing issued.`,
+              { api: vsApi, data: { ...sd, trigger } }, "buyer_refused", `buyer refused: Sally did not confirm ${sd.officer}'s OOR chain — ${ssally.error}`);
+            throw STOP;
+          }
           sellerVerifiedAfter = moves.length - 1;
           step(run, "verify_seller_agent", "done", ACTORS.agent, ACTORS.seller,
-            `${sellerAgent} verified on its first message (${trigger}): delegated (live KEL) from ${sd.officer}, who holds OOR ${sd.officerOorSaid} issued by the QVI; Legal Entity ${sd.legalEntity} (LEI ${sd.lei}). LE → QVI is not checked by the exporter.`,
+            `${sellerAgent} verified on its first message (${trigger}): delegated (live KEL) from ${sd.officer}, who holds OOR ${sd.officerOorSaid}; Legal Entity ${sd.legalEntity} (LEI ${sd.lei}).${liveText(slive)}${sallyText(ssally)}${ssally.verified ? "" : " LE → QVI is not checked."}`,
             { api: vsApi, data: { ...sd, trigger } });
           run.currentStep = "negotiate";
         },
@@ -551,6 +564,37 @@ export function createRunner({
     return executeTail(run, units, parsed);
   }
 
+  // change #16a: every identity check also asks the live vLEI verifier (vlei_verification :9724) when configured
+  async function liveCheck(evidence, alias) {
+    if (!deps.verifyDelegation) return { checked: false, verified: false, note: "live vLEI verifier not configured (--vlei-verifier off)" };
+    const pair = delegationPair(evidence, alias);
+    return { ...(await deps.verifyDelegation(pair)), agent: alias, parentAlias: pair?.parentAlias ?? null };
+  }
+  const liveLink = (live) => ({
+    link: "agent → delegator (live vLEI verifier)",
+    verified: live.verified === true,
+    ...(live.checked ? {} : { checked: false }),
+    how: live.checked ? `POST ${live.url} (${live.ms ?? "?"} ms)${live.verified ? "" : `: ${live.error}`}` : live.note,
+  });
+  // change #16b: the counterparty's officer presents its OOR credential to Sally; Sally's signed web-hook result proves
+  // OOR → OOR-auth → LE credential → QVI credential → GLEIF root (local demo root) live, and not revoked
+  async function sallyCheck(chainData) {
+    if (!deps.sallyCheck) return { checked: false, verified: false, note: "live Sally check not configured (--sally off)" };
+    return deps.sallyCheck({ officerAlias: chainData.officer, oorSaid: chainData.officerOorSaid });
+  }
+  const withSally = (links, sally) => {
+    const out = links.map((l) => {
+      if (!sally.verified) return l;
+      if (l.link === "Legal Entity → QVI") return { ...l, verified: true, checked: true, how: `live by Sally: LE credential ${sally.result.legalEntityCredential} chained to QVI credential ${sally.result.qviCredential}` };
+      if (l.link === "officer holds OOR issued by the QVI") return { ...l, verified: true, how: `live by Sally: OOR ${sally.result ? "iss (not revoked)" : ""}` };
+      return l;
+    });
+    out.push({ link: "OOR → LE → QVI → GLEIF (live Sally)", verified: sally.verified === true, ...(sally.checked ? {} : { checked: false }), how: sally.checked ? (sally.verified ? `Sally ${sally.action} in ${sally.ms} ms (signed by Sally ${String(sally.signer).slice(0, 10)}…)` : sally.error) : sally.note });
+    return out;
+  };
+  const sallyText = (sally) => (sally.checked ? (sally.verified ? ` Sally ✓ OOR → LE → QVI → GLEIF (LEI ${sally.result.LEI}, ${(sally.ms / 1000).toFixed(1)} s).` : ` Sally ✗ (${sally.error}).`) : " Sally: not configured.");
+  const liveText = (live) => (live.checked ? (live.verified ? ` Live vLEI verifier ✓ (${live.ms} ms).` : ` Live vLEI verifier ✗ (${live.error}).`) : " Live vLEI verifier: not configured.");
+
   /** Seller verifies the buyer agent (existing strict exporter, live KELs). Returns {ok, bd, evidence}; on failure the run is finished. */
   async function verifyBuyer(run, fail, nothing) {
     run.currentStep = "verify_buyer";
@@ -560,15 +604,33 @@ export function createRunner({
     const vbApi = { service: "vlei", cmd: vb.cmd ?? vbCmd, exitCode: vb.exitCode, ms: vb.ms, ...(vb.timedOut ? { timedOut: true } : {}) };
     const vbRaw = proofTail(`${vb.stdout ?? ""}\n${vb.stderr ?? ""}`);
     const buyer = vb.evidence ? agentChain(vb.evidence, agentAlias) : null;
-    if (vb.exitCode !== 0 || !buyer?.ok) {
-      const why = vb.timedOut ? "exporter timed out" : vb.spawnError ? vb.spawnError : buyer && !buyer.ok ? buyer.reason : !vb.evidence ? `exporter exit code ${vb.exitCode}, no output` : `exporter strict checks failed (exit ${vb.exitCode})`;
+    // #16a: only identity failures block; failures about other (old) invoices are shown as warnings
+    const split = splitExportFailures(vb.evidence);
+    const exportOk = vb.exitCode === 0 || (!!vb.evidence && split.blocking.length === 0);
+    if (!exportOk || !buyer?.ok) {
+      const why = vb.timedOut ? "exporter timed out" : vb.spawnError ? vb.spawnError : buyer && !buyer.ok ? buyer.reason : !vb.evidence ? `exporter exit code ${vb.exitCode}, no output` : `exporter strict checks failed: ${split.blocking.slice(0, 2).join("; ")}`;
       fail("verify_buyer", ACTORS.seller, ACTORS.agent, `Seller refused: buyer not verified — ${why}. ${nothing}`,
         { api: vbApi, data: { ...(buyer?.data ?? {}), raw: vbRaw } }, "seller_refused", `seller refused: buyer not verified — ${why}`);
       return { ok: false };
     }
-    const bd = buyer.data;
+    const live = await liveCheck(vb.evidence, agentAlias);
+    const bd = { ...buyer.data, links: [...buyer.data.links, liveLink(live)], live, exportWarnings: split.warnings };
+    if (live.checked && !live.verified) {
+      fail("verify_buyer", ACTORS.seller, ACTORS.agent, `Seller refused: the live vLEI verifier did not confirm ${agentAlias} — ${live.error}. ${nothing}`,
+        { api: vbApi, data: { ...bd, raw: vbRaw } }, "seller_refused", `seller refused: live vLEI verifier did not confirm ${agentAlias} — ${live.error}`);
+      return { ok: false };
+    }
+    step(run, "verify_buyer", "running", ACTORS.seller, ACTORS.agent, `Delegation ✓ (live verifier). Asking ${bd.officer} to present its OOR credential to Sally…`, { api: vbApi, data: { ...bd } });
+    const sally = await sallyCheck(bd);
+    bd.links = withSally(bd.links, sally);
+    bd.sally = sally;
+    if (sally.checked && !sally.verified) {
+      fail("verify_buyer", ACTORS.seller, ACTORS.agent, `Seller refused: Sally did not confirm ${bd.officer}'s OOR chain — ${sally.error}. ${nothing}`,
+        { api: vbApi, data: { ...bd, raw: vbRaw } }, "seller_refused", `seller refused: Sally did not confirm ${bd.officer}'s OOR chain — ${sally.error}`);
+      return { ok: false };
+    }
     step(run, "verify_buyer", "done", ACTORS.seller, ACTORS.agent,
-      `${agentAlias} verified: delegated (live KEL) from ${bd.officer}, who holds OOR ${bd.officerOorSaid} issued by the QVI; Legal Entity ${bd.legalEntity} (LEI ${bd.lei}). LE → QVI is not checked by the exporter.`,
+      `${agentAlias} verified: delegated (live KEL) from ${bd.officer}, who holds OOR ${bd.officerOorSaid}; Legal Entity ${bd.legalEntity} (LEI ${bd.lei}).${liveText(live)}${sallyText(sally)}${sally.verified ? "" : " LE → QVI is not checked."}${split.warnings.length ? ` Note: ${split.warnings.length} unrelated invoice check(s) failed (shown in details, not blocking).` : ""}`,
       { api: vbApi, data: { ...bd, raw: vbRaw } });
     return { ok: true, bd, evidence: vb.evidence };
   }
@@ -643,21 +705,26 @@ export function createRunner({
     }
     const inv = evidence && evidenceInvoices(evidence).find((i) => i.said === issued.said);
     const exportInfo = { exitCode: ex.exitCode, ms: ex.ms, allChecksPassed: /All checks passed\./.test(ex.stdout), generatedAt: evidence?.generatedAt ?? null, invoices: evidence ? evidenceInvoices(evidence).length : null };
-    if (ex.exitCode !== 0 || !exportInfo.allChecksPassed || !inv) {
-      const why = ex.timedOut ? "export timed out" : ex.spawnError ? ex.spawnError : ex.exitCode !== 0 ? `export exit code ${ex.exitCode}` : !inv ? "new invoice not in the export" : '"All checks passed." not printed';
+    // #16a: failures about OTHER invoices are warnings; identity failures and failures about THIS invoice block
+    const xsplit = splitExportFailures(evidence, { keepInvoice: [issued.said, issued.invoiceNumber] });
+    exportInfo.warnings = xsplit.warnings;
+    const exportOk = (ex.exitCode === 0 && exportInfo.allChecksPassed) || (!!evidence && ex.exitCode !== null && !ex.timedOut && !ex.spawnError && xsplit.blocking.length === 0);
+    if (!exportOk || !inv) {
+      const why = ex.timedOut ? "export timed out" : ex.spawnError ? ex.spawnError : xsplit.blocking.length ? xsplit.blocking.slice(0, 2).join("; ") : ex.exitCode !== 0 ? `export exit code ${ex.exitCode}` : !inv ? "new invoice not in the export" : '"All checks passed." not printed';
       return fail("verify_seller", ACTORS.agent, ACTORS.seller, `Seller not verified: strict export failed (${why})`, { api: exApi, data: { export: exportInfo, raw: exRaw } });
     }
     const seller = agentChain(evidence, sellerAgent);
     const from = inv.issuerDelegatedFrom || {};
     const sd = seller.data;
     const issuerOk = inv.issuerAid === sd.agentAid && from.officerAid === sd.officerAid && from.officerOorSaid === sd.officerOorSaid;
-    const sellerData = { ...sd, issuerMatches: issuerOk, issuanceVerified: inv.issuanceVerified === true, issuanceAnchor: inv.issuance?.anchor ?? null, export: exportInfo, raw: exRaw };
-    if (!seller.ok || !issuerOk || inv.issuanceVerified !== true) {
-      const why = !seller.ok ? seller.reason : !issuerOk ? "invoice issuer is not the delegated seller agent" : "invoice issuance not anchored in the seller KEL";
+    const xlive = seller.ok ? await liveCheck(evidence, sellerAgent) : { checked: false, verified: false, note: "skipped (export check failed)" };
+    const sellerData = { ...sd, links: [...(sd.links || []), liveLink(xlive)], live: xlive, issuerMatches: issuerOk, issuanceVerified: inv.issuanceVerified === true, issuanceAnchor: inv.issuance?.anchor ?? null, export: exportInfo, raw: exRaw };
+    if (!seller.ok || !issuerOk || inv.issuanceVerified !== true || (xlive.checked && !xlive.verified)) {
+      const why = !seller.ok ? seller.reason : !issuerOk ? "invoice issuer is not the delegated seller agent" : inv.issuanceVerified !== true ? "invoice issuance not anchored in the seller KEL" : `live vLEI verifier did not confirm ${sellerAgent} — ${xlive.error}`;
       return fail("verify_seller", ACTORS.agent, ACTORS.seller, `Seller not verified: ${why}`, { api: exApi, data: sellerData });
     }
     step(run, "verify_seller", "done", ACTORS.agent, ACTORS.seller,
-      `${sellerAgent} verified: delegated (live KEL) from ${sd.officer}, who holds OOR ${sd.officerOorSaid}; it issued ${issued.invoiceNumber} and the issuance is anchored in its KEL (strict export: ${exportInfo.invoices} invoices, all checks passed)`,
+      `${sellerAgent} verified: delegated (live KEL) from ${sd.officer}, who holds OOR ${sd.officerOorSaid}; it issued ${issued.invoiceNumber} and the issuance is anchored in its KEL (strict export: ${exportInfo.invoices} invoices${xsplit.warnings.length ? `; ${xsplit.warnings.length} unrelated invoice check(s) failed, not blocking` : ", all checks passed"}).${liveText(xlive)}`,
       { api: exApi, data: sellerData });
 
     // 6. accept

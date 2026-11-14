@@ -6,6 +6,8 @@
 #                                   (default: runs in THIS terminal — Ctrl+C or closing the window stops all services;
 #                                    --background = old behaviour, services keep running until `stop`)
 #                                   [--pace-ms 1500 (pause per negotiation move; 0 = instant)]
+#                                   [--vlei-verifier required|off (live check via vlei_verification :9724; default required)]
+#                                   [--sally required|off (officer presents its OOR to Sally; signed result must be "iss")]
 #                                   [--negotiator rules|llm --llm-url <url> [--llm-model <name>]]   (change #4;
 #                                   llm reads the key from env SIGNATORY_LLM_API_KEY — never put the key on the command line)
 #   bash scripts/signatory.sh stop  [--vlei] [--dry-run]
@@ -45,7 +47,7 @@ CONFIG="$ROOT/config/signatory.json"
 
 MODE="${1:-}"; shift || true
 DRY=0; AP2="on"; WITH_VLEI=0; NO_UI=0; FRESH_VLEI=0; YES=0; SKIP_NPM=0
-NEGOTIATOR="rules"; LLM_URL=""; LLM_MODEL=""; BACKGROUND=0; PACE_MS=1500
+NEGOTIATOR="rules"; LLM_URL=""; LLM_MODEL=""; BACKGROUND=0; PACE_MS=1500; VLEI_VERIFIER="required"; SALLY="required"
 EXPORT_NODE="/mnt/c/Program Files/nodejs/node.exe"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -60,6 +62,8 @@ while [ $# -gt 0 ]; do
     --negotiator) shift; NEGOTIATOR="${1:-}" ;;
     --background) BACKGROUND=1 ;;
     --pace-ms) shift; PACE_MS="${1:-}" ;;
+    --vlei-verifier) shift; VLEI_VERIFIER="${1:-}" ;;
+    --sally) shift; SALLY="${1:-}" ;;
     --llm-url) shift; LLM_URL="${1:-}" ;;
     --llm-model) shift; LLM_MODEL="${1:-}" ;;
     -h|--help) sed -n '2,30p' "$0"; exit 0 ;;
@@ -70,7 +74,9 @@ done
 case "$AP2" in on|off) ;; *) echo "--ap2 must be on or off" >&2; exit 64 ;; esac
 case "$NEGOTIATOR" in rules|llm) ;; *) echo "--negotiator must be rules or llm" >&2; exit 64 ;; esac
 case "$PACE_MS" in ""|*[!0-9]*) echo "--pace-ms must be a whole number of milliseconds" >&2; exit 64 ;; esac
-RUNNER_EXTRA=(--negotiator "$NEGOTIATOR" --pace-ms "$PACE_MS")
+case "$VLEI_VERIFIER" in required|off) ;; *) echo "--vlei-verifier must be required or off" >&2; exit 64 ;; esac
+case "$SALLY" in required|off) ;; *) echo "--sally must be required or off" >&2; exit 64 ;; esac
+RUNNER_EXTRA=(--negotiator "$NEGOTIATOR" --pace-ms "$PACE_MS" --vlei-verifier "$VLEI_VERIFIER" --sally "$SALLY")
 [ -n "$LLM_URL" ] && RUNNER_EXTRA+=(--llm-url "$LLM_URL")
 [ -n "$LLM_MODEL" ] && RUNNER_EXTRA+=(--llm-model "$LLM_MODEL")
 
@@ -174,7 +180,7 @@ do_start() {
     hdr "vLEI stack (same identities, no 4D): legentvLEI/start-vlei.sh"
     ( cd "$VLEI" && run ./start-vlei.sh ) || { bad "start-vlei.sh failed — see its output above"; exit 1; }
   fi
-  hdr "services (ap2 $AP2, negotiator $NEGOTIATOR, pace ${PACE_MS} ms)"
+  hdr "services (ap2 $AP2, negotiator $NEGOTIATOR, pace ${PACE_MS} ms, vLEI verifier $VLEI_VERIFIER, Sally $SALLY)"
   start_bg signer "$SERVICES" "$RUN_DIR/signer.log" node signer/index.mjs --ap2 "$AP2"
   start_bg bridge "$SERVICES" "$RUN_DIR/bridge.log" node bridge/index.mjs --ap2 "$AP2"
   for s in "signer $SIGNER_PORT" "bridge $BRIDGE_PORT"; do

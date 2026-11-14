@@ -1,7 +1,0 @@
-# requirements
-requests
-ipywidgets
-nbmake
-keri
-pytest
-# Add any other libraries your notebooks depend on

@@ -1,5 +1,0 @@
-customer_id,name,city,country,tier,credit_limit_usd,open_receivable_usd,payment_behaviour
-TOMMY,Tommy Apparel Inc (tommyBuyerAgent),Amsterdam,Netherlands,TIER1,300000,60000,pays on time
-CUST-S,masked,Hamburg,Germany,TIER1,250000,120000,pays on time
-CUST-K,masked,New York,United States,TIER2,150000,85000,pays 5-10 days late
-CUST-M,masked,Dhaka,Bangladesh,TIER3,60000,35000,45 days overdue
